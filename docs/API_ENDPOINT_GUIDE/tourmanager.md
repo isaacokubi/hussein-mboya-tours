@@ -453,8 +453,6 @@ router.post("/itineraries", createItinerary)
 - Literal HTTP statuses in handler: `400`, `404`, `409`, `201`.
 - JSON envelope keys observed: `success`, `message`, `itinerary`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -481,8 +479,6 @@ router.get("/itineraries", getItineraries)
 - Path parameters read: none detected; query parameters read: `tour`, `status`.
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: `success`, `count`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
@@ -511,8 +507,6 @@ router.get("/itineraries/:id", getItinerary)
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -539,8 +533,6 @@ router.put("/itineraries/:id", updateItinerary)
 - Path parameters read: `id`; query parameters read: none detected.
 - Literal HTTP statuses in handler: `400`, `409`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
@@ -569,8 +561,6 @@ router.delete("/itineraries/:id", deleteItinerary)
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -597,8 +587,6 @@ router.get("/bookings", getTourManagerBookings)
 - Path parameters read: none detected; query parameters read: `page`, `limit`, `status`, `paymentStatus`, `search`, `tour`.
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: `success`, `pages`, `count`, `bookings`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
@@ -627,8 +615,6 @@ router.patch("/bookings/:id/complete", completeBookingAndMaybeRelease)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -655,8 +641,6 @@ router.put("/bookings/:id/complete", completeBookingAndMaybeRelease)
 - Path parameters read: `id`; query parameters read: none detected.
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
@@ -685,8 +669,6 @@ router.patch("/bookings/:id/cancel", cancelBookingAndUpdateCapacity)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -713,8 +695,6 @@ router.post("/bookings/:id/notify", sendBookingNotification)
 - Path parameters read: `id`; query parameters read: none detected.
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
@@ -743,8 +723,6 @@ router.put("/bookings/:id/cancel", cancelBookingAndUpdateCapacity)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -771,8 +749,6 @@ router.get("/customers", getTenantCustomers)
 - Path parameters read: none detected; query parameters read: `search`, `page`, `limit`.
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
@@ -801,8 +777,6 @@ router.get("/guides", getTenantGuides)
 - Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -829,8 +803,6 @@ router.get("/drivers", getTenantDrivers)
 - Path parameters read: none detected; query parameters read: none detected.
 - Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
@@ -859,8 +831,6 @@ router.get("/vehicles", getTenantVehicles)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: `success`, `count`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -887,8 +857,6 @@ router.get("/reports", getTourReports)
 - Path parameters read: none detected; query parameters read: none detected.
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
@@ -917,8 +885,6 @@ router.get("/tours/:id/availability", getTourAvailability)
 - Literal HTTP statuses in handler: `404`, `400`, `200`.
 - JSON envelope keys observed: `success`, `message`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -945,8 +911,6 @@ router.put("/tours/:id/availability", updateTourAvailability)
 - Path parameters read: `id`; query parameters read: none detected.
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
