@@ -218,3 +218,8 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/services/stripeWebhookSecurity.js` | SOURCE-VERIFIED | [Stripe payment contracts](API_DOMAIN_CONTRACTS/stripe-payments.md) | Raw-body HMAC-SHA256 verification, timestamp tolerance and constant-time comparison |
 | `server/models/StripeWebhookEvent.js` | SOURCE-VERIFIED | [Stripe payment contracts](API_DOMAIN_CONTRACTS/stripe-payments.md) | Tenant/event uniqueness and webhook processing state fields used by Stripe handler |
 | `server/tests/stripeWebhookSecurity.test.js` | SOURCE-VERIFIED | [Stripe payment contracts](API_DOMAIN_CONTRACTS/stripe-payments.md) | Valid signature, raw-body tampering, stale timestamp and wrong-secret cases; no controller integration coverage |
+
+
+| `server/routes/superAdminMaintenanceRoutes.js` | SOURCE-VERIFIED | [Super Admin maintenance contracts](API_DOMAIN_CONTRACTS/superadmin-maintenance.md) | Nine mounted aliases, tenant resolution, JWT protection and super-admin-only boundary |
+| `server/controllers/superAdminOperationsController.js` | SOURCE-VERIFIED | [Super Admin maintenance contracts](API_DOMAIN_CONTRACTS/superadmin-maintenance.md) | Backup list/create/download/delete and process-wide cache clearing; file/database/audit failure boundaries |
+| `server/models/DatabaseBackup.js` | SOURCE-VERIFIED | [Super Admin maintenance contracts](API_DOMAIN_CONTRACTS/superadmin-maintenance.md) | Backup metadata fields and tenant plugin used by maintenance handlers |
