@@ -91,3 +91,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Tenant system health and integration connectivity](system-health.md)
 
 - [Tenant branding, public reads, updates and stale aliases](tenant-branding.md)
+
+- [Platform tenant directory, creation and administration](platform-tenants.md)
