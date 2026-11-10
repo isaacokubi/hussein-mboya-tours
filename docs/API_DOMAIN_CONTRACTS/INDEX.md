@@ -101,3 +101,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Tour Manager Operations Copilot summary and preview-only quote drafts](operations-copilot.md)
 
 - [Tour Manager tenant routes, operations, bookings and availability](tour-manager.md)
+
+- [Public and manager tour catalogue, CRUD and availability](tour-catalogue.md)
