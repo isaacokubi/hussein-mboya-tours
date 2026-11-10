@@ -107,3 +107,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Travel voucher, dynamic pricing and loyalty](travel-lifecycle.md)
 
 - [Tenant operations assets and commercial rules](travel-operations.md)
+
+- [Tenant-scoped tour report and financial aggregation](tour-reports.md)
