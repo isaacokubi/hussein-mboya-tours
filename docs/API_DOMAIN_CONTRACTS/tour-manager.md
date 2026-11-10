@@ -32,6 +32,9 @@ Body date must be a real YYYY-MM-DD date; title must be a trimmed string of 1–
 
 Requires valid ObjectId; invalid or missing/out-of-tenant reminder returns 404. Performs tenant-filtered hard delete and returns 200 {success:true,message:"Reminder removed.",data:{id}}.
 
+CalendarReminder model evidence: tenantId is required; date is stored as a YYYY-MM-DD string; title is trimmed and constrained to 1–180 characters; normalizedTitle is required and lowercase. The model indexes tenant/date/createdAt and uniquely indexes tenant/date/normalizedTitle. The controller validates actual calendar dates (not only the model's regex) and maps duplicate-key races to 409. Listing is capped at 500 without pagination. Delete is a tenant-filtered hard delete. No focused calendarReminder controller/route test was found in the searched paths; no reminder was created or deleted during this source review.
+
+
 ## Tour catalogue and lifecycle
 
 ### GET /api/tourmanager/tours and /api/tour-manager/tours — entries 528–529
