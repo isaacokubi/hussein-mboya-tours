@@ -388,3 +388,7 @@ Entries 536–537 are source-traced in [Tour Manager API contracts](API_DOMAIN_C
 ## Tenant user profile and directory
 
 Entries 614–617 are source-traced in [Tenant user profile and directory API contracts](API_DOMAIN_CONTRACTS/user-profile.md). Profile read/update operate on the authenticated user and exclude password; updates allow only name, phone and profileImage, with schema validators applied. Guide listing is restricted to admin/tour-manager/manager roles and returns tenant-scoped active Staff guide records. User deletion is admin-only, tenant-scoped and hard-deletes the User without cascading linked records. No focused user controller/route tests were found.
+
+## Tour resource assignment aliases
+
+Entries 538–539 and 544–547 are source-traced in [Tenant-safe tour resource assignment API contract](API_DOMAIN_CONTRACTS/tour-resource-assignment.md). The tour-manager route aliases validate tenant ownership, active resource state and overlapping active tour windows, then update Tour/Staff/Vehicle records atomically. The post-commit webhook payload uses only supplied body IDs (omitted preserved assignments appear as null), and queue errors are swallowed while the API still returns success. No focused controller test was found.
