@@ -147,6 +147,10 @@ The four daily/monthly/tour/agent report routes are source-traced in [Admin book
 
 Entries 382–385 (`GET`/`PUT /api/admin/settings` and `/api/settings`) share the settings router and controller and are source-traced in [the settings endpoint guide](API_ENDPOINT_GUIDE/settings.md). All mounts use tenant resolution, JWT authentication and `settings.manage`; tenant setting changes synchronize selected organization fields in separate nontransactional writes.
 
+## Staff directory and administration
+
+Entries 386–393 are source-traced in [staff and operational personnel contracts](API_DOMAIN_CONTRACTS/staff-management.md). The guide records the shared tenant/JWT boundary, role gates, write side effects during staff listing, identical behavior of the two update aliases, and the hard-delete consequences. No focused endpoint tests were found.
+
 
 ## Admin tour lifecycle and resource operations
 

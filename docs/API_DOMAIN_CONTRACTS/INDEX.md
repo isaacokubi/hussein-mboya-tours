@@ -61,3 +61,4 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Security status metrics and recent event listing](security-status.md)
 - [Tenant-resolved XML sitemap generation](../API_ENDPOINT_GUIDE/sitemap-xml.md)
 - [Tenant settings read/update aliases](../API_ENDPOINT_GUIDE/settings.md)
+- [Staff directory, operations lookups, administration and role synchronization](staff-management.md)

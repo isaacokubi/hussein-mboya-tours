@@ -4,7 +4,7 @@ This guide contains 8 mounted method/path inventory entries in the **staff** dom
 
 ## endpoint-386 — GET /api/staff/guides
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [staffRoutes.js](../../server/routes/staffRoutes.js) · [route module explanation](../code-explanations/backend/routes/staffRoutes.md)<br>
 **Mounted inventory entry:** 386 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `getGuides`
@@ -25,13 +25,13 @@ router.get("/guides", managerOnly, getGuides)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: `success`, `count`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [staff and operational personnel contracts](../API_DOMAIN_CONTRACTS/staff-management.md) for request fields, role gate, tenant filters, persistence, responses, errors, callers, tests and per-alias behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-387 — GET /api/staff/drivers
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [staffRoutes.js](../../server/routes/staffRoutes.js) · [route module explanation](../code-explanations/backend/routes/staffRoutes.md)<br>
 **Mounted inventory entry:** 387 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `getDrivers`
@@ -52,13 +52,13 @@ router.get("/drivers", managerOnly, getDrivers)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: `success`, `count`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [staff and operational personnel contracts](../API_DOMAIN_CONTRACTS/staff-management.md) for request fields, role gate, tenant filters, persistence, responses, errors, callers, tests and per-alias behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-388 — POST /api/staff
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [staffRoutes.js](../../server/routes/staffRoutes.js) · [route module explanation](../code-explanations/backend/routes/staffRoutes.md)<br>
 **Mounted inventory entry:** 388 of 629<br>
 **Route declaration pipeline:** `adminOnly`, `createStaff`
@@ -79,13 +79,13 @@ router.post("/", adminOnly, createStaff)
 - Literal HTTP statuses in handler: `400`, `409`, `201`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [staff and operational personnel contracts](../API_DOMAIN_CONTRACTS/staff-management.md) for request fields, role gate, tenant filters, persistence, responses, errors, callers, tests and per-alias behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-389 — GET /api/staff
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [staffRoutes.js](../../server/routes/staffRoutes.js) · [route module explanation](../code-explanations/backend/routes/staffRoutes.md)<br>
 **Mounted inventory entry:** 389 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `getStaff`
@@ -106,13 +106,13 @@ router.get("/", managerOnly, getStaff)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [staff and operational personnel contracts](../API_DOMAIN_CONTRACTS/staff-management.md) for request fields, role gate, tenant filters, persistence, responses, errors, callers, tests and per-alias behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-390 — GET /api/staff/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [staffRoutes.js](../../server/routes/staffRoutes.js) · [route module explanation](../code-explanations/backend/routes/staffRoutes.md)<br>
 **Mounted inventory entry:** 390 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `getStaffById`
@@ -133,13 +133,13 @@ router.get("/:id", managerOnly, getStaffById)
 - Literal HTTP statuses in handler: `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [staff and operational personnel contracts](../API_DOMAIN_CONTRACTS/staff-management.md) for request fields, role gate, tenant filters, persistence, responses, errors, callers, tests and per-alias behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-391 — PUT /api/staff/:id/status
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [staffRoutes.js](../../server/routes/staffRoutes.js) · [route module explanation](../code-explanations/backend/routes/staffRoutes.md)<br>
 **Mounted inventory entry:** 391 of 629<br>
 **Route declaration pipeline:** `adminOnly`, `updateStaff`
@@ -160,13 +160,13 @@ router.put("/:id/status", adminOnly, updateStaff)
 - Literal HTTP statuses in handler: `404`, `409`, `200`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [staff and operational personnel contracts](../API_DOMAIN_CONTRACTS/staff-management.md) for request fields, role gate, tenant filters, persistence, responses, errors, callers, tests and per-alias behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-392 — PUT /api/staff/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [staffRoutes.js](../../server/routes/staffRoutes.js) · [route module explanation](../code-explanations/backend/routes/staffRoutes.md)<br>
 **Mounted inventory entry:** 392 of 629<br>
 **Route declaration pipeline:** `adminOnly`, `updateStaff`
@@ -187,13 +187,13 @@ router.put("/:id", adminOnly, updateStaff)
 - Literal HTTP statuses in handler: `404`, `409`, `200`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [staff and operational personnel contracts](../API_DOMAIN_CONTRACTS/staff-management.md) for request fields, role gate, tenant filters, persistence, responses, errors, callers, tests and per-alias behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-393 — DELETE /api/staff/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [staffRoutes.js](../../server/routes/staffRoutes.js) · [route module explanation](../code-explanations/backend/routes/staffRoutes.md)<br>
 **Mounted inventory entry:** 393 of 629<br>
 **Route declaration pipeline:** `adminOnly`, `deleteStaff`
@@ -214,7 +214,7 @@ router.delete("/:id", adminOnly, deleteStaff)
 - Literal HTTP statuses in handler: `404`, `409`, `200`.
 - JSON envelope keys observed: `success`, `message`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [staff and operational personnel contracts](../API_DOMAIN_CONTRACTS/staff-management.md) for request fields, role gate, tenant filters, persistence, responses, errors, callers, tests and per-alias behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
