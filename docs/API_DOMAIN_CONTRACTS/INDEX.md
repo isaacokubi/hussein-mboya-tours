@@ -62,3 +62,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Tenant-resolved XML sitemap generation](../API_ENDPOINT_GUIDE/sitemap-xml.md)
 - [Tenant settings read/update aliases](../API_ENDPOINT_GUIDE/settings.md)
 - [Staff directory, operations lookups, administration and role synchronization](staff-management.md)
+
+- [Stripe checkout, signed webhooks, verification and bank-transfer confirmation boundary](stripe-payments.md)
