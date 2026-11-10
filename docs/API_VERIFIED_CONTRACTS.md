@@ -265,3 +265,8 @@ Entries 411–414 are source-traced in [Super Admin role and permission API cont
 ## Super Admin tenant directory
 
 Entries 419–426 are source-traced in [Super Admin tenant plans and tenant directory APIs](API_DOMAIN_CONTRACTS/superadmin-tenants.md). The guide covers static plan tiers, tenant listing filters/pagination and per-tenant counts, transactional tenant/admin/default-settings creation, validation and duplicate-key handling, and tenant detail lookup. Search text is used as an unescaped regular expression; creation's post-commit safe-admin read is outside the transaction.
+
+
+## Super Admin tenant gateway and company status
+
+Entries 427–434 are source-traced in [Super Admin tenant M-Pesa gateway and status APIs](API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md), including tenant context isolation, AES-GCM credential storage, strict callback URL validation and OAuth-only validation behavior. Entries 435–436 use the same guide for status activation. The status endpoint's active branch invokes manual subscription activation without requiring a payment reference or creating a SubscriptionPayment; non-active status updates only Organization.status.
