@@ -38,7 +38,8 @@ const makeHandlers = ({ payment = makePayment(), completeRefund } = {}) => {
 
 test("successful refund callback completes only a matching in-flight refund using its stored amount", async () => {
   const { mpesaRefundResult, calls, payment } = makeHandlers();
-  const { res, body } = response();
+  const state = response();
+  const { res } = state;
   await mpesaRefundResult({
     tenantId: "tenant-a",
     body: { Result: { ConversationID: "AG_123456", ResultCode: 0, ResultDesc: "Success", Amount: 1 } },
@@ -49,7 +50,7 @@ test("successful refund callback completes only a matching in-flight refund usin
   assert.equal(calls.completions.length, 1);
   assert.equal(calls.completions[0].refundAmount, 250);
   assert.equal(calls.completions[0].refundData.refundStatus, "completed");
-  assert.equal(body.ResultCode, 0);
+  assert.equal(state.body.ResultCode, 0);
   assert.equal(payment.saves, 0);
 });
 
