@@ -184,10 +184,7 @@ router.get("/tours", getTours)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
-
+**Source-traced behavior:** See [Tour Manager API contracts](../API_DOMAIN_CONTRACTS/tour-manager.md) for tenant scope, query filtering, pagination, populated resources and response shape.
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-530 — POST /api/tourmanager/tours
