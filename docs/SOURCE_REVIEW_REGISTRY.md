@@ -250,3 +250,8 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 | `server/controllers/superAdminTenantController.js` | SOURCE-VERIFIED | [Super Admin tenant contracts](API_DOMAIN_CONTRACTS/superadmin-tenants.md) | Static plan catalogue, tenant list/detail queries, per-tenant counts, transaction-based tenant/admin/settings creation and validation |
 | `server/models/Organization.js` | SOURCE-VERIFIED | [Super Admin tenant contracts](API_DOMAIN_CONTRACTS/superadmin-tenants.md) | Global organization schema, status/subscription/features and domain uniqueness |
+
+
+| `server/controllers/superAdminMpesaGatewayController.js` | SOURCE-VERIFIED | [Super Admin tenant gateway contracts](API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) | Tenant resolution, platform-tenant exclusion, environment-scoped credential persistence, encryption and Daraja OAuth validation |
+| `server/models/PaymentGatewayConfig.js` | SOURCE-VERIFIED | [Super Admin tenant gateway contracts](API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) | Tenant/provider unique config, AES-256-GCM credential encryption and environment-specific M-Pesa fields |
+| `server/services/mpesaGatewaySettings.js` | SOURCE-VERIFIED | [Super Admin tenant gateway contracts](API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) | Public HTTPS callback URL constraints, sandbox origin matching and safe redacted gateway view |
