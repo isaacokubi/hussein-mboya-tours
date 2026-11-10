@@ -275,3 +275,8 @@ Entries 427–434 are source-traced in [Super Admin tenant M-Pesa gateway and st
 ## Super Admin subscription operations
 
 Entries 437–444 are source-traced in [Super Admin subscription operations](API_DOMAIN_CONTRACTS/superadmin-subscriptions.md). Manual activation requires a non-empty reference but does not independently verify provider settlement before creating and completing a manual payment record. Plan seat definitions differ between tenant creation and subscription activation/switching (professional 20 vs 15; enterprise 100 vs 250). Tenant deletion hard-deletes tenantId-tagged records across Mongo collections within a transaction.
+
+
+## Super Admin platform billing
+
+Entries 445–450 are source-traced in [Super Admin platform billing configuration APIs](API_DOMAIN_CONTRACTS/superadmin-billing.md). All four plan prices are required on update and must be integer KES amounts from 0 to 100,000,000. Optional feature configuration must provide an array for each plan, rejects unknown feature IDs and always includes billing. Platform settings are read/written in explicit bypass context.
