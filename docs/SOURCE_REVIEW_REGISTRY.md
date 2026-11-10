@@ -317,3 +317,9 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/controllers/tourReportController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant booking/revenue/status/popular-tour/monthly-journal report aggregation |
 | `server/controllers/tenantDirectoryController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant customer/guide/driver/vehicle directory and derived customer metrics |
 | `server/controllers/tourManagerBookingController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant booking filters, pagination, populated customer fallback and booking summaries |
+
+
+| `server/routes/tourReportRoutes.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Tenant-resolved, authenticated admin/manager report route |
+| `server/routes/tourRoutes.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Public tour reads followed by protected manager CRUD, availability and assignment routes |
+| `server/controllers/tourController.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Public visibility filters, search/category/pagination, tenant-aware reads and manager-owned tour list |
+| `server/middleware/tourManagerMiddleware.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Role allowlist for tour_manager/manager/admin/super_admin |
