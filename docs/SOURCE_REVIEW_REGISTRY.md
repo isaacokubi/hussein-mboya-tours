@@ -211,3 +211,10 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/routes/staffRoutes.js` | SOURCE-VERIFIED | [Staff management contracts](API_DOMAIN_CONTRACTS/staff-management.md) | Eight mounted route declarations, tenant/auth middleware order and manager/admin role boundaries |
 | `server/controllers/staffController.js` | SOURCE-VERIFIED | [Staff management contracts](API_DOMAIN_CONTRACTS/staff-management.md) | Eight mounted handler paths: tenant reads, profile synchronization, staff writes, response/error paths; unmounted exports excluded |
 | `server/models/Staff.js` | SOURCE-VERIFIED | [Staff management contracts](API_DOMAIN_CONTRACTS/staff-management.md) | Staff fields used by mounted handlers, tenant/email index, references, identity virtuals and assignment methods; not all lifecycle semantics |
+
+
+| `server/routes/stripeRoutes.js` | SOURCE-VERIFIED | [Stripe payment contracts](API_DOMAIN_CONTRACTS/stripe-payments.md) | Four mounted Stripe endpoints, webhook-before-child-auth ordering, shared initiation limiter and handler mapping |
+| `server/controllers/stripeController.js` | SOURCE-VERIFIED | [Stripe payment contracts](API_DOMAIN_CONTRACTS/stripe-payments.md) | Checkout/session verification, bank-transfer pending state, signed webhook event processing, provider correlation and response/error branches |
+| `server/services/stripeWebhookSecurity.js` | SOURCE-VERIFIED | [Stripe payment contracts](API_DOMAIN_CONTRACTS/stripe-payments.md) | Raw-body HMAC-SHA256 verification, timestamp tolerance and constant-time comparison |
+| `server/models/StripeWebhookEvent.js` | SOURCE-VERIFIED | [Stripe payment contracts](API_DOMAIN_CONTRACTS/stripe-payments.md) | Tenant/event uniqueness and webhook processing state fields used by Stripe handler |
+| `server/tests/stripeWebhookSecurity.test.js` | SOURCE-VERIFIED | [Stripe payment contracts](API_DOMAIN_CONTRACTS/stripe-payments.md) | Valid signature, raw-body tampering, stale timestamp and wrong-secret cases; no controller integration coverage |
