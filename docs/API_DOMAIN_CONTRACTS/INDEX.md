@@ -73,3 +73,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 
 - [Super Admin role and permission management](superadmin-roles.md)
 - [Super Admin dashboard metrics](superadmin-dashboard.md)
+
+- [Super Admin tenant plans, tenant listing, creation and detail](superadmin-tenants.md)
