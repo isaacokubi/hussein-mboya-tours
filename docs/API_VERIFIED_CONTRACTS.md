@@ -307,7 +307,7 @@ Entries 496–499 are source-traced in [Tenant system health API contracts](API_
 
 ## Tenant branding
 
-Entries 504–507 are source-traced in [Tenant branding API contracts and inventory reconciliation](API_DOMAIN_CONTRACTS/tenant-branding.md). Current source mounts only GET/PUT /api/tenant. The listed /api/tenant/branding entries 505 and 507 are not declared by the current route module or mounted separately, so they are documented as stale/unmounted inventory paths rather than live routes.
+Entries 504–507 are source-traced in [Tenant branding API contracts and mount reconciliation](API_DOMAIN_CONTRACTS/tenant-branding.md). The router is mounted at /api/tenant through routes/index.js and directly at /api/tenant/branding in app.js before the consolidated /api router; all four GET/PUT paths are live. Updates are limited to admin and tour_manager roles, and the settings Mixed field has no nested allowlist.
 
 
 ## Platform tenant directory
