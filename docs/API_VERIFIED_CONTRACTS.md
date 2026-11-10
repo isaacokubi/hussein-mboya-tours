@@ -354,3 +354,7 @@ Entries 528–529 are source-traced in [Tour Manager API contracts](API_DOMAIN_C
 ## Travel voucher, pricing and loyalty
 
 Entries 600–605 are source-traced in [Travel lifecycle APIs](API_DOMAIN_CONTRACTS/travel-lifecycle.md). The review identified non-atomic one-use voucher redemption, client-overridable basePrice in dynamic pricing, loyalty balance disclosure to any authenticated same-tenant user, and loyalty redemption against arbitrary customerId without owner/manager authorization.
+
+## Tour Manager tour creation
+
+Entries 530–531 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both aliases run future-date and tour-command validation before the shared create controller. Required tour fields and structured JSON fields are normalized server-side; destination and optional guide/driver/vehicle must be tenant-owned and available, and overlapping active assignments are rejected. Tour creation and resource-state updates run in a Mongo transaction. The manager route does not attach upload middleware, so its shared controller's req.files image branch is not available through these aliases. The opt-in first-tenant integration test exercises /api/admin/tours, not these manager aliases.
