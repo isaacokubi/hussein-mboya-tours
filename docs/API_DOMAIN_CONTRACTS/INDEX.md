@@ -75,3 +75,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Super Admin dashboard metrics](superadmin-dashboard.md)
 
 - [Super Admin tenant plans, tenant listing, creation and detail](superadmin-tenants.md)
+
+- [Super Admin tenant M-Pesa gateway and company status operations](superadmin-tenant-gateways.md)
