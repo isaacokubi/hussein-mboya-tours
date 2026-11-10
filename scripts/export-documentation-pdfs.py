@@ -33,9 +33,15 @@ def inline_markup(s):
     s=re.sub(r'!\[([^\]]*)\]\(([^)]+)\)',r'[Image: \1] (\2)',s)
     s=re.sub(r'\[([^\]]+)\]\((https?://[^ )]+)(?:\s+"[^"]*")?\)',r'<link href="\2" color="#245a91">\1</link>',s)
     tick=chr(96)
-    s=re.sub(tick+r'([^'+tick+r']+)'+tick,r'<font name="Courier" size="7">\1</font>',s)
+    code_spans=[]
+    def hold_code(match):
+        code_spans.append(match.group(1))
+        return f"CODETOKEN{len(code_spans)-1}END"
+    s=re.sub(tick+r'([^'+tick+r']+)'+tick,hold_code,s)
     s=re.sub(r'\*\*(.+?)\*\*|__(.+?)__',lambda m:'<b>'+(m.group(1) or m.group(2))+'</b>',s)
     s=re.sub(r'(?<!\*)\*([^*]+)\*(?!\*)|_([^_]+)_',lambda m:'<i>'+(m.group(1) or m.group(2))+'</i>',s)
+    for index,code in enumerate(code_spans):
+        s=s.replace(f"CODETOKEN{index}END",'<font name="Courier" size="7">'+escape(code)+'</font>')
     return s
 
 def split_table_row(line):
