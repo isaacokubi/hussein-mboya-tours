@@ -295,3 +295,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 
 | `server/routes/tenantSubscriptionRoutes.js` | SOURCE-VERIFIED | [Tenant subscription contracts](API_DOMAIN_CONTRACTS/tenant-subscriptions.md) | Authenticated tenant context and subscription/read/payment route declarations |
+
+
+| `server/routes/tourAssignmentRoutes.js` | SOURCE-VERIFIED | [Tour resource assignment contract](API_DOMAIN_CONTRACTS/tour-resource-assignment.md) | Tenant resolution, JWT, manager-only gate and assignment route declaration |
+| `server/middleware/validateTourAssignmentTenant.js` | SOURCE-VERIFIED | [Tour resource assignment contract](API_DOMAIN_CONTRACTS/tour-resource-assignment.md) | Tenant ownership and ObjectId validation for tour, guide, driver and vehicle inputs |
