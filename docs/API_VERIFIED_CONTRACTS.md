@@ -255,3 +255,8 @@ Entries 407–409 are source-traced in [Super Admin operational status and audit
 ## Super Admin platform revenue
 
 Entry 410 is source-traced in [Super Admin platform revenue API contract](API_DOMAIN_CONTRACTS/superadmin-revenue.md). The source review found a potential cross-tenant financial disclosure: tenant admins receive admin.dashboard via compatibility permissions, while this handler explicitly enters platform-wide tenant bypass. A platform-only authorization guard is recommended; no application code was changed in this documentation pass.
+
+
+## Super Admin role and dashboard APIs
+
+Entries 411–414 are source-traced in [Super Admin role and permission API contracts](API_DOMAIN_CONTRACTS/superadmin-roles.md). Entries 415–418 are source-traced in [Super Admin dashboard metrics](API_DOMAIN_CONTRACTS/superadmin-dashboard.md). The role permission update accepts empty normalized ID lists, including non-array and all-invalid input, and can therefore clear a role's permissions; this is documented as a validation edge case. The dashboard aliases are protected by protect and superAdminOnly and use explicit tenant filters for tenant operational metrics.
