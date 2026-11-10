@@ -255,3 +255,9 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/controllers/superAdminMpesaGatewayController.js` | SOURCE-VERIFIED | [Super Admin tenant gateway contracts](API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) | Tenant resolution, platform-tenant exclusion, environment-scoped credential persistence, encryption and Daraja OAuth validation |
 | `server/models/PaymentGatewayConfig.js` | SOURCE-VERIFIED | [Super Admin tenant gateway contracts](API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) | Tenant/provider unique config, AES-256-GCM credential encryption and environment-specific M-Pesa fields |
 | `server/services/mpesaGatewaySettings.js` | SOURCE-VERIFIED | [Super Admin tenant gateway contracts](API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) | Public HTTPS callback URL constraints, sandbox origin matching and safe redacted gateway view |
+
+
+| `server/controllers/tenantSubscriptionController.js` | SOURCE-VERIFIED | [Super Admin subscription contracts](API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) | Manual activation reference checks, plan switching and global subscription payment listing |
+| `server/services/tenantSubscriptionService.js` | SOURCE-VERIFIED | [Super Admin subscription contracts](API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) | Subscription activation, plan seat constants, payment completion behavior and plan switching |
+| `server/models/SubscriptionPayment.js` | SOURCE-VERIFIED | [Super Admin subscription contracts](API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) | Payment evidence fields, provider/status enums and unique transaction reference index |
+| `server/models/Subscription.js` | SOURCE-VERIFIED | [Super Admin subscription contracts](API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) | Per-tenant subscription schema, period fields and unique tenant index |
