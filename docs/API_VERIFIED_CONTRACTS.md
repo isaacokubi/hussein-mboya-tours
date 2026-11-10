@@ -260,3 +260,8 @@ Entry 410 is source-traced in [Super Admin platform revenue API contract](API_DO
 ## Super Admin role and dashboard APIs
 
 Entries 411–414 are source-traced in [Super Admin role and permission API contracts](API_DOMAIN_CONTRACTS/superadmin-roles.md). Entries 415–418 are source-traced in [Super Admin dashboard metrics](API_DOMAIN_CONTRACTS/superadmin-dashboard.md). The role permission update accepts empty normalized ID lists, including non-array and all-invalid input, and can therefore clear a role's permissions; this is documented as a validation edge case. The dashboard aliases are protected by protect and superAdminOnly and use explicit tenant filters for tenant operational metrics.
+
+
+## Super Admin tenant directory
+
+Entries 419–426 are source-traced in [Super Admin tenant plans and tenant directory APIs](API_DOMAIN_CONTRACTS/superadmin-tenants.md). The guide covers static plan tiers, tenant listing filters/pagination and per-tenant counts, transactional tenant/admin/default-settings creation, validation and duplicate-key handling, and tenant detail lookup. Search text is used as an unescaped regular expression; creation's post-commit safe-admin read is outside the transaction.
