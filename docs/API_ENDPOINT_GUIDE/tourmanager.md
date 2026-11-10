@@ -82,7 +82,7 @@ router.post("/copilot/quote-draft", createOperationsQuoteDraft)
 
 ## endpoint-522 — GET /api/tourmanager/calendar/reminders
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 522 of 629<br>
 **Route declaration pipeline:** `listCalendarReminders`
@@ -105,11 +105,13 @@ router.get("/calendar/reminders", listCalendarReminders)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-524 — POST /api/tourmanager/calendar/reminders
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 524 of 629<br>
 **Route declaration pipeline:** `createCalendarReminder`
@@ -132,11 +134,13 @@ router.post("/calendar/reminders", createCalendarReminder)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-526 — DELETE /api/tourmanager/calendar/reminders/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 526 of 629<br>
 **Route declaration pipeline:** `deleteCalendarReminder`
@@ -159,11 +163,13 @@ router.delete("/calendar/reminders/:id", deleteCalendarReminder)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-528 — GET /api/tourmanager/tours
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 528 of 629<br>
 **Route declaration pipeline:** `getTours`
@@ -186,11 +192,13 @@ router.get("/tours", getTours)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-530 — POST /api/tourmanager/tours
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 530 of 629<br>
 **Route declaration pipeline:** `validateFutureTourDate`, `validateTourCommand`, `createTour`
@@ -213,11 +221,13 @@ router.post("/tours", validateFutureTourDate, validateTourCommand(), createTour)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-532 — PUT /api/tourmanager/tours/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 532 of 629<br>
 **Route declaration pipeline:** `validateTourCommand`, `updateTour`
@@ -240,11 +250,13 @@ router.put("/tours/:id", validateTourCommand(), updateTour)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-534 — DELETE /api/tourmanager/tours/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 534 of 629<br>
 **Route declaration pipeline:** `deleteTour`
@@ -267,11 +279,13 @@ router.delete("/tours/:id", deleteTour)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-536 — PATCH /api/tourmanager/tours/:id/publication
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 536 of 629<br>
 **Route declaration pipeline:** `setPublication`
@@ -294,11 +308,13 @@ router.patch("/tours/:id/publication", setPublication)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-538 — PUT /api/tourmanager/tours/:id/assign
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 538 of 629<br>
 **Route declaration pipeline:** `validateTourAssignmentTenant`, `assignTourResourcesSafe`
@@ -321,11 +337,13 @@ router.put("/tours/:id/assign", validateTourAssignmentTenant, assignTourResource
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-540 — PATCH /api/tourmanager/tours/:id/complete
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 540 of 629<br>
 **Route declaration pipeline:** `completeTour`
@@ -348,11 +366,13 @@ router.patch("/tours/:id/complete", completeTour)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-542 — PATCH /api/tourmanager/tours/:id/cancel
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 542 of 629<br>
 **Route declaration pipeline:** `cancelTour`
@@ -375,11 +395,13 @@ router.patch("/tours/:id/cancel", cancelTour)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-544 — PUT /api/tourmanager/assign-resources/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 544 of 629<br>
 **Route declaration pipeline:** `validateTourAssignmentTenant`, `assignTourResourcesSafe`
@@ -402,11 +424,13 @@ router.put("/assign-resources/:id", validateTourAssignmentTenant, assignTourReso
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-546 — POST /api/tourmanager/assign-guide
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 546 of 629<br>
 **Route declaration pipeline:** `validateTourAssignmentTenant`, `assignTourResourcesSafe`
@@ -429,11 +453,13 @@ router.post("/assign-guide", (req, res, next) => { req.params.id = req.body?.tou
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-548 — POST /api/tourmanager/itineraries
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 548 of 629<br>
 **Route declaration pipeline:** `createItinerary`
@@ -456,11 +482,13 @@ router.post("/itineraries", createItinerary)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-550 — GET /api/tourmanager/itineraries
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 550 of 629<br>
 **Route declaration pipeline:** `getItineraries`
@@ -483,11 +511,13 @@ router.get("/itineraries", getItineraries)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-552 — GET /api/tourmanager/itineraries/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 552 of 629<br>
 **Route declaration pipeline:** `getItinerary`
@@ -510,11 +540,13 @@ router.get("/itineraries/:id", getItinerary)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-554 — PUT /api/tourmanager/itineraries/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 554 of 629<br>
 **Route declaration pipeline:** `updateItinerary`
@@ -537,11 +569,13 @@ router.put("/itineraries/:id", updateItinerary)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-556 — DELETE /api/tourmanager/itineraries/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 556 of 629<br>
 **Route declaration pipeline:** `deleteItinerary`
@@ -564,11 +598,13 @@ router.delete("/itineraries/:id", deleteItinerary)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-558 — GET /api/tourmanager/bookings
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 558 of 629<br>
 **Route declaration pipeline:** `getTourManagerBookings`
@@ -591,11 +627,13 @@ router.get("/bookings", getTourManagerBookings)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-560 — PATCH /api/tourmanager/bookings/:id/complete
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 560 of 629<br>
 **Route declaration pipeline:** `completeBookingAndMaybeRelease`
@@ -618,11 +656,13 @@ router.patch("/bookings/:id/complete", completeBookingAndMaybeRelease)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-562 — PUT /api/tourmanager/bookings/:id/complete
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 562 of 629<br>
 **Route declaration pipeline:** `completeBookingAndMaybeRelease`
@@ -645,11 +685,13 @@ router.put("/bookings/:id/complete", completeBookingAndMaybeRelease)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-564 — PATCH /api/tourmanager/bookings/:id/cancel
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 564 of 629<br>
 **Route declaration pipeline:** `cancelBookingAndUpdateCapacity`
@@ -672,11 +714,13 @@ router.patch("/bookings/:id/cancel", cancelBookingAndUpdateCapacity)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-566 — POST /api/tourmanager/bookings/:id/notify
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 566 of 629<br>
 **Route declaration pipeline:** `sendBookingNotification`
@@ -699,11 +743,13 @@ router.post("/bookings/:id/notify", sendBookingNotification)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-568 — PUT /api/tourmanager/bookings/:id/cancel
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 568 of 629<br>
 **Route declaration pipeline:** `cancelBookingAndUpdateCapacity`
@@ -726,11 +772,13 @@ router.put("/bookings/:id/cancel", cancelBookingAndUpdateCapacity)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-570 — GET /api/tourmanager/customers
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 570 of 629<br>
 **Route declaration pipeline:** `getTenantCustomers`
@@ -753,11 +801,13 @@ router.get("/customers", getTenantCustomers)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-572 — GET /api/tourmanager/guides
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 572 of 629<br>
 **Route declaration pipeline:** `getTenantGuides`
@@ -780,11 +830,13 @@ router.get("/guides", getTenantGuides)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-574 — GET /api/tourmanager/drivers
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 574 of 629<br>
 **Route declaration pipeline:** `getTenantDrivers`
@@ -807,11 +859,13 @@ router.get("/drivers", getTenantDrivers)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-576 — GET /api/tourmanager/vehicles
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 576 of 629<br>
 **Route declaration pipeline:** `getTenantVehicles`
@@ -834,11 +888,13 @@ router.get("/vehicles", getTenantVehicles)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-578 — GET /api/tourmanager/reports
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 578 of 629<br>
 **Route declaration pipeline:** `getTourReports`
@@ -861,11 +917,13 @@ router.get("/reports", getTourReports)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-580 — GET /api/tourmanager/tours/:id/availability
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 580 of 629<br>
 **Route declaration pipeline:** `getTourAvailability`
@@ -888,11 +946,13 @@ router.get("/tours/:id/availability", getTourAvailability)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-582 — PUT /api/tourmanager/tours/:id/availability
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 582 of 629<br>
 **Route declaration pipeline:** `updateTourAvailability`
@@ -914,6 +974,8 @@ router.put("/tours/:id/availability", updateTourAvailability)
 - JSON envelope keys observed: `success`, `message`.
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+
+**Source-traced behavior:** See [Tour Manager API contracts (both tenant aliases)](../API_DOMAIN_CONTRACTS/tour-manager.md) for shared routing, role/tenant scope, handler behavior, response shapes, transaction boundaries and known operational caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
