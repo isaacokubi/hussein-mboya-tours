@@ -83,7 +83,11 @@ There is no guard against completing a cancelled-but-not-deleted tour, and the h
 
 ### PATCH /api/tourmanager/tours/:id/cancel and /api/tour-manager/tours/:id/cancel — entries 542–543
 
-Calls cancelTourAndBookings with deleted:false and optional body.reason. Transactionally cancels active bookings, requests refunds for paid amounts (does not issue refunds), writes customer notifications, cancels/unpublishes the tour and releases resources. The resource-release helper sets assignmentStatus to pending after the cancellation service initially sets it to cancelled; the final saved tour therefore has assignmentStatus pending even though status is cancelled. This is a source-level state inconsistency. Success 200 {success:true,message,data,bookingsAffected}.
+Handler cancelTour calls cancelTourAndBookings with deleted:false, reason from body.reason or "Cancelled by tour manager", and the requesting user ID. The service validates the ObjectId, requires a tenant-owned non-deleted tour, rejects completed tours with 409, and transactionally cancels active bookings, releases their capacity, requests refunds for paid amounts, creates notifications for distinct booking.user recipients and releases assigned resources. It does not call a payment provider or create a completed refund; paid/part-paid booking paymentStatus remains unchanged while refundStatus becomes requested.
+
+The tour is marked cancelled, unavailable and unpublished, but deleted:false leaves isDeleted/deletedAt/deletedBy unchanged. releaseTourResources resets assignmentStatus to pending after the cancellation service sets it to cancelled, so the final saved assignmentStatus is pending. Date-specific availability is decremented for affected bookings; availabilitySettings.bookedSlots is reset to zero. Success is 200 {success:true,message,data,bookingsAffected}; invalid ID 400, missing/already deleted tour 404, completed tour 409. Unexpected failures go to next(error).
+
+The opt-in tourLifecycleIntegration.test.js calls the service directly with deleted:false and verifies cancellation, refund request amount/status and capacity release; it does not exercise this HTTP route or assert notification/resource-release details. It requires RUN_DATABASE_INTEGRATION_TESTS=true and a disposable transaction-capable MongoDB URI.s is cancelled. This is a source-level state inconsistency. Success 200 {success:true,message,data,bookingsAffected}.
 
 ## Itineraries
 
