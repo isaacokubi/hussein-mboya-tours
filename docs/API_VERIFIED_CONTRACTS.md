@@ -1,6 +1,6 @@
 # Source-reviewed API contracts for critical flows
 
-This file records contracts hand-traced from route middleware through controllers/services. It complements, but does not replace, the 629-declaration [route inventory](API_ROUTE_INVENTORY.md). “Source-reviewed” means the contract below was compared with current source. It does **not** mean the command was run against a live deployment. The remaining declarations do not yet have complete contracts here.
+This file records contracts hand-traced from route middleware through controllers/services. It complements, but does not replace, the 629-declaration [route inventory](API_ROUTE_INVENTORY.md). “Source-reviewed” means the contract below was compared with current source. It does **not** mean the command was run against a live deployment. This file intentionally highlights selected critical flows rather than reproducing every endpoint contract. The complete 629-entry endpoint-guide set and per-domain contract documents are indexed in [the endpoint guide](API_ENDPOINT_GUIDE/INDEX.md) and [domain contract index](API_DOMAIN_CONTRACTS/INDEX.md).
 
 ## Shared request context
 
