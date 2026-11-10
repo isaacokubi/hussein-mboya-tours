@@ -400,3 +400,7 @@ Entries 540–541 are source-traced in [Tour Manager API contracts](API_DOMAIN_C
 ## Tour Manager tour cancellation
 
 Entries 542–543 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both aliases use the shared cancellation transaction with deleted:false: active bookings are cancelled, paid amounts become refund requests (not provider refunds), eligible users are notified, capacity is released and the tour is cancelled/unavailable/unpublished but not soft-deleted. The release helper leaves assignmentStatus=pending. The opt-in integration test covers the service path, not the HTTP route.
+
+## Tour Manager itinerary, booking, directory, reporting and availability APIs
+
+Entries 548–583 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). They cover tenant-scoped itinerary CRUD, booking reads and completion/cancellation/notification actions, customer/guide/driver/vehicle directories, reports and tour availability. Important boundaries include transactional booking completion/cancellation, notifications that can send real customer messages, no automatic refund in booking cancellation, differing revenue bases in reports, and the mismatch between per-date Tour.availability and aggregate availabilitySettings when updating capacity. The endpoint guides now point to the shared handler contract rather than retaining partial-verification boilerplate.
