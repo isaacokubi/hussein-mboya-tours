@@ -340,3 +340,8 @@ Entries 516–583 are source-traced in [Tour Manager API contracts](API_DOMAIN_C
 ## Tour Manager calendar reminders
 
 Entries 522–527 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both route prefixes share the same tenant-scoped list/create/delete handlers. Dates are validated as real YYYY-MM-DD calendar dates; duplicate reminders are protected by a unique tenant/date/normalized-title index, and deletion is permanent with 404 for invalid or cross-tenant IDs. The endpoint guide marks all six aliases source-traced. No focused controller/route test was found.
+
+
+## Public and manager tour catalogue
+
+Entries 584–599 are source-traced in [Public and manager tour catalogue API contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md). Public reads enforce published/available/status filters and tenant context; manager mutations require protect/tourManagerOnly and tenant-scoped controller checks. The manager listing is restricted to tours created by the current user. Tour deletion is a soft delete through transactional booking cancellation/refund-request/resource release; assignment aliases use the safe transactional assignment controller.
