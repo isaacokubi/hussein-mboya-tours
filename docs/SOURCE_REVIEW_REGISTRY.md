@@ -278,3 +278,8 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/controllers/superAdminToolsController.js` | SOURCE-VERIFIED | [Super Admin tools contracts](API_DOMAIN_CONTRACTS/superadmin-tools.md) | Database metadata response and placeholder settings response; unused monitor/system handlers are not mounted |
 
 | `server/routes/superAdminUserRoutes.js` | SOURCE-VERIFIED | [Super Admin user contracts](API_DOMAIN_CONTRACTS/superadmin-users.md) | Duplicate account-creation route declaration; effective earlier superAdminRoutes gate is superAdminOnly |
+
+
+| `server/routes/systemHealthRoutes.js` | SOURCE-VERIFIED | [Tenant system health contracts](API_DOMAIN_CONTRACTS/system-health.md) | Tenant resolution, authentication, admin role and system.security middleware for both health aliases |
+| `server/controllers/systemHealthController.js` | SOURCE-VERIFIED | [Tenant system health contracts](API_DOMAIN_CONTRACTS/system-health.md) | Database, Cloudinary ping and tenant Daraja OAuth health response |
+| `server/middleware/adminMiddleware.js` | SOURCE-VERIFIED | [Tenant system health contracts](API_DOMAIN_CONTRACTS/system-health.md) | Reloaded active-user and admin/super-admin role gate |
