@@ -384,3 +384,7 @@ Entries 614–629 are source-traced in [user profile](API_DOMAIN_CONTRACTS/user-
 ## Tour Manager publication controls
 
 Entries 536–537 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both aliases update only the tenant-owned Tour.published flag after boolean validation. The handler does not change status/available and can set published=true on a cancelled or unavailable tour; this flag-consistency risk is documented. No focused publication-route test was found.
+
+## Tenant user profile and directory
+
+Entries 614–617 are source-traced in [Tenant user profile and directory API contracts](API_DOMAIN_CONTRACTS/user-profile.md). Profile read/update operate on the authenticated user and exclude password; updates allow only name, phone and profileImage, with schema validators applied. Guide listing is restricted to admin/tour-manager/manager roles and returns tenant-scoped active Staff guide records. User deletion is admin-only, tenant-scoped and hard-deletes the User without cascading linked records. No focused user controller/route tests were found.
