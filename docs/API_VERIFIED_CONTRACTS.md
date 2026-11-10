@@ -371,3 +371,7 @@ Entries 532–533 are source-traced in [Tour Manager API contracts](API_DOMAIN_C
 ## Tour reports
 
 Entry 584 (GET /api/tour-reports) is source-traced in [Tour reports API contract](API_DOMAIN_CONTRACTS/tour-reports.md). It is tenant-scoped and limited to admin/manager/super-admin roles. Booking/tour/customer counts, status buckets, popular tours and posted-journal revenue are documented separately. Important caveats: popular-tour revenue uses completed payment records while headline/monthly revenue use posted journals; cancelled/refunded booking status is not excluded from the popular-tour aggregation; and the report repeats posted-journal aggregation work. No dedicated route/controller test was found.
+
+## Tour Manager tour deletion
+
+Entries 534–535 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both aliases call the shared transactional cancelTourAndBookings service with deleted:true. The tour is soft-deleted after active bookings are cancelled, paid amounts become refund requests (no provider refund is executed), resources are released and eligible booking users are notified. The release helper overwrites assignmentStatus back to pending, and the opt-in integration test covers deleted:false cancellation rather than the DELETE soft-delete path.
