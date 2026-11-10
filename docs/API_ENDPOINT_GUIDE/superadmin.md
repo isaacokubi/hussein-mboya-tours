@@ -694,7 +694,7 @@ router.get("/tenants/:id", getTenant)
 
 ## endpoint-427 — GET /api/superadmin/tenants/:tenantId/mpesa
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 427 of 629<br>
 **Route declaration pipeline:** `getSuperAdminTenantMpesa`
@@ -708,13 +708,13 @@ router.get("/tenants/:id", getTenant)
 router.get("/tenants/:tenantId/mpesa", getSuperAdminTenantMpesa)
 ```
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin tenant M-Pesa gateway and status APIs](../API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) for tenant scoping, encrypted credentials, callback validation, Daraja OAuth verification, disable behavior and manual subscription activation.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-428 — GET /api/superadmin/tenants/:tenantId/mpesa
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 428 of 629<br>
 **Route declaration pipeline:** `getSuperAdminTenantMpesa`
@@ -728,13 +728,13 @@ router.get("/tenants/:tenantId/mpesa", getSuperAdminTenantMpesa)
 router.get("/tenants/:tenantId/mpesa", getSuperAdminTenantMpesa)
 ```
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin tenant M-Pesa gateway and status APIs](../API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) for tenant scoping, encrypted credentials, callback validation, Daraja OAuth verification, disable behavior and manual subscription activation.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-429 — PUT /api/superadmin/tenants/:tenantId/mpesa
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 429 of 629<br>
 **Route declaration pipeline:** `saveSuperAdminTenantMpesa`
@@ -748,13 +748,13 @@ router.get("/tenants/:tenantId/mpesa", getSuperAdminTenantMpesa)
 router.put("/tenants/:tenantId/mpesa", saveSuperAdminTenantMpesa)
 ```
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin tenant M-Pesa gateway and status APIs](../API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) for tenant scoping, encrypted credentials, callback validation, Daraja OAuth verification, disable behavior and manual subscription activation.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-430 — PUT /api/superadmin/tenants/:tenantId/mpesa
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 430 of 629<br>
 **Route declaration pipeline:** `saveSuperAdminTenantMpesa`
@@ -768,13 +768,13 @@ router.put("/tenants/:tenantId/mpesa", saveSuperAdminTenantMpesa)
 router.put("/tenants/:tenantId/mpesa", saveSuperAdminTenantMpesa)
 ```
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin tenant M-Pesa gateway and status APIs](../API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) for tenant scoping, encrypted credentials, callback validation, Daraja OAuth verification, disable behavior and manual subscription activation.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-431 — POST /api/superadmin/tenants/:tenantId/mpesa/validate
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 431 of 629<br>
 **Route declaration pipeline:** `rateLimit`, `validateSuperAdminTenantMpesa`
@@ -788,13 +788,13 @@ router.put("/tenants/:tenantId/mpesa", saveSuperAdminTenantMpesa)
 router.post("/tenants/:tenantId/mpesa/validate", rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: true, legacyHeaders: false, message: { success: false, message: "Too many configuration checks. Try again later." } }), validateSuperAdminTenantMpesa)
 ```
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin tenant M-Pesa gateway and status APIs](../API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) for tenant scoping, encrypted credentials, callback validation, Daraja OAuth verification, disable behavior and manual subscription activation.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-432 — POST /api/superadmin/tenants/:tenantId/mpesa/validate
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 432 of 629<br>
 **Route declaration pipeline:** `rateLimit`, `validateSuperAdminTenantMpesa`
@@ -808,13 +808,13 @@ router.post("/tenants/:tenantId/mpesa/validate", rateLimit({ windowMs: 15 * 60 *
 router.post("/tenants/:tenantId/mpesa/validate", rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: true, legacyHeaders: false, message: { success: false, message: "Too many configuration checks. Try again later." } }), validateSuperAdminTenantMpesa)
 ```
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin tenant M-Pesa gateway and status APIs](../API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) for tenant scoping, encrypted credentials, callback validation, Daraja OAuth verification, disable behavior and manual subscription activation.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-433 — DELETE /api/superadmin/tenants/:tenantId/mpesa
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 433 of 629<br>
 **Route declaration pipeline:** `disableSuperAdminTenantMpesa`
@@ -828,13 +828,13 @@ router.post("/tenants/:tenantId/mpesa/validate", rateLimit({ windowMs: 15 * 60 *
 router.delete("/tenants/:tenantId/mpesa", disableSuperAdminTenantMpesa)
 ```
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin tenant M-Pesa gateway and status APIs](../API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) for tenant scoping, encrypted credentials, callback validation, Daraja OAuth verification, disable behavior and manual subscription activation.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-434 — DELETE /api/superadmin/tenants/:tenantId/mpesa
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 434 of 629<br>
 **Route declaration pipeline:** `disableSuperAdminTenantMpesa`
@@ -848,13 +848,13 @@ router.delete("/tenants/:tenantId/mpesa", disableSuperAdminTenantMpesa)
 router.delete("/tenants/:tenantId/mpesa", disableSuperAdminTenantMpesa)
 ```
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin tenant M-Pesa gateway and status APIs](../API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) for tenant scoping, encrypted credentials, callback validation, Daraja OAuth verification, disable behavior and manual subscription activation.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-435 — PATCH /api/superadmin/tenants/:id/status
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 435 of 629<br>
 **Route declaration pipeline:** `updateTenantStatus`
@@ -868,20 +868,13 @@ router.delete("/tenants/:tenantId/mpesa", disableSuperAdminTenantMpesa)
 router.patch("/tenants/:id/status", updateTenantStatus)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `status`, `plan`, `periodDays`, `transactionReference`.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `404`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin tenant M-Pesa gateway and status APIs](../API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) for tenant scoping, encrypted credentials, callback validation, Daraja OAuth verification, disable behavior and manual subscription activation.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-436 — PATCH /api/superadmin/tenants/:id/status
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 436 of 629<br>
 **Route declaration pipeline:** `updateTenantStatus`
@@ -895,14 +888,7 @@ router.patch("/tenants/:id/status", updateTenantStatus)
 router.patch("/tenants/:id/status", updateTenantStatus)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `status`, `plan`, `periodDays`, `transactionReference`.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `404`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin tenant M-Pesa gateway and status APIs](../API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md) for tenant scoping, encrypted credentials, callback validation, Daraja OAuth verification, disable behavior and manual subscription activation.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
