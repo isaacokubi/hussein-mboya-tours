@@ -358,3 +358,8 @@ Entries 600–605 are source-traced in [Travel lifecycle APIs](API_DOMAIN_CONTRA
 ## Tour Manager tour creation
 
 Entries 530–531 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both aliases run future-date and tour-command validation before the shared create controller. Required tour fields and structured JSON fields are normalized server-side; destination and optional guide/driver/vehicle must be tenant-owned and available, and overlapping active assignments are rejected. Tour creation and resource-state updates run in a Mongo transaction. The manager route does not attach upload middleware, so its shared controller's req.files image branch is not available through these aliases. The opt-in first-tenant integration test exercises /api/admin/tours, not these manager aliases.
+
+
+## Travel operations and commercial rules
+
+Entries 606–613 are source-traced in [Travel operations and commercial rule APIs](API_DOMAIN_CONTRACTS/travel-operations.md). Reads require authentication; mutations require managerOnly. Operations support tenant filters and assigned-resource overlap checks; rule updates use an unfiltered body $set and no explicit controller allowlist.
