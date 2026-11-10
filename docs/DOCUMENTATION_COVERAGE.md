@@ -66,10 +66,11 @@ The production-readiness script explicitly states that launch certification rema
 
 ### Runtime and release evidence
 
-- CI on commit `ca84f2d` completed successfully: server production checks, automated backend tests, tour lifecycle runtime integration, live tenant-isolation regression, client ESLint and production build all passed.
-- The Three-Phase Release Gate on `ca84f2d` completed successfully, including Phase 1 (security and tenant integrity), Phase 2 (Kenya production readiness) and Phase 3 (final release gate).
-- Production Smoke Check on `ca84f2d` failed at `Check API health when configured`; the public web check was skipped. The failure needs investigation in the deployment environment and must not be described as a passing live API health check. Earlier smoke checks on `786335a` passed.
-- A smoke check does not prove live M-Pesa or card transactions, verified production credentials, or all production operational controls.
+- CI on commit `06e3bd2` completed successfully: server production checks, automated backend tests, tour lifecycle runtime integration, live tenant-isolation regression, client ESLint and production build all passed. This run includes the new M-Pesa status/refund and cash-payment handler tests.
+- The Three-Phase Release Gate on `06e3bd2` passed Phase 1 (security and tenant integrity) and Phase 2 (Kenya production readiness). Phase 3 (final release gate) had completed its client lint step and was still running the client production build at the time of this report update.
+- Production Smoke Check on `06e3bd2` passed, including the configured API health check and public web endpoint check.
+- An earlier smoke run on `ca84f2d` failed its API health step, but the later successful run on `06e3bd2` is the current evidence. Production health should continue to be monitored.
+- A smoke check does not prove live M-Pesa or card transactions, verified production payment credentials, or all production operational controls.
 - No live payment or provider transaction is claimed by this report.
 
 ## Historical measurements
