@@ -77,7 +77,9 @@ All invoke validateTourAssignmentTenant then assignTourResourcesSafe. The assign
 
 ### PATCH /api/tourmanager/tours/:id/complete and /api/tour-manager/tours/:id/complete — entries 540–541
 
-Requires tenant context, valid ObjectId and tenant-owned non-deleted tour. Runs in a Mongo transaction. Already-completed tours return an idempotent success. Otherwise marks completed/completedAt, releases guide/driver/vehicle and resets assignment state and bookedSlots. Success 200 {success:true,message,data}; missing tour 404 and invalid ID 400.
+Handler completeTour requires tenant context, validates the ObjectId (400), and loads a tenant-owned non-deleted Tour (404) in a Mongo transaction. An already-completed tour returns idempotent success without further writes. Otherwise it sets status=completed and completedAt, calls releaseTourResources, and returns 200 {success:true,message,data}. The release helper clears guide/driver/vehicle references, releases Staff/Vehicle state, resets assignmentStatus to pending and availabilitySettings.bookedSlots to zero; it does not reset every date-specific availability slot.
+
+There is no guard against completing a cancelled-but-not-deleted tour, and the handler does not check whether active bookings remain or whether they are paid/completed. It also leaves published and available flags unchanged. A manager can therefore mark a cancelled tour completed or complete a tour with unpaid/active bookings; the lifecycle state and date-specific capacity can remain inconsistent. Unexpected errors are passed to next(error), and the session is ended in finally. No focused completeTour route/controller test was found; tourLifecycleIntegration.test.js exercises booking completion and tour cancellation, not this handler.
 
 ### PATCH /api/tourmanager/tours/:id/cancel and /api/tour-manager/tours/:id/cancel — entries 542–543
 
