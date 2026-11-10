@@ -374,7 +374,7 @@ router.get("/", authorize("admin.dashboard"), getSuperAdminRevenue)
 
 ## endpoint-411 — GET /api/superadmin/roles
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoleRoutes.js](../../server/routes/superAdminRoleRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoleRoutes.md)<br>
 **Mounted inventory entry:** 411 of 629<br>
 **Route declaration pipeline:** `getPlatformRoles`
@@ -388,20 +388,13 @@ router.get("/", authorize("admin.dashboard"), getSuperAdminRevenue)
 router.get("/", getPlatformRoles)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
-- JSON envelope keys observed: `success`, `count`, `roles`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin role and permission API contracts](../API_DOMAIN_CONTRACTS/superadmin-roles.md) for authorization, tenant scope, request/response behavior, validation and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-412 — GET /api/superadmin/roles/permissions/all
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoleRoutes.js](../../server/routes/superAdminRoleRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoleRoutes.md)<br>
 **Mounted inventory entry:** 412 of 629<br>
 **Route declaration pipeline:** `getPlatformPermissions`
@@ -415,20 +408,13 @@ router.get("/", getPlatformRoles)
 router.get("/permissions/all", getPlatformPermissions)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
-- JSON envelope keys observed: `success`, `count`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin role and permission API contracts](../API_DOMAIN_CONTRACTS/superadmin-roles.md) for authorization, tenant scope, request/response behavior, validation and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-413 — GET /api/superadmin/roles/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoleRoutes.js](../../server/routes/superAdminRoleRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoleRoutes.md)<br>
 **Mounted inventory entry:** 413 of 629<br>
 **Route declaration pipeline:** `getPlatformRole`
@@ -442,20 +428,13 @@ router.get("/permissions/all", getPlatformPermissions)
 router.get("/:id", getPlatformRole)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `404`.
-- JSON envelope keys observed: `success`, `message`, `role`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin role and permission API contracts](../API_DOMAIN_CONTRACTS/superadmin-roles.md) for authorization, tenant scope, request/response behavior, validation and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-414 — PUT /api/superadmin/roles/:id/permissions
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoleRoutes.js](../../server/routes/superAdminRoleRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoleRoutes.md)<br>
 **Mounted inventory entry:** 414 of 629<br>
 **Route declaration pipeline:** `updatePlatformRolePermissions`
@@ -469,20 +448,13 @@ router.get("/:id", getPlatformRole)
 router.put("/:id/permissions", updatePlatformRolePermissions)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `permissions`.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `404`, `403`.
-- JSON envelope keys observed: `success`, `message`, `role`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin role and permission API contracts](../API_DOMAIN_CONTRACTS/superadmin-roles.md) for authorization, tenant scope, request/response behavior, validation and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-415 — GET /api/superadmin/dashboard/metrics
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 415 of 629<br>
 **Route declaration pipeline:** `getSuperAdminDashboardMetrics`
@@ -496,20 +468,13 @@ router.put("/:id/permissions", updatePlatformRolePermissions)
 router.get("/dashboard/metrics", getSuperAdminDashboardMetrics)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `503`, `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin dashboard metrics API contract](../API_DOMAIN_CONTRACTS/superadmin-dashboard.md) for authorization, tenant scope, request/response behavior, validation and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-416 — GET /api/superadmin/dashboard/metrics
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 416 of 629<br>
 **Route declaration pipeline:** `getSuperAdminDashboardMetrics`
@@ -523,20 +488,13 @@ router.get("/dashboard/metrics", getSuperAdminDashboardMetrics)
 router.get("/dashboard/metrics", getSuperAdminDashboardMetrics)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `503`, `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin dashboard metrics API contract](../API_DOMAIN_CONTRACTS/superadmin-dashboard.md) for authorization, tenant scope, request/response behavior, validation and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-417 — GET /api/superadmin/dashboard
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 417 of 629<br>
 **Route declaration pipeline:** `getSuperAdminDashboardMetrics`
@@ -550,20 +508,13 @@ router.get("/dashboard/metrics", getSuperAdminDashboardMetrics)
 router.get("/dashboard", getSuperAdminDashboardMetrics)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `503`, `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin dashboard metrics API contract](../API_DOMAIN_CONTRACTS/superadmin-dashboard.md) for authorization, tenant scope, request/response behavior, validation and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-418 — GET /api/superadmin/dashboard
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 418 of 629<br>
 **Route declaration pipeline:** `getSuperAdminDashboardMetrics`
@@ -577,14 +528,7 @@ router.get("/dashboard", getSuperAdminDashboardMetrics)
 router.get("/dashboard", getSuperAdminDashboardMetrics)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `503`, `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin dashboard metrics API contract](../API_DOMAIN_CONTRACTS/superadmin-dashboard.md) for authorization, tenant scope, request/response behavior, validation and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
