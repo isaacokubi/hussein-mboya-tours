@@ -25,9 +25,7 @@ router.post("/", managerOnly, upload.single("image"), createVehicle)
 - Literal HTTP statuses in handler: `400`, `201`.
 - JSON envelope keys observed: `success`, `message`, `field`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for tenant enforcement, multipart image handling, validation, lifecycle effects and known assignment/restore consistency risks.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
@@ -54,9 +52,7 @@ router.put("/:id", managerOnly, upload.single("image"), updateVehicle)
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `field`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for tenant enforcement, multipart image handling, validation, lifecycle effects and known assignment/restore consistency risks.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
@@ -83,9 +79,7 @@ router.delete("/:id", managerOnly, deleteVehicle)
 - Literal HTTP statuses in handler: `404`, `200`.
 - JSON envelope keys observed: `success`, `message`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for tenant enforcement, multipart image handling, validation, lifecycle effects and known assignment/restore consistency risks.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
@@ -111,9 +105,7 @@ router.get("/", vehicleReadOnly, getVehicles)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: `success`, `count`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for tenant enforcement, multipart image handling, validation, lifecycle effects and known assignment/restore consistency risks.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
@@ -139,9 +131,7 @@ router.get("/:id", vehicleReadOnly, getVehicle)
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for tenant enforcement, multipart image handling, validation, lifecycle effects and known assignment/restore consistency risks.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
@@ -168,9 +158,7 @@ router.put("/:id/assign-driver", managerOnly, assignVehicleDriver)
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for tenant enforcement, multipart image handling, validation, lifecycle effects and known assignment/restore consistency risks.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
@@ -197,9 +185,7 @@ router.put("/:id/remove-driver", managerOnly, removeVehicleDriver)
 - Literal HTTP statuses in handler: `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for tenant enforcement, multipart image handling, validation, lifecycle effects and known assignment/restore consistency risks.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
@@ -226,9 +212,7 @@ router.put("/:id/status", managerOnly, updateVehicleStatus)
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for tenant enforcement, multipart image handling, validation, lifecycle effects and known assignment/restore consistency risks.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
@@ -255,9 +239,7 @@ router.patch("/:id/restore", adminOnly, restoreVehicle)
 - Literal HTTP statuses in handler: `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
-**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+**Source-traced behavior:** See [Tenant vehicle management API contracts](../API_DOMAIN_CONTRACTS/vehicles.md) for tenant enforcement, multipart image handling, validation, lifecycle effects and known assignment/restore consistency risks.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
