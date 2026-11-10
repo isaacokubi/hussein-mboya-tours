@@ -246,3 +246,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/controllers/superAdminDashboardMetricsController.js` | SOURCE-VERIFIED | [Super Admin dashboard contracts](API_DOMAIN_CONTRACTS/superadmin-dashboard.md) | Platform user counts, tenant-filtered operational counts, currency revenue aggregation and consistency response |
 | `server/middleware/superAdminOnly.js` | SOURCE-VERIFIED | [Super Admin dashboard contracts](API_DOMAIN_CONTRACTS/superadmin-dashboard.md) | Explicit authenticated platform-super-admin check |
 | `server/services/superAdminDataConsistency.js` | SOURCE-VERIFIED | [Super Admin dashboard contracts](API_DOMAIN_CONTRACTS/superadmin-dashboard.md) | Canonical customer account/profile/admin metric aggregation and legacy tenant reconciliation |
+
+
+| `server/controllers/superAdminTenantController.js` | SOURCE-VERIFIED | [Super Admin tenant contracts](API_DOMAIN_CONTRACTS/superadmin-tenants.md) | Static plan catalogue, tenant list/detail queries, per-tenant counts, transaction-based tenant/admin/settings creation and validation |
+| `server/models/Organization.js` | SOURCE-VERIFIED | [Super Admin tenant contracts](API_DOMAIN_CONTRACTS/superadmin-tenants.md) | Global organization schema, status/subscription/features and domain uniqueness |
