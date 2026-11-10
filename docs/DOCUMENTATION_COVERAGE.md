@@ -6,16 +6,16 @@ Counts are computed from first-party `server/` and `client/src/` source files, e
 
 ## Measured coverage status
 
-The latest locally supplied audit was run after pulling commit `605facb` on 2026-11-10. The counts below have since been reconciled with the current source index and review registry after adding the focused M-Pesa refund callback tests; the coverage script has not yet been rerun against this latest commit. Re-run `node scripts/check-documentation-coverage.js` locally to confirm the refreshed counts and link integrity before treating this as a fresh automated audit.
+The latest locally supplied audit was run after pulling commit `605facb` on 2026-11-10. The counts below have since been reconciled with the current source index and review registry after adding focused M-Pesa refund callback and status-query handler tests; the coverage script has not yet been rerun against this latest commit. Re-run `node scripts/check-documentation-coverage.js` locally to confirm the refreshed counts and link integrity before treating this as a fresh automated audit.
 
 | Area | Audited count/status | Documentation |
 |---|---:|---|
 | Source files discovered | 1,017 | `client/src/` and `server/` inventory |
 | Source files indexed | 1,017/1,017 | [Source file index](SOURCE_FILE_INDEX.md) |
 | Source files with explanation links | 1,017/1,017 | Link existence, not semantic depth |
-| Source classifications | 260 SOURCE-VERIFIED; 195 PARTIAL; 562 STRUCTURAL; 0 UNREVIEWED | [Source review registry](SOURCE_REVIEW_REGISTRY.md) and [source index](SOURCE_FILE_INDEX.md) |
-| Registered scoped-review rows | 267 rows across 260 distinct source files | [Source review registry](SOURCE_REVIEW_REGISTRY.md) |
-| Source files without registered scoped review | 757/1,017 | Not an exhaustive line-review count |
+| Source classifications | 261 SOURCE-VERIFIED; 195 PARTIAL; 561 STRUCTURAL; 0 UNREVIEWED | [Source review registry](SOURCE_REVIEW_REGISTRY.md) and [source index](SOURCE_FILE_INDEX.md) |
+| Registered scoped-review rows | 268 rows across 261 distinct source files | [Source review registry](SOURCE_REVIEW_REGISTRY.md) |
+| Source files without registered scoped review | 756/1,017 | Not an exhaustive line-review count |
 | Fully reviewed source files | 0 | No file is certified exhaustive line-by-line |
 | AST-derived walkthrough artifacts | 735 | [Walkthrough index](code-explanations/source/INDEX.md) |
 | Structural walkthrough labels | 725 | Navigation classification; not a review certification |
@@ -43,7 +43,7 @@ The latest locally supplied audit was run after pulling commit `605facb` on 2026
 ## Interpretation and known gaps
 
 - **API documentation inventory is complete by its current classification:** all 629 mounted method/path rows have endpoint-guide records marked SOURCE-TRACED. This does not prove every runtime branch, authorization combination, validation failure, or provider interaction has been tested.
-- **Source review is not complete:** 757 source files lack a registered source-verified critical-scope review. The 260 SOURCE-VERIFIED classification applies only to the named scope in each registry row; it is not a whole-file certification.
+- **Source review is not complete:** 756 source files lack a registered source-verified critical-scope review. The 261 SOURCE-VERIFIED classification applies only to the named scope in each registry row; it is not a whole-file certification.
 - **No source file is certified fully reviewed line-by-line.** The 195 PARTIAL and 563 STRUCTURAL classifications are explanatory/indexing states, not evidence that those files are defect-free.
 - **Focused API test coverage remains incomplete:** 58 domain contract documents explicitly report no focused test. The audit does not infer endpoint-level test coverage automatically.
 - Runtime schema pages cover all 96 model files and 2,229 compiled schema paths. Dynamic Mixed subkeys, out-of-band database indexes, database contents, and all controller-level field rules are not established by schema introspection.
@@ -54,7 +54,7 @@ The latest locally supplied audit was run after pulling commit `605facb` on 2026
 
 ### Local verification supplied on 2026-11-10
 
-At local commit `605facb`, the supplied terminal output records the baseline verification below. The later refund-callback changes are covered by the current GitHub CI run, but the full documentation coverage script should be rerun after pulling them:
+At local commit `605facb`, the supplied terminal output records the baseline verification below. The later M-Pesa refund callback and status-query handler changes are covered by the current GitHub CI run, but the full documentation coverage script should be rerun after pulling them:
 
 - `node scripts/check-documentation-coverage.js`: completed and reported the counts above, with no reported broken links or possible secret matches.
 - `npm --prefix server run check:all`: passed, including server syntax checks, tenant model contract and static production-readiness contract.
