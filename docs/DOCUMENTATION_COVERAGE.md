@@ -13,9 +13,9 @@ The latest locally supplied audit was run after pulling commit `605facb` on 2026
 | Source files discovered | 1,017 | `client/src/` and `server/` inventory |
 | Source files indexed | 1,017/1,017 | [Source file index](SOURCE_FILE_INDEX.md) |
 | Source files with explanation links | 1,017/1,017 | Link existence, not semantic depth |
-| Source classifications | 261 SOURCE-VERIFIED; 195 PARTIAL; 561 STRUCTURAL; 0 UNREVIEWED | [Source review registry](SOURCE_REVIEW_REGISTRY.md) and [source index](SOURCE_FILE_INDEX.md) |
-| Registered scoped-review rows | 268 rows across 261 distinct source files | [Source review registry](SOURCE_REVIEW_REGISTRY.md) |
-| Source files without registered scoped review | 756/1,017 | Not an exhaustive line-review count |
+| Source classifications | 263 SOURCE-VERIFIED; 195 PARTIAL; 559 STRUCTURAL; 0 UNREVIEWED | [Source review registry](SOURCE_REVIEW_REGISTRY.md) and [source index](SOURCE_FILE_INDEX.md) |
+| Registered scoped-review rows | 270 rows across 263 distinct source files | [Source review registry](SOURCE_REVIEW_REGISTRY.md) |
+| Source files without registered scoped review | 754/1,017 | Not an exhaustive line-review count |
 | Fully reviewed source files | 0 | No file is certified exhaustive line-by-line |
 | AST-derived walkthrough artifacts | 735 | [Walkthrough index](code-explanations/source/INDEX.md) |
 | Structural walkthrough labels | 725 | Navigation classification; not a review certification |
@@ -30,7 +30,7 @@ The latest locally supplied audit was run after pulling commit `605facb` on 2026
 | API domain guides | 57 | [API domain contracts](API_DOMAIN_CONTRACTS/INDEX.md) |
 | Backend test files | 77 | `server/tests/` |
 | Domain contracts with test-evidence notes | 76 | Evidence notes are not equivalent to passing tests |
-| Domain contracts explicitly reporting no focused tests | 58 | Focused test coverage remains a gap |
+| Domain contracts explicitly reporting no focused tests | 56 | Focused test coverage remains a gap |
 | Model guides | 96/96 | [Model guide index](code-explanations/database/models/INDEX.md) |
 | Model schema paths described | 2,229 | Schema introspection inventory |
 | Model schema indexes described | 633 | Does not prove all database indexes are captured |
@@ -43,9 +43,9 @@ The latest locally supplied audit was run after pulling commit `605facb` on 2026
 ## Interpretation and known gaps
 
 - **API documentation inventory is complete by its current classification:** all 629 mounted method/path rows have endpoint-guide records marked SOURCE-TRACED. This does not prove every runtime branch, authorization combination, validation failure, or provider interaction has been tested.
-- **Source review is not complete:** 756 source files lack a registered source-verified critical-scope review. The 261 SOURCE-VERIFIED classification applies only to the named scope in each registry row; it is not a whole-file certification.
+- **Source review is not complete:** 754 source files lack a registered source-verified critical-scope review. The 263 SOURCE-VERIFIED classification applies only to the named scope in each registry row; it is not a whole-file certification.
 - **No source file is certified fully reviewed line-by-line.** The 195 PARTIAL and 563 STRUCTURAL classifications are explanatory/indexing states, not evidence that those files are defect-free.
-- **Focused API test coverage remains incomplete:** 58 domain contract documents explicitly report no focused test. The audit does not infer endpoint-level test coverage automatically.
+- **Focused API test coverage remains incomplete:** 56 domain contract documents explicitly report no focused test. The audit does not infer endpoint-level test coverage automatically.
 - Runtime schema pages cover all 96 model files and 2,229 compiled schema paths. Dynamic Mixed subkeys, out-of-band database indexes, database contents, and all controller-level field rules are not established by schema introspection.
 - Exact deployment state, provider credentials, sandbox/production transaction evidence, and production operations cannot be inferred from repository manifests or static checks.
 - Historical engineering challenges cannot be asserted unless supported by commit or issue evidence; interview material labels inferences.
