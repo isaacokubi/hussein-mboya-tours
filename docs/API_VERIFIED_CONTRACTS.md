@@ -318,3 +318,8 @@ Entries 508–511 are source-traced in [Platform tenant directory APIs](API_DOMA
 ## Tenant subscription checkout
 
 Entries 512–514 are source-traced in [Tenant subscription and M-Pesa checkout API contracts](API_DOMAIN_CONTRACTS/tenant-subscriptions.md). Checkout uses platform-level legacy M-Pesa environment credentials, not tenant PaymentGatewayConfig; it creates a pending payment and initiates STK Push. Payment-status reads are tenant-filtered but do not poll Daraja.
+
+
+## Tour resource assignment
+
+Entry 515 is source-traced in [Tenant-safe tour resource assignment API contract](API_DOMAIN_CONTRACTS/tour-resource-assignment.md). Assignment is restricted to tenant managers, checks tenant ownership and resource availability/date overlaps, commits Tour/Staff/Vehicle changes in a Mongo transaction, then queues a webhook after commit.
