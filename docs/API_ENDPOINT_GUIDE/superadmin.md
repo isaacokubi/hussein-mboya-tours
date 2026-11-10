@@ -2014,7 +2014,7 @@ router.get("/database/backup/:id/download", downloadPlatformDatabaseBackup)
 
 ## endpoint-495 — POST /api/superadmin/users/accounts
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminUserRoutes.js](../../server/routes/superAdminUserRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminUserRoutes.md)<br>
 **Mounted inventory entry:** 495 of 629<br>
 **Route declaration pipeline:** `createCompanyAccount`
@@ -2027,14 +2027,7 @@ router.get("/database/backup/:id/download", downloadPlatformDatabaseBackup)
 router.post("/accounts", createCompanyAccount)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `name`, `email`, `phone`, `password`, `role`.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `409`, `201`.
-- JSON envelope keys observed: `success`, `message`, `user`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin user administration API contracts](../API_DOMAIN_CONTRACTS/superadmin-users.md). The earlier /superadmin router declares this same path first and applies protect + superAdminOnly; this later router declaration is shadowed for the matching request.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
