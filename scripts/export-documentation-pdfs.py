@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Export every repository Markdown document into one master PDF and section PDFs."""
+"""Export every repository Markdown document into one master PDF and section PDFs.
+
+This exporter is invoked by the repository documentation artifact workflow.
+"""
 from pathlib import Path
 from xml.sax.saxutils import escape
 import json, re, zipfile
