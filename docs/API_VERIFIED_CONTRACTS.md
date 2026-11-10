@@ -250,3 +250,8 @@ Entries 398–406 are source-traced in [Super Admin maintenance API contracts](A
 ## Super Admin audit and operational status
 
 Entries 407–409 are source-traced in [Super Admin operational status and audit APIs](API_DOMAIN_CONTRACTS/superadmin-operations.md). The audit listing's queries and aggregate counts are not tenant-filtered despite tenant resolution at the router, so access depends materially on the roles.manage permission boundary. Database/system status expose infrastructure metadata. No focused endpoint tests or live requests were run.
+
+
+## Super Admin platform revenue
+
+Entry 410 is source-traced in [Super Admin platform revenue API contract](API_DOMAIN_CONTRACTS/superadmin-revenue.md). The source review found a potential cross-tenant financial disclosure: tenant admins receive admin.dashboard via compatibility permissions, while this handler explicitly enters platform-wide tenant bypass. A platform-only authorization guard is recommended; no application code was changed in this documentation pass.
