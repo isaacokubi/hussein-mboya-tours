@@ -380,3 +380,7 @@ Entries 534–535 are source-traced in [Tour Manager API contracts](API_DOMAIN_C
 ## User, vehicle and wishlist APIs
 
 Entries 614–629 are source-traced in [user profile](API_DOMAIN_CONTRACTS/user-profile.md), [vehicle management](API_DOMAIN_CONTRACTS/vehicles.md) and [wishlist](API_DOMAIN_CONTRACTS/wishlist.md) contracts. The source review found hard-delete user behavior without cascade, vehicle driver assignment state changes that are not transactional, vehicle restore that leaves isActive false, and wishlist visibility filters that omit availability/status.
+
+## Tour Manager publication controls
+
+Entries 536–537 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both aliases update only the tenant-owned Tour.published flag after boolean validation. The handler does not change status/available and can set published=true on a cancelled or unavailable tour; this flag-consistency risk is documented. No focused publication-route test was found.
