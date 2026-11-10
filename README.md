@@ -1,114 +1,90 @@
-# Hussein Mboya Tours
+# Global Tours — Multi-Tenant Travel & Hospitality Platform
 
-A React and Express application for publishing tours and destinations, accepting reservations, and coordinating travel operations. The checked-in code has also grown into a tenant-aware platform with agent, staff, hospitality, finance, compliance, and platform-administration modules. The breadth of code should not be taken as proof that every module is production-enabled or externally certified; see the status notes below and the detailed readiness evidence in `docs/`.
+Global Tours is a multi-tenant platform for tour operators and hospitality businesses. It brings public travel catalogues, bookings, customer management and operational administration together with tenant-scoped finance, payment and reporting workflows.
 
-## Problem and users
+## Platform capabilities
 
-Tour operators need a shared place to present travel products, collect customer booking details, coordinate staff and transport, and follow payment status. This application implements public discovery and booking alongside role-oriented operational dashboards. Its intended users include travelers, tenant administrators, tour managers, agents, guides, drivers, and platform super administrators.
+- **Travel operations:** tour catalogues, itineraries, reservations, booking lifecycle management and customer records.
+- **Multi-tenant workspaces:** organisation-specific data, users, roles, permissions and tenant-aware public websites.
+- **Finance and accounting:** payment records, invoices, expenses, supplier workflows, reconciliation, reporting and compliance controls.
+- **Payment integrations:** Safaricom Daraja, Stripe, PayPal, bank transfer and cash workflows, subject to tenant configuration and provider verification.
+- **Hospitality operations:** hotels, room types, room inventory, rate plans, room blocks and airport transfers.
+- **Administration and governance:** user management, subscription controls, audit records, privacy workflows and operational dashboards.
+- **Operational tooling:** notifications, scheduled jobs and AI-assisted workflows where configured.
 
-## Capabilities present in the code
-
-- Public tour, destination, hotel, and airport-transfer discovery.
-- Customer accounts, booking requests, booking management, and custom-tour requests.
-- Staff and agent workflows, tour assignments, availability, and operational dashboards.
-- Mongoose models with tenant scoping and tenant-aware request handling.
-- M-Pesa STK Push initiation and callback/status processing; Stripe and PayPal integration code is also present.
-- Hospitality reservations, payment, finance/accounting, reporting, compliance, and platform administration modules.
-- Optional AI, email, messaging, file/media, and real-time capabilities when configured.
-
-These are implementation capabilities, not a claim that all services have credentials, have passed external certification, or are active for every tenant. See [payments readiness](docs/PAYMENTS_AND_MPESA.md) and [implementation status](docs/PROJECT_OVERVIEW.md).
+The application is designed so that an accepted payment request is not treated as proof of settlement. Provider callbacks, transaction details and authorised manual confirmations must be verified before payment records are marked complete.
 
 ## Technology
 
-| Area | Implementation |
-| --- | --- |
-| Browser application | React 19, React Router, Vite, TanStack Query |
-| API | Node.js ES modules, Express 5 |
-| Persistence | MongoDB via Mongoose 8 |
-| Authentication | JWT, bcryptjs, HTTP-only cookie support and role/permission middleware |
-| Payments | Daraja/M-Pesa, Stripe and PayPal code paths |
-| Hosting configuration | Render API/static service in `render.yaml`; Vercel frontend build/rewrites in `vercel.json` |
+| Layer | Technologies |
+|---|---|
+| Frontend | React 19, Vite, Tailwind CSS |
+| Backend | Node.js, Express 5 |
+| Data | MongoDB and Mongoose |
+| Realtime | Socket.IO |
+| Authentication and security | JWT, HTTP security middleware, tenant-scoped authorization and rate limiting |
+| Media and messaging | Cloudinary, Resend, Africa's Talking |
+| Integrations | Safaricom Daraja, Stripe, PayPal and OpenAI API |
 
-## Architecture at a glance
+## Repository structure
 
-```mermaid
-flowchart LR
-  Browser[React SPA] -->|HTTP JSON / cookie or bearer| API[Express API]
-  Browser <-->|Socket.IO| API
-  API --> Tenant[Tenant resolution and access controls]
-  Tenant --> Routes[Express route modules]
-  Routes --> Controllers[Controllers and services]
-  Controllers --> Models[Mongoose models]
-  Models --> Mongo[(MongoDB)]
-  API --> Providers[M-Pesa / Stripe / PayPal / optional services]
-  Providers -->|webhooks or callbacks| API
-```
+- `client/` — React application and browser end-to-end tests.
+- `server/` — API, domain models, controllers, services, jobs, scripts and automated tests.
+- `docs/` — architecture, tenant isolation, operations, finance, security, testing and release runbooks.
+- `.github/` — CI and repository automation.
 
-## Quick start
+## Local development
 
-Prerequisites: Node.js compatible with the installed dependencies, npm, and a MongoDB instance. The server loads `server/.env` (then root `.env`) and requires `MONGODB_URI` and `JWT_SECRET`.
+Use separate terminals for the API and web client.
 
+**Backend**
 ```bash
 cd server
 npm ci
 cp .env.example .env
-# Set MONGODB_URI and JWT_SECRET in server/.env; configure exact CLIENT_ORIGINS.
+# Configure MongoDB, JWT, CORS and optional provider integrations.
 npm run dev
 ```
 
-In another terminal:
-
+**Frontend**
 ```bash
 cd client
 npm ci
-# Set VITE_API_URL to the API origin/base expected by client/src/api/apiUrls.js.
+cp .env.example .env
 npm run dev
 ```
 
-More complete setup and variable references: [installation](docs/INSTALLATION.md), [environment variables](docs/ENVIRONMENT_VARIABLES.md).
+## Verification
 
-## Development commands
-
-Run from the relevant directory:
-
-| Command | Purpose |
-| --- | --- |
-| `cd server && npm test` | Node built-in test runner for `server/tests/*.js` |
-| `cd server && npm run check:all` | Syntax/contract/readiness checks, including a production readiness script |
-| `cd client && npm run lint` | ESLint over client files |
-| `cd client && npm run build` | Vite production build |
-| `cd client && npm run test:e2e` | Playwright end-to-end tests |
-
-These commands can depend on environment variables, a database, or external services. Consult [testing](docs/TESTING.md) before treating a result as a live integration test.
-
-## Screenshots
-
-Screenshots are not included in this repository snapshot. Add current, non-sensitive screenshots here when available.
-
-## Deployment
-
-`render.yaml` defines a Render Node web service rooted at `server/` and a Render static frontend rooted at `client/`. `vercel.json` separately defines the Vite frontend build and SPA fallback. Configuration in a manifest does not prove that a service is currently deployed or healthy. See [deployment](docs/DEPLOYMENT.md) and repository readiness evidence.
-
-## Documentation
-
-Start at **[docs/INDEX.md](docs/INDEX.md)**. It links the architecture, source guides, all 629 mounted API inventory entries, database models, security/payments, workflows, deployment and interview material. Thirty-three alias-inclusive API entries now have source-traced contracts; the remaining 596 are explicitly partial. The source review registry lists 16 scoped critical-module reviews, not exhaustive file reviews.
-
-Check documentation coverage after source or route changes:
-
+**Backend**
 ```bash
-node scripts/check-documentation-coverage.js
+cd server
+npm test
+npm run check:all
 ```
 
-The audit reports indexed, structural, deep-linked and fully reviewed source counts separately; it also verifies model pages, endpoint guide entries, local links and selected secret patterns. A passing structural audit does not mean all endpoint contracts or all source behavior are deeply explained.
+**Frontend**
+```bash
+cd client
+npm run lint
+npm run build
+```
 
-## Limitations and status
+Browser end-to-end checks are available through the Playwright configuration in `client/`. Run them against an explicitly configured test or staging environment.
 
-- This is a broad, actively evolving codebase. The route and module surface is large; inspect authorization and tenant scope for the specific operation you discuss.
-- Presence of a payment provider adapter does not establish a successful end-to-end provider payment. The repository's readiness notes document missing or unverified credential, callback, sandbox, and production evidence.
-- `render.yaml` and `vercel.json` are deployment definitions, not deployment evidence.
-- Automated tests cover selected behavior; they do not establish production security, financial reconciliation, or provider certification.
-- Some optional modules require external credentials and may be unavailable without them.
+## Key documentation
 
-## Maintainer
+- [System architecture and implementation guide](docs/SYSTEM_FROM_SCRATCH_GUIDE.md)
+- [Multi-tenancy and data isolation](docs/MULTITENANCY.md)
+- [Tenant payment configuration](docs/TENANT_PAYMENT_CONFIGURATION.md)
+- [M-Pesa sandbox readiness and acceptance limits](docs/MPESA_DARAJA_SANDBOX_READINESS.md)
+- [Production readiness](docs/PRODUCTION_READINESS.md)
+- [Production go-live checklist](docs/PRODUCTION_GO_LIVE_CHECKLIST.md)
+- [Kenya production runbook](docs/KENYA_PRODUCTION_RUNBOOK.md)
+- [Documentation index](docs/DOCUMENTATION_INDEX.md)
 
-The repository is published at [`isaacokubi/hussein-mboya-tours`](https://github.com/isaacokubi/hussein-mboya-tours), and recent Git commits use the `isaacokubi` author identity. This README avoids adding personal biography or employment claims that are not established by repository evidence.
+## Configuration and release discipline
+
+Keep credentials in local environment files or the deployment provider's secret manager. Never commit database URIs, JWT secrets, payment credentials, API keys or customer data.
+
+A successful automated test suite or frontend build is not proof of live provider acceptance. Before production use, verify tenant-specific gateway configuration, real sandbox callback lifecycles, deployment health, authenticated role access, backups and restore procedures. Do not describe eTIMS/OSCU as KRA-certified without the relevant formal certification evidence.
