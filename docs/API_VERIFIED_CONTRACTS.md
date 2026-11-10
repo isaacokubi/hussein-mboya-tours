@@ -345,3 +345,7 @@ Entries 522–527 are source-traced in [Tour Manager API contracts](API_DOMAIN_C
 ## Public and manager tour catalogue
 
 Entries 584–599 are source-traced in [Public and manager tour catalogue API contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md). Public reads enforce published/available/status filters and tenant context; manager mutations require protect/tourManagerOnly and tenant-scoped controller checks. The manager listing is restricted to tours created by the current user. Tour deletion is a soft delete through transactional booking cancellation/refund-request/resource release; assignment aliases use the safe transactional assignment controller.
+
+## Tour Manager tour catalogue
+
+Entries 528–529 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both route prefixes reach the same tenant-scoped GET handler. It excludes deleted tours, supports status and upcoming filters, clamps page size to 1–50, populates assigned resources/creator and returns data/tours plus pagination. The upcoming filter overrides a supplied status with the active future-tour status set; invalid status values are not separately rejected.
