@@ -26,6 +26,10 @@ Both HTTP method aliases invoke updateSuperAdminUserStatus. The path id must be 
 
 Handler deleteSuperAdminUser. Invalid ObjectId returns 400. The caller cannot delete their own account (400). Missing user returns 404. Users whose role or legacyRole is super_admin/superadmin are protected and return 403. Otherwise it concurrently deletes Staff and Agent documents linked by user id and then deletes the User; success is 200 {success:true,deleted:true,message}. The three deletes are not in a transaction, so a partial failure can leave linked records or an orphaned user. The handler does not delete customer profiles, bookings or other related records.
 
+## DELETE alias — inventory 460
+
+Inventory entry 460 is a repeated mount of the same `DELETE /api/superadmin/users/:id` declaration and `deleteSuperAdminUser` handler documented above for entry 459. It has identical authentication, ObjectId validation, self-delete protection, Super Admin role check, linked Staff/Agent deletion, User deletion, response and non-transactional failure behavior. It is retained as a separate inventory row because the mounted route inventory preserves repeated mounts.
+
 ## Model evidence and limitations
 
 User stores role/legacyRole, roleId, tenantId, status, verification and authentication metadata; password is excluded by default and hashed by the User save hook. Its unique email index is tenant-scoped for users with ObjectId tenantId. This controller's account creation path does not provide tenantId. No focused superAdminUserController tests were found in searched paths. No user was created, updated or deleted during this source review.
