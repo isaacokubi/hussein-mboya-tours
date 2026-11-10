@@ -8,8 +8,8 @@ This guide contains 15 mounted method/path inventory entries in the **tours** do
 **Router:** [tourRoutes.js](../../server/routes/tourRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourRoutes.md)<br>
 **Mounted inventory entry:** 585 of 629<br>
 **Route declaration pipeline:** `getTours`
-**Router-wide middleware:** protect; tourManagerOnly
-**Authentication evidence:** A JWT/authentication guard is visible in route/router middleware.
+**Router-wide middleware:** none for this declaration; public routes are registered before protect/tourManagerOnly
+**Authentication evidence:** No authentication middleware applies to this route; it is public. Global tenant resolution still runs, and the handler fails closed without tenant context unless platform bypass is intentional.
 
 **Source declaration:**
 
@@ -24,8 +24,6 @@ router.get("/", getTours)
 - Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -36,8 +34,8 @@ router.get("/", getTours)
 **Router:** [tourRoutes.js](../../server/routes/tourRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourRoutes.md)<br>
 **Mounted inventory entry:** 586 of 629<br>
 **Route declaration pipeline:** `getFeaturedTours`
-**Router-wide middleware:** protect; tourManagerOnly
-**Authentication evidence:** A JWT/authentication guard is visible in route/router middleware.
+**Router-wide middleware:** none for this declaration; public routes are registered before protect/tourManagerOnly
+**Authentication evidence:** No authentication middleware applies to this route; it is public. Global tenant resolution still runs, and the handler fails closed without tenant context unless platform bypass is intentional.
 
 **Source declaration:**
 
@@ -52,8 +50,6 @@ router.get("/featured", getFeaturedTours)
 - Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -64,8 +60,8 @@ router.get("/featured", getFeaturedTours)
 **Router:** [tourRoutes.js](../../server/routes/tourRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourRoutes.md)<br>
 **Mounted inventory entry:** 587 of 629<br>
 **Route declaration pipeline:** `searchTours`
-**Router-wide middleware:** protect; tourManagerOnly
-**Authentication evidence:** A JWT/authentication guard is visible in route/router middleware.
+**Router-wide middleware:** none for this declaration; public routes are registered before protect/tourManagerOnly
+**Authentication evidence:** No authentication middleware applies to this route; it is public. Global tenant resolution still runs, and the handler fails closed without tenant context unless platform bypass is intentional.
 
 **Source declaration:**
 
@@ -80,8 +76,6 @@ router.get("/search", searchTours)
 - Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -92,8 +86,8 @@ router.get("/search", searchTours)
 **Router:** [tourRoutes.js](../../server/routes/tourRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourRoutes.md)<br>
 **Mounted inventory entry:** 588 of 629<br>
 **Route declaration pipeline:** `getTourBySlug`
-**Router-wide middleware:** protect; tourManagerOnly
-**Authentication evidence:** A JWT/authentication guard is visible in route/router middleware.
+**Router-wide middleware:** none for this declaration; public routes are registered before protect/tourManagerOnly
+**Authentication evidence:** No authentication middleware applies to this route; it is public. Global tenant resolution still runs, and the handler fails closed without tenant context unless platform bypass is intentional.
 
 **Source declaration:**
 
@@ -108,8 +102,6 @@ router.get("/slug/:slug", getTourBySlug)
 - Literal HTTP statuses in handler: `400`, `404`.
 - JSON envelope keys observed: `success`, `message`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -120,8 +112,8 @@ router.get("/slug/:slug", getTourBySlug)
 **Router:** [tourRoutes.js](../../server/routes/tourRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourRoutes.md)<br>
 **Mounted inventory entry:** 589 of 629<br>
 **Route declaration pipeline:** `getTourAvailability`
-**Router-wide middleware:** protect; tourManagerOnly
-**Authentication evidence:** A JWT/authentication guard is visible in route/router middleware.
+**Router-wide middleware:** none for this declaration; public routes are registered before protect/tourManagerOnly
+**Authentication evidence:** No authentication middleware applies to this route; it is public. Global tenant resolution still runs, and the handler fails closed without tenant context unless platform bypass is intentional.
 
 **Source declaration:**
 
@@ -136,8 +128,6 @@ router.get("/:id/availability", getTourAvailability)
 - Literal HTTP statuses in handler: `404`, `400`, `200`.
 - JSON envelope keys observed: `success`, `message`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -148,8 +138,8 @@ router.get("/:id/availability", getTourAvailability)
 **Router:** [tourRoutes.js](../../server/routes/tourRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourRoutes.md)<br>
 **Mounted inventory entry:** 590 of 629<br>
 **Route declaration pipeline:** `getTourById`
-**Router-wide middleware:** protect; tourManagerOnly
-**Authentication evidence:** A JWT/authentication guard is visible in route/router middleware.
+**Router-wide middleware:** none for this declaration; public routes are registered before protect/tourManagerOnly
+**Authentication evidence:** No authentication middleware applies to this route; it is public. Global tenant resolution still runs, and the handler fails closed without tenant context unless platform bypass is intentional.
 
 **Source declaration:**
 
@@ -163,8 +153,6 @@ router.get("/:id", getTourById)
 - Path parameters read: `id`; query parameters read: none detected.
 - Literal HTTP statuses in handler: `404`.
 - JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
@@ -192,8 +180,6 @@ router.get("/manager", getManagerTours)
 - Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -219,8 +205,6 @@ router.post("/", validateTourCommand(), upload.array("images", 10), createTour)
 - Path parameters read: none detected; query parameters read: none detected.
 - Literal HTTP statuses in handler: `201`.
 - JSON envelope keys observed: `success`, `message`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
@@ -248,8 +232,6 @@ router.patch("/:id/availability", updateTourAvailability)
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -275,8 +257,6 @@ router.put("/:id", validateTourCommand({ allowPast: true }), upload.array("image
 - Path parameters read: `id`; query parameters read: none detected.
 - Literal HTTP statuses in handler: `400`, `404`.
 - JSON envelope keys observed: `success`, `message`, `data`, `tour`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
@@ -304,8 +284,6 @@ router.delete("/:id", deleteTour)
 - Literal HTTP statuses in handler: `400`.
 - JSON envelope keys observed: `success`, `message`, `data`, `bookingsAffected`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -331,8 +309,6 @@ router.patch("/:id/publication", setPublication)
 - Path parameters read: `id`; query parameters read: none detected.
 - Literal HTTP statuses in handler: `400`, `404`.
 - JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
@@ -360,8 +336,6 @@ router.put("/:id/assign", assignTourResourcesSafe)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -388,8 +362,6 @@ router.patch("/:id/assign-vehicle", assignTourResourcesSafe)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -408,8 +380,6 @@ router.patch("/:id/assign-vehicle", assignTourResourcesSafe)
 ```js
 router.patch("/:id/remove-vehicle", (req, res, next) => { req.body = { ...(req.body || {}), vehicleId: null }; return assignTourResourcesSafe(req, res, next); })
 ```
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Public and manager tour catalogue API contracts](../API_DOMAIN_CONTRACTS/tour-catalogue.md) for visibility filters, tenant scope, query normalization, tour CRUD, assignment and lifecycle behavior.
 
