@@ -1,6 +1,6 @@
 # API endpoint guide
 
-Generated from the mounted route inventory: **629 entries**, **411 source-traced API entries**, **218 partially verified API entries**. The status is intentionally conservative. Review [API_VERIFIED_CONTRACTS.md](../API_VERIFIED_CONTRACTS.md) and [domain contract guides](../API_DOMAIN_CONTRACTS/INDEX.md) for source-traced contracts and [API_ROUTE_INVENTORY.md](../API_ROUTE_INVENTORY.md) for the raw route list.
+Generated from the mounted route inventory: **629 entries**, **414 source-traced API entries**, **215 partially verified API entries**. The status is intentionally conservative. Review [API_VERIFIED_CONTRACTS.md](../API_VERIFIED_CONTRACTS.md) and [domain contract guides](../API_DOMAIN_CONTRACTS/INDEX.md) for source-traced contracts and [API_ROUTE_INVENTORY.md](../API_ROUTE_INVENTORY.md) for the raw route list.
 
 | Domain | Mounted entries | Guide |
 |---|---:|---|
