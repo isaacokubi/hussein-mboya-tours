@@ -176,7 +176,8 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/services/mfaService.js` | SOURCE-VERIFIED | [Customer login PIN contracts](API_DOMAIN_CONTRACTS/customer-mfa.md) | Secure random PIN, bcrypt hash/compare and Kenyan phone normalization |
 
 | `server/controllers/mpesaStatusController.js` | SOURCE-VERIFIED | [M-Pesa status and refund contracts](API_DOMAIN_CONTRACTS/mpesa-status-refunds.md) | Provider query result classification, terminal-state behavior, pending receipt requirement and payment failure transition |
-| `server/controllers/mpesaRefundController.js` | SOURCE-VERIFIED | [M-Pesa status and refund contracts](API_DOMAIN_CONTRACTS/mpesa-status-refunds.md) | Refund result/timeout acknowledgement, duplicate handling and failure persistence |
+| `server/controllers/mpesaRefundController.js` | SOURCE-VERIFIED | [M-Pesa status and refund contracts](API_DOMAIN_CONTRACTS/mpesa-status-refunds.md) | Refund result/timeout acknowledgement, matching reference, active-processing guard, server-side amount source, duplicate/late callback behavior |
+| `server/tests/mpesaRefundSafety.test.js` | SOURCE-VERIFIED | [M-Pesa status and refund contracts](API_DOMAIN_CONTRACTS/mpesa-status-refunds.md) | Focused handler tests for success, reference mismatch, duplicate/late results, failure and timeout state transitions |
 | `server/middleware/resolveMpesaRefundTenant.js` | SOURCE-VERIFIED | [M-Pesa status and refund contracts](API_DOMAIN_CONTRACTS/mpesa-status-refunds.md) | Tenant correlation from stored refund conversation reference; missing reference behavior |
 
 | `server/controllers/notificationController.js` | SOURCE-VERIFIED | [Notification contracts](API_DOMAIN_CONTRACTS/notifications.md) | Staff recipient selection, internal notification persistence, user-owned inbox filtering and mark-as-read path |
