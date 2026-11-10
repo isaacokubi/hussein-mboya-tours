@@ -313,3 +313,8 @@ Entries 504–507 are source-traced in [Tenant branding API contracts and invent
 ## Platform tenant directory
 
 Entries 508–511 are source-traced in [Platform tenant directory APIs](API_DOMAIN_CONTRACTS/platform-tenants.md). The GET /api/tenants handler has a source-level defect: it calls tenantFilter(req), but the platform Super Admin flow intentionally has no req.tenantId, so the helper throws missing tenant context. The tenant create/detail/update paths are also traced, including non-transactional compensating cleanup on create.
+
+
+## Tenant subscription checkout
+
+Entries 512–514 are source-traced in [Tenant subscription and M-Pesa checkout API contracts](API_DOMAIN_CONTRACTS/tenant-subscriptions.md). Checkout uses platform-level legacy M-Pesa environment credentials, not tenant PaymentGatewayConfig; it creates a pending payment and initiates STK Push. Payment-status reads are tenant-filtered but do not poll Daraja.
