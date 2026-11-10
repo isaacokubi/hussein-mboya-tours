@@ -64,3 +64,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Staff directory, operations lookups, administration and role synchronization](staff-management.md)
 
 - [Stripe checkout, signed webhooks, verification and bank-transfer confirmation boundary](stripe-payments.md)
+
+- [Super Admin backup, cache maintenance and file operations](superadmin-maintenance.md)
