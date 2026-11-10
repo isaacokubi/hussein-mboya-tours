@@ -28,3 +28,5 @@ After the transaction commits, the controller attempts to queue webhook event to
 ### Limitations and test evidence
 
 The overlap calculation uses duration days and date/startDate rather than the Tour.endDate field. The source review found no focused test file at server/tests/tourResourceAssignmentController.test.js. No assignment was made and no webhook was queued during this review.
+
+**Route-alias and webhook caveats:** The Tour Manager router exposes the same assignment handler through PUT /tours/:id/assign, PUT /assign-resources/:id and POST /assign-guide (the last copies body.tourId to req.params.id), under both /tourmanager and /tour-manager prefixes. The dedicated assignment path accepts guideId, driverId and vehicleId; guide/driver Staff position checks are exact ("guide" and "driver"), narrower than createTour's guide aliases (guide, tour_guide, tourguide). After the transaction, the webhook payload is built from request body IDs only: omitted fields are emitted as null even when an existing assignment was preserved. Queue errors are logged and swallowed, so the API can return 200 without a queued webhook.
