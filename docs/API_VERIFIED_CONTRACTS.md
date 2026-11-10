@@ -290,3 +290,8 @@ Entries 451–460 are source-traced in [Super Admin user administration API cont
 ## Super Admin monitoring, settings and backup operations
 
 Entries 460–490 are source-traced in [Super Admin audit, security, settings, monitoring and backup APIs](API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md), with entry 460 sharing the user deletion contract. Effective mount order applies protect/superAdminOnly before the overlapping later routers. The backup endpoints write full platform data to plaintext JSON under server/backups without visible encryption/retention/size guards; cache clear is process-wide. API monitor reports database-derived status and does not probe endpoints or measure latency.
+
+
+## Super Admin backup downloads and tools
+
+Entries 491–492 are source-traced in [Super Admin operations and backups](API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md); platform backup downloads require a valid ObjectId and tenantId:null metadata and use a basename-safe file path. Entries 493–494 are source-traced in [Super Admin tools](API_DOMAIN_CONTRACTS/superadmin-tools.md); those routes use tenant resolution and system.security permission (which is granted to admin compatibility roles), and the settings handler is a static empty placeholder.
