@@ -27,3 +27,8 @@ Success is 200 {success:true,system:{status,checks,uptimeSeconds,nodeVersion,env
 ## Test evidence and limitations
 
 No focused tests were found for getAuditLogs, getDatabaseStatus, getSystemHealth, or the superAdminOperationsRoutes permission/audit middleware composition. The discovered superAdminBackupListing test targets a different router/controller. No endpoint request was executed during this source review.
+
+
+## Mount-order clarification (effective authorization)
+
+server/routes/index.js mounts superAdminRoutes at /superadmin before superAdminOperationsRoutes at the same prefix. The first router applies protect then superAdminOnly and declares GET /audit, GET /database and GET /system itself. Those earlier route handlers use the same getAuditLogs/getDatabaseStatus/getSystemHealth controller functions imported by the later router. Requests are handled by the earlier declarations, so the later router's resolveTenant/authorize("roles.manage")/auditMiddleware chain does not run for these matching paths. Effective authorization is protect + superAdminOnly. The global audit filters/counts are therefore platform-only by the earlier route gate, not tenant-admin accessible as the local later router declaration alone might suggest.
