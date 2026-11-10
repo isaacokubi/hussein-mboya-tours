@@ -270,3 +270,8 @@ Entries 419–426 are source-traced in [Super Admin tenant plans and tenant dire
 ## Super Admin tenant gateway and company status
 
 Entries 427–434 are source-traced in [Super Admin tenant M-Pesa gateway and status APIs](API_DOMAIN_CONTRACTS/superadmin-tenant-gateways.md), including tenant context isolation, AES-GCM credential storage, strict callback URL validation and OAuth-only validation behavior. Entries 435–436 use the same guide for status activation. The status endpoint's active branch invokes manual subscription activation without requiring a payment reference or creating a SubscriptionPayment; non-active status updates only Organization.status.
+
+
+## Super Admin subscription operations
+
+Entries 437–444 are source-traced in [Super Admin subscription operations](API_DOMAIN_CONTRACTS/superadmin-subscriptions.md). Manual activation requires a non-empty reference but does not independently verify provider settlement before creating and completing a manual payment record. Plan seat definitions differ between tenant creation and subscription activation/switching (professional 20 vs 15; enterprise 100 vs 250). Tenant deletion hard-deletes tenantId-tagged records across Mongo collections within a transaction.
