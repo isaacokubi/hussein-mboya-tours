@@ -35,3 +35,8 @@ The router requires authentication and roles.manage. ADMIN_COMPATIBILITY_PERMISS
 ## Tests and limitations
 
 No focused superAdminRoleRoutes/controller test was found in the repository paths searched for this review. This contract is based on the route, controller, permission middleware, tenant context/plugin and Role/Permission model source. No role permissions were changed and no live API request was executed.
+
+
+## Mount-order clarification (effective authorization)
+
+server/routes/index.js mounts superAdminRoutes at /superadmin before superAdminRoleRoutes at /superadmin/roles. superAdminRoutes applies protect then superAdminOnly at router level. When a request for /roles does not match a route in that first router, the middleware has already run before Express falls through to the role router. The effective route chain therefore includes protect + superAdminOnly + the role router's protect + authorize("roles.manage"). The ADMIN_COMPATIBILITY_PERMISSIONS entry for admin does not allow a tenant admin to bypass the earlier platform gate. This mount-order fact supersedes any interpretation that roles.manage alone is the effective authorization boundary.
