@@ -235,3 +235,8 @@ Entries 200–203 are source-traced in [Administrative commission APIs](API_DOMA
 ## Coupon validation
 
 `POST /api/coupons/validate` (entry 209) is source-traced in [Coupon validation](API_DOMAIN_CONTRACTS/coupon-validation.md), including the service/schema mismatch for expiry and minimum purchase checks.
+
+
+## Stripe checkout and bank-transfer lifecycle
+
+Entries 394–397 are source-traced in [Stripe checkout and bank-transfer API contracts](API_DOMAIN_CONTRACTS/stripe-payments.md). The trace distinguishes signed public webhook processing from authenticated checkout/session verification and bank-transfer initiation. Bank-transfer submission remains pending until staff verification; Stripe payment completion uses the transactional payment lifecycle. The focused webhook-signature unit test exists, but endpoint/provider integration tests and live Stripe verification were not run.
