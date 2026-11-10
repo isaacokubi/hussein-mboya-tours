@@ -81,3 +81,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Super Admin subscription activation, plan switching, deletion and payments](superadmin-subscriptions.md)
 
 - [Super Admin platform billing prices and feature catalogue](superadmin-billing.md)
+
+- [Super Admin user administration and account lifecycle](superadmin-users.md)
