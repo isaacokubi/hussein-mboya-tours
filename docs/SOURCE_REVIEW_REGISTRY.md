@@ -332,7 +332,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 
 | `server/routes/travelLifecycleRoutes.js` | SOURCE-VERIFIED | [Travel lifecycle contracts](API_DOMAIN_CONTRACTS/travel-lifecycle.md) | Authenticated travel voucher, pricing and loyalty route declarations with mixed manager-only gates |
-| `server/controllers/travelLifecycleController.js` | SOURCE-VERIFIED | [Travel lifecycle contracts](API_DOMAIN_CONTRACTS/travel-lifecycle.md) | Voucher token hashing/redemption, dynamic price rule application and loyalty balance/earn/redeem handlers |
+| `server/controllers/travelLifecycleController.js` | SOURCE-VERIFIED | [Travel lifecycle contracts](API_DOMAIN_CONTRACTS/travel-lifecycle.md) | Voucher token hashing/redemption race, expiry validation gap, client-controlled base price, dynamic rule conditions and loyalty IDOR/counter-only mutations balance/earn/redeem handlers |
 | `server/models/LoyaltyAccount.js` | SOURCE-VERIFIED | [Travel lifecycle contracts](API_DOMAIN_CONTRACTS/travel-lifecycle.md) | Tenant/customer unique account, points counters and referral code indexes |
 
 
