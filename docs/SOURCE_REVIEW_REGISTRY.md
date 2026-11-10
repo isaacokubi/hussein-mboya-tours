@@ -305,3 +305,15 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 | `server/routes/tourAssignmentRoutes.js` | SOURCE-VERIFIED | [Tour resource assignment contract](API_DOMAIN_CONTRACTS/tour-resource-assignment.md) | Tenant resolution, JWT, manager-only gate and assignment route declaration |
 | `server/middleware/validateTourAssignmentTenant.js` | SOURCE-VERIFIED | [Tour resource assignment contract](API_DOMAIN_CONTRACTS/tour-resource-assignment.md) | Tenant ownership and ObjectId validation for tour, guide, driver and vehicle inputs |
+
+
+| `server/controllers/calendarReminderController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant reminder date validation, duplicate protection, list cap and deletion |
+| `server/models/CalendarReminder.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant/date/normalized-title unique index and reminder schema |
+| `server/controllers/tourLifecycleController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tour completion and booking completion/cancellation transaction paths |
+| `server/services/tourResourceLifecycleService.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Staff/vehicle release, assignment reset and booked-slot reset |
+| `server/controllers/itineraryController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant itinerary create/list/read/update/soft-delete and one-per-tour checks |
+| `server/models/Itinerary.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Itinerary days, status, creator and soft-delete fields plus unique tour index |
+| `server/controllers/tourAvailabilityController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant availability reads, booking aggregation and capacity updates |
+| `server/controllers/tourReportController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant booking/revenue/status/popular-tour/monthly-journal report aggregation |
+| `server/controllers/tenantDirectoryController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant customer/guide/driver/vehicle directory and derived customer metrics |
+| `server/controllers/tourManagerBookingController.js` | SOURCE-VERIFIED | [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md) | Tenant booking filters, pagination, populated customer fallback and booking summaries |
