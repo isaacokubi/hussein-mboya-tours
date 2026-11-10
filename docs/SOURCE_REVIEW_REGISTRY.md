@@ -324,6 +324,8 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 
 | `server/routes/tourReportRoutes.js` | SOURCE-VERIFIED | [Tour reports API contract](API_DOMAIN_CONTRACTS/tour-reports.md) | Tenant resolution, JWT authentication and admin/manager/super-admin role gate |
+| `server/models/Destination.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Tenant-scoped destination reference populated by public and manager tour reads |
+| `server/models/Tour.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Public visibility flags, availability fields, tenant scope, destination ref and soft-delete fields used by catalogue reads |
 | `server/routes/tourRoutes.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Public tour reads followed by protected manager CRUD, availability and assignment routes |
 | `server/controllers/tourController.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Public visibility filters, search/category/pagination, tenant-aware reads and manager-owned tour list |
 | `server/middleware/tourManagerMiddleware.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Role allowlist for tour_manager/manager/admin/super_admin |
