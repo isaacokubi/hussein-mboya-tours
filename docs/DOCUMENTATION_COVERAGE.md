@@ -13,8 +13,8 @@ Counts are computed from first-party `server/` and `client/src/` source files, e
 | AST-derived walkthrough artifacts | 735 artifacts exist; 725 source-index rows currently classify their primary guide as structural after ten critical files were redirected to detailed guides | [Walkthrough index](code-explanations/source/INDEX.md) |
 | Dedicated subsystem/source guides | 22 source rows link to detailed/deep guides, plus 96 model files, 96 route modules, 77 client API modules, and the router mount graph; overlap counted in the source index | [Detailed code explanations](code-explanations/INDEX.md) |
 | Source-index classification | 725 structural-label rows, 24 deep-label rows, and 268 specialized/non-deep rows; labels may overlap scoped reviews and are not quality certification | [Source file index](SOURCE_FILE_INDEX.md) |
-| Registered source-verified critical scopes | 170 registered review-scope rows; scope is listed in [source review registry](SOURCE_REVIEW_REGISTRY.md), and does not imply exhaustive file review | [Review registry](SOURCE_REVIEW_REGISTRY.md) |
-| Source files without a registered scoped review | 853 of 1,017; 0 files certified exhaustive line-by-line | [Source review registry](SOURCE_REVIEW_REGISTRY.md) |
+| Registered source-verified critical scopes | 185 registered review-scope rows; scope is listed in [source review registry](SOURCE_REVIEW_REGISTRY.md), and does not imply exhaustive file review | [Review registry](SOURCE_REVIEW_REGISTRY.md) |
+| Source files without a registered scoped review | 839 of 1,017; 0 files certified exhaustive line-by-line | [Source review registry](SOURCE_REVIEW_REGISTRY.md) |
 | Fully source-traced API entries | 414 mounted method/path entries; 215 of 629 remain partial | [Verified contracts](API_VERIFIED_CONTRACTS.md) |
 | Curl examples | 8 illustrative request templates are source-shape checked; 0 requests executed | [Verified critical contracts](API_VERIFIED_CONTRACTS.md) |
 | Mounted route inventory | 629 method/path rows: 588 unique route-module/method/path declarations plus 41 repeated mount entries; 81 route declarations in unmounted modules | [API route inventory](API_ROUTE_INVENTORY.md) |
@@ -31,7 +31,7 @@ Counts are computed from first-party `server/` and `client/src/` source files, e
 
 ## Files explained individually
 
-The source index has 1,017 rows. The coverage audit assigns mutually exclusive classifications: 164 SOURCE-VERIFIED scoped files, 238 PARTIAL explanation files, 615 STRUCTURAL summaries, and 0 UNREVIEWED files. The registry records 170 reviewed-scope rows across 164 source files; no file is certified exhaustive. Index label categories remain navigational and are not a semantic quality score. The audit reports zero exhaustive line-by-line reviews.
+The source index has 1,017 rows. The coverage audit assigns mutually exclusive classifications: 178 SOURCE-VERIFIED scoped files, 238 PARTIAL explanation files, 615 STRUCTURAL summaries, and 0 UNREVIEWED files. The registry records 185 reviewed-scope rows across 178 source files; no file is certified exhaustive. Index label categories remain navigational and are not a semantic quality score. The audit reports zero exhaustive line-by-line reviews.
 
 This is not 100% expert-level line-by-line coverage. 170 registered review-scope rows cover 164 distinct source files classified SOURCE-VERIFIED; 853 source files lack that scoped review designation, and no file is certified exhaustive. Of 629 mounted path entries, 390 have source-traced contracts and 239 remain partial.
 
