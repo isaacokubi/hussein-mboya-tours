@@ -25,8 +25,6 @@ router.post("/vouchers", managerOnly, issueVoucher)
 - Literal HTTP statuses in handler: `201`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -52,8 +50,6 @@ router.post("/vouchers/redeem", redeemVoucher)
 - Path parameters read: none detected; query parameters read: none detected.
 - Literal HTTP statuses in handler: `404`, `410`, `409`.
 - JSON envelope keys observed: `success`, `message`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
 
@@ -81,8 +77,6 @@ router.post("/pricing/calculate", calculateDynamicPrice)
 - Literal HTTP statuses in handler: `404`, `400`.
 - JSON envelope keys observed: `success`, `message`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -108,8 +102,6 @@ router.get("/loyalty/:customerId", loyaltyBalance)
 - Path parameters read: `customerId`; query parameters read: none detected.
 - Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
 
@@ -138,8 +130,6 @@ router.post("/loyalty/earn", managerOnly, earnLoyalty)
 - Literal HTTP statuses in handler: `400`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -165,8 +155,6 @@ router.post("/loyalty/redeem", redeemLoyalty)
 - Path parameters read: none detected; query parameters read: none detected.
 - Literal HTTP statuses in handler: `400`, `409`.
 - JSON envelope keys observed: `success`, `message`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
 
