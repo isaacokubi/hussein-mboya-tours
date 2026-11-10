@@ -331,3 +331,8 @@ Entries 516–517 are source-traced in [Tour manager dashboard contract](API_DOM
 ## Tour Manager Operations Copilot
 
 Entries 518–521 are source-traced in [Tour Manager Operations Copilot API contracts](API_DOMAIN_CONTRACTS/operations-copilot.md). Both route prefixes share the same tenant-scoped summary and preview-only quote handlers. Summary totals are based on bounded samples and its overall estimated margin can mix all bookings with only the first 100 tours; the quote endpoint uses catalogue price and persists no records. Static access tests and pure calculation tests are present; no live HTTP/controller integration was run in this documentation pass.
+
+
+## Tour Manager routes
+
+Entries 516–583 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). The 34 route declarations are mounted under both /tourmanager and /tour-manager. The contract documents tenant/manager gates, tour CRUD and lifecycle transactions, resource assignment, reminders, itinerary soft deletes, booking completion/cancellation, external notification delivery, directory/report reads and availability capacity updates. Known caveats include cancellation assignmentStatus reset, unescaped search regexes, vehicle directory inclusion of inactive vehicles, and per-date availability divergence after capacity updates.
