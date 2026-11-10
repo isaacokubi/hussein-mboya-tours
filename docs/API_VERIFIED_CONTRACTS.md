@@ -303,3 +303,8 @@ The duplicate POST /api/superadmin/users/accounts declaration in superAdminUserR
 ## Tenant system health
 
 Entries 496–499 are source-traced in [Tenant system health API contracts](API_DOMAIN_CONTRACTS/system-health.md). Both aliases use the same handler and require tenant resolution, JWT authentication, admin role and system.security permission. Each request performs Cloudinary ping and tenant M-Pesa Daraja OAuth connectivity checks; an unavailable integration is reported in the component payload rather than changing the overall HTTP success status.
+
+
+## Tenant branding
+
+Entries 504–507 are source-traced in [Tenant branding API contracts and inventory reconciliation](API_DOMAIN_CONTRACTS/tenant-branding.md). Current source mounts only GET/PUT /api/tenant. The listed /api/tenant/branding entries 505 and 507 are not declared by the current route module or mounted separately, so they are documented as stale/unmounted inventory paths rather than live routes.
