@@ -30,7 +30,7 @@ router.get("/dashboard", getTourManagerDashboard)
 
 ## endpoint-518 — GET /api/tourmanager/copilot/summary
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 518 of 629<br>
 **Route declaration pipeline:** `getOperationsCopilotSummary`
@@ -51,13 +51,12 @@ router.get("/copilot/summary", getOperationsCopilotSummary)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
+**Source-traced behavior:** See [Tour Manager Operations Copilot API contracts](../API_DOMAIN_CONTRACTS/operations-copilot.md) for tenant scope, calculations, request validation, preview-only behavior and test evidence.
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-520 — POST /api/tourmanager/copilot/quote-draft
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 520 of 629<br>
 **Route declaration pipeline:** `createOperationsQuoteDraft`
@@ -78,8 +77,7 @@ router.post("/copilot/quote-draft", createOperationsQuoteDraft)
 - Literal HTTP statuses in handler: `400`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
+**Source-traced behavior:** See [Tour Manager Operations Copilot API contracts](../API_DOMAIN_CONTRACTS/operations-copilot.md) for tenant scope, calculations, request validation, preview-only behavior and test evidence.
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-522 — GET /api/tourmanager/calendar/reminders
