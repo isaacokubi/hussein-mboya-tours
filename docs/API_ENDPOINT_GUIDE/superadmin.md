@@ -1368,20 +1368,13 @@ router.delete("/users/:id", deleteSuperAdminUser)
 router.delete("/users/:id", deleteSuperAdminUser)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `404`, `403`.
-- JSON envelope keys observed: `success`, `message`, `deleted`.
-
-**Source-traced behavior:** See [Super Admin user administration API contracts](../API_DOMAIN_CONTRACTS/superadmin-users.md) for user lookup, self-delete protection, protected Super Admin identities, linked Staff/Agent cleanup and non-transactional failure boundaries. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin user administration API contracts](../API_DOMAIN_CONTRACTS/superadmin-users.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-461 — GET /api/superadmin/audit
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 461 of 629<br>
 **Route declaration pipeline:** `getAuditLogs`
@@ -1395,20 +1388,13 @@ router.delete("/users/:id", deleteSuperAdminUser)
 router.get("/audit", getAuditLogs)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: `page`, `search`, `action`, `resource`, `status`, `severity`.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-462 — GET /api/superadmin/audit
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 462 of 629<br>
 **Route declaration pipeline:** `getAuditLogs`
@@ -1422,20 +1408,13 @@ router.get("/audit", getAuditLogs)
 router.get("/audit", getAuditLogs)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: `page`, `search`, `action`, `resource`, `status`, `severity`.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-463 — GET /api/superadmin/security
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 463 of 629<br>
 **Route declaration pipeline:** inline callback
@@ -1449,13 +1428,13 @@ router.get("/audit", getAuditLogs)
 router.get("/security", async (req, res) => { try { const data = await securityService.getSecurityStatus(); return res.json({ success: true, data }); } catch (error) { console.error("SuperAdmin security status error:", error); return res.status(500).json({ success: false, message: error.message }); } })
 ```
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-464 — GET /api/superadmin/security
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 464 of 629<br>
 **Route declaration pipeline:** inline callback
@@ -1469,13 +1448,13 @@ router.get("/security", async (req, res) => { try { const data = await securityS
 router.get("/security", async (req, res) => { try { const data = await securityService.getSecurityStatus(); return res.json({ success: true, data }); } catch (error) { console.error("SuperAdmin security status error:", error); return res.status(500).json({ success: false, message: error.message }); } })
 ```
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-465 — GET /api/superadmin/database
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 465 of 629<br>
 **Route declaration pipeline:** `getDatabaseStatus`
@@ -1489,20 +1468,13 @@ router.get("/security", async (req, res) => { try { const data = await securityS
 router.get("/database", getDatabaseStatus)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-466 — GET /api/superadmin/database
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 466 of 629<br>
 **Route declaration pipeline:** `getDatabaseStatus`
@@ -1516,20 +1488,13 @@ router.get("/database", getDatabaseStatus)
 router.get("/database", getDatabaseStatus)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-467 — GET /api/superadmin/system
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 467 of 629<br>
 **Route declaration pipeline:** `getSystemHealth`
@@ -1543,20 +1508,13 @@ router.get("/database", getDatabaseStatus)
 router.get("/system", getSystemHealth)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-468 — GET /api/superadmin/system
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 468 of 629<br>
 **Route declaration pipeline:** `getSystemHealth`
@@ -1570,20 +1528,13 @@ router.get("/system", getSystemHealth)
 router.get("/system", getSystemHealth)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-469 — GET /api/superadmin/api-monitor
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 469 of 629<br>
 **Route declaration pipeline:** `getApiMonitor`
@@ -1597,20 +1548,13 @@ router.get("/system", getSystemHealth)
 router.get("/api-monitor", getApiMonitor)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-470 — GET /api/superadmin/api-monitor
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 470 of 629<br>
 **Route declaration pipeline:** `getApiMonitor`
@@ -1624,20 +1568,13 @@ router.get("/api-monitor", getApiMonitor)
 router.get("/api-monitor", getApiMonitor)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-471 — GET /api/superadmin/settings
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 471 of 629<br>
 **Route declaration pipeline:** `getSettings`
@@ -1651,20 +1588,13 @@ router.get("/api-monitor", getApiMonitor)
 router.get("/settings", getSettings)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `200`.
-- JSON envelope keys observed: `success`, `data`, `scope`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-472 — GET /api/superadmin/settings
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 472 of 629<br>
 **Route declaration pipeline:** `getSettings`
@@ -1678,20 +1608,13 @@ router.get("/settings", getSettings)
 router.get("/settings", getSettings)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `200`.
-- JSON envelope keys observed: `success`, `data`, `scope`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-473 — PUT /api/superadmin/settings
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 473 of 629<br>
 **Route declaration pipeline:** `updateSettings`
@@ -1705,20 +1628,13 @@ router.get("/settings", getSettings)
 router.put("/settings", updateSettings)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `200`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-474 — PUT /api/superadmin/settings
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 474 of 629<br>
 **Route declaration pipeline:** `updateSettings`
@@ -1732,20 +1648,13 @@ router.put("/settings", updateSettings)
 router.put("/settings", updateSettings)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `200`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-475 — POST /api/superadmin/maintenance/backup
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 475 of 629<br>
 **Route declaration pipeline:** `createPlatformDatabaseBackup`
@@ -1759,20 +1668,13 @@ router.put("/settings", updateSettings)
 router.post("/maintenance/backup", createPlatformDatabaseBackup)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `503`, `500`.
-- JSON envelope keys observed: `success`, `message`, `file`, `backup`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-476 — POST /api/superadmin/maintenance/backup
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 476 of 629<br>
 **Route declaration pipeline:** `createPlatformDatabaseBackup`
@@ -1786,20 +1688,13 @@ router.post("/maintenance/backup", createPlatformDatabaseBackup)
 router.post("/maintenance/backup", createPlatformDatabaseBackup)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `503`, `500`.
-- JSON envelope keys observed: `success`, `message`, `file`, `backup`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-477 — POST /api/superadmin/database/backup
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 477 of 629<br>
 **Route declaration pipeline:** `createPlatformDatabaseBackup`
@@ -1813,20 +1708,13 @@ router.post("/maintenance/backup", createPlatformDatabaseBackup)
 router.post("/database/backup", createPlatformDatabaseBackup)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `503`, `500`.
-- JSON envelope keys observed: `success`, `message`, `file`, `backup`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-478 — POST /api/superadmin/database/backup
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 478 of 629<br>
 **Route declaration pipeline:** `createPlatformDatabaseBackup`
@@ -1840,20 +1728,13 @@ router.post("/database/backup", createPlatformDatabaseBackup)
 router.post("/database/backup", createPlatformDatabaseBackup)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `503`, `500`.
-- JSON envelope keys observed: `success`, `message`, `file`, `backup`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-479 — POST /api/superadmin/maintenance/cache
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 479 of 629<br>
 **Route declaration pipeline:** `clearSystemCache`
@@ -1867,20 +1748,13 @@ router.post("/database/backup", createPlatformDatabaseBackup)
 router.post("/maintenance/cache", clearSystemCache)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`, `timestamp`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-480 — POST /api/superadmin/maintenance/cache
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 480 of 629<br>
 **Route declaration pipeline:** `clearSystemCache`
@@ -1894,20 +1768,13 @@ router.post("/maintenance/cache", clearSystemCache)
 router.post("/maintenance/cache", clearSystemCache)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`, `timestamp`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-481 — POST /api/superadmin/database/cache-clear
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 481 of 629<br>
 **Route declaration pipeline:** `clearSystemCache`
@@ -1921,20 +1788,13 @@ router.post("/maintenance/cache", clearSystemCache)
 router.post("/database/cache-clear", clearSystemCache)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`, `timestamp`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-482 — POST /api/superadmin/database/cache-clear
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 482 of 629<br>
 **Route declaration pipeline:** `clearSystemCache`
@@ -1948,20 +1808,13 @@ router.post("/database/cache-clear", clearSystemCache)
 router.post("/database/cache-clear", clearSystemCache)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `message`, `timestamp`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-483 — GET /api/superadmin/database/backups
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 483 of 629<br>
 **Route declaration pipeline:** `listPlatformDatabaseBackups`
@@ -1975,20 +1828,13 @@ router.post("/database/cache-clear", clearSystemCache)
 router.get("/database/backups", listPlatformDatabaseBackups)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `backups`, `count`, `scope`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-484 — GET /api/superadmin/database/backups
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 484 of 629<br>
 **Route declaration pipeline:** `listPlatformDatabaseBackups`
@@ -2002,20 +1848,13 @@ router.get("/database/backups", listPlatformDatabaseBackups)
 router.get("/database/backups", listPlatformDatabaseBackups)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `backups`, `count`, `scope`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-485 — GET /api/superadmin/maintenance/backups
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 485 of 629<br>
 **Route declaration pipeline:** `listPlatformDatabaseBackups`
@@ -2029,20 +1868,13 @@ router.get("/database/backups", listPlatformDatabaseBackups)
 router.get("/maintenance/backups", listPlatformDatabaseBackups)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `backups`, `count`, `scope`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-486 — GET /api/superadmin/maintenance/backups
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 486 of 629<br>
 **Route declaration pipeline:** `listPlatformDatabaseBackups`
@@ -2056,20 +1888,13 @@ router.get("/maintenance/backups", listPlatformDatabaseBackups)
 router.get("/maintenance/backups", listPlatformDatabaseBackups)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `500`.
-- JSON envelope keys observed: `success`, `backups`, `count`, `scope`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-487 — DELETE /api/superadmin/maintenance/backups/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 487 of 629<br>
 **Route declaration pipeline:** `deletePlatformDatabaseBackup`
@@ -2083,20 +1908,13 @@ router.get("/maintenance/backups", listPlatformDatabaseBackups)
 router.delete("/maintenance/backups/:id", deletePlatformDatabaseBackup)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `404`, `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-488 — DELETE /api/superadmin/maintenance/backups/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 488 of 629<br>
 **Route declaration pipeline:** `deletePlatformDatabaseBackup`
@@ -2110,20 +1928,13 @@ router.delete("/maintenance/backups/:id", deletePlatformDatabaseBackup)
 router.delete("/maintenance/backups/:id", deletePlatformDatabaseBackup)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `404`, `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-489 — DELETE /api/superadmin/database/backups/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 489 of 629<br>
 **Route declaration pipeline:** `deletePlatformDatabaseBackup`
@@ -2137,20 +1948,13 @@ router.delete("/maintenance/backups/:id", deletePlatformDatabaseBackup)
 router.delete("/database/backups/:id", deletePlatformDatabaseBackup)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `404`, `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-490 — DELETE /api/superadmin/database/backups/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 490 of 629<br>
 **Route declaration pipeline:** `deletePlatformDatabaseBackup`
@@ -2164,14 +1968,7 @@ router.delete("/database/backups/:id", deletePlatformDatabaseBackup)
 router.delete("/database/backups/:id", deletePlatformDatabaseBackup)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `404`, `500`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin audit, security, settings, monitoring and backup APIs](../API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) for effective router order, authorization, handler behavior, response contracts and operational/security limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
