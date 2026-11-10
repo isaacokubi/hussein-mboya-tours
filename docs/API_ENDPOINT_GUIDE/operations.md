@@ -24,8 +24,6 @@ router.get("/", listOperations)
 - Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -52,8 +50,6 @@ router.post("/", managerOnly, createOperation)
 - Path parameters read: none detected; query parameters read: none detected.
 - Literal HTTP statuses in handler: `400`, `201`.
 - JSON envelope keys observed: `success`, `message`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
 
@@ -82,8 +78,6 @@ router.patch("/:id", managerOnly, updateOperation)
 - Literal HTTP statuses in handler: `404`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -111,8 +105,6 @@ router.delete("/:id", managerOnly, deleteOperation)
 - Literal HTTP statuses in handler: `404`.
 - JSON envelope keys observed: `success`, `message`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -138,8 +130,6 @@ router.get("/rules/list", listRules)
 - Path parameters read: none detected; query parameters read: `type`.
 - Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
 
@@ -168,8 +158,6 @@ router.post("/rules", managerOnly, createRule)
 - Literal HTTP statuses in handler: `400`, `201`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -197,8 +185,6 @@ router.patch("/rules/:id", managerOnly, updateRule)
 - Literal HTTP statuses in handler: `404`.
 - JSON envelope keys observed: `success`, `message`, `data`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
 **Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
@@ -225,8 +211,6 @@ router.delete("/rules/:id", managerOnly, deleteRule)
 - Path parameters read: `id`; query parameters read: none detected.
 - Literal HTTP statuses in handler: `404`.
 - JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
 
