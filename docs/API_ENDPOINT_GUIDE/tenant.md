@@ -36,7 +36,7 @@ router.get("/", getBranding)
 router.get("/", getBranding)
 ```
 
-**Source-traced behavior:** See [Tenant branding API contracts and inventory reconciliation](../API_DOMAIN_CONTRACTS/tenant-branding.md). This listed /branding path is not mounted in the current route source; only the root path under /tenant is declared.
+**Source-traced behavior:** See [Tenant branding API contracts and mount reconciliation](../API_DOMAIN_CONTRACTS/tenant-branding.md). The application directly mounts the same root router at /api/tenant/branding before the consolidated /api router, so this path is live.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
@@ -76,7 +76,7 @@ router.put("/", protect, requireRoles("admin", "manager"), updateBranding)
 router.put("/", protect, requireRoles("admin", "manager"), updateBranding)
 ```
 
-**Source-traced behavior:** See [Tenant branding API contracts and inventory reconciliation](../API_DOMAIN_CONTRACTS/tenant-branding.md). This listed /branding path is not mounted in the current route source; only the root path under /tenant is declared.
+**Source-traced behavior:** See [Tenant branding API contracts and mount reconciliation](../API_DOMAIN_CONTRACTS/tenant-branding.md). The application directly mounts the same root router at /api/tenant/branding before the consolidated /api router, so this path is live.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
