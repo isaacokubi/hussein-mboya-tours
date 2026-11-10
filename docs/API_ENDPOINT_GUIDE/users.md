@@ -4,7 +4,7 @@ This guide contains 4 mounted method/path inventory entries in the **users** dom
 
 ## endpoint-614 — GET /api/users/profile
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [userRoutes.js](../../server/routes/userRoutes.js) · [route module explanation](../code-explanations/backend/routes/userRoutes.md)<br>
 **Mounted inventory entry:** 614 of 629<br>
 **Route declaration pipeline:** `getUserProfile`
@@ -29,11 +29,13 @@ router.get(
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant user profile and directory APIs](../API_DOMAIN_CONTRACTS/user-profile.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-615 — PUT /api/users/profile
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [userRoutes.js](../../server/routes/userRoutes.js) · [route module explanation](../code-explanations/backend/routes/userRoutes.md)<br>
 **Mounted inventory entry:** 615 of 629<br>
 **Route declaration pipeline:** `updateUserProfile`
@@ -58,11 +60,13 @@ router.put(
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant user profile and directory APIs](../API_DOMAIN_CONTRACTS/user-profile.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-616 — GET /api/users/guides
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [userRoutes.js](../../server/routes/userRoutes.js) · [route module explanation](../code-explanations/backend/routes/userRoutes.md)<br>
 **Mounted inventory entry:** 616 of 629<br>
 **Route declaration pipeline:** `roleMiddleware`, `getGuides`
@@ -89,11 +93,13 @@ router.get(
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant user profile and directory APIs](../API_DOMAIN_CONTRACTS/user-profile.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-617 — DELETE /api/users/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [userRoutes.js](../../server/routes/userRoutes.js) · [route module explanation](../code-explanations/backend/routes/userRoutes.md)<br>
 **Mounted inventory entry:** 617 of 629<br>
 **Route declaration pipeline:** `roleMiddleware`, `deleteUser`
@@ -119,6 +125,8 @@ router.delete(
 - JSON envelope keys observed: `success`, `message`.
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+
+**Source-traced behavior:** See [Tenant user profile and directory APIs](../API_DOMAIN_CONTRACTS/user-profile.md) for route middleware, tenant boundaries, request validation, responses and implementation caveats.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
