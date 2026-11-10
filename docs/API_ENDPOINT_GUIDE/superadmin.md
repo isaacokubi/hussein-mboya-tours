@@ -1354,7 +1354,7 @@ router.delete("/users/:id", deleteSuperAdminUser)
 
 ## endpoint-460 — DELETE /api/superadmin/users/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 460 of 629<br>
 **Route declaration pipeline:** `deleteSuperAdminUser`
@@ -1375,7 +1375,7 @@ router.delete("/users/:id", deleteSuperAdminUser)
 - Literal HTTP statuses in handler: `400`, `404`, `403`.
 - JSON envelope keys observed: `success`, `message`, `deleted`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin user administration API contracts](../API_DOMAIN_CONTRACTS/superadmin-users.md) for user lookup, self-delete protection, protected Super Admin identities, linked Staff/Agent cleanup and non-transactional failure boundaries. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
