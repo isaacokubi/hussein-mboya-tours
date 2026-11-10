@@ -408,3 +408,7 @@ Entries 548–583 are source-traced in [Tour Manager API contracts](API_DOMAIN_C
 ## Public and manager tour catalogue routes
 
 Entries 585–599 are source-traced in [Public and manager tour catalogue API contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md). Entries 585–590 are public tenant-resolved reads because they are declared before the router's protect/tourManagerOnly middleware. Entries 591–599 are protected manager operations. Public reads fail closed when no tenant context is resolved (except intentional platform bypass); they do not become globally public merely because authentication is absent.
+
+## Tenant vehicle management and driver assignment
+
+Entries 618–626 are source-traced in [Tenant vehicle management API contracts](API_DOMAIN_CONTRACTS/vehicles.md). The manager-only PUT spreads body fields and can set isDeleted:false/isActive:true, bypassing the admin-only restore route; it can also change driver/assignedTour references without ownership checks. Driver assignment/removal are non-transactional and can leave Staff availability inconsistent. Detail reads include soft-deleted vehicles, restore leaves isActive=false, and registrationNumber is not unique. The generic upload middleware limits a single image to 5 MB and requires Cloudinary configuration.
