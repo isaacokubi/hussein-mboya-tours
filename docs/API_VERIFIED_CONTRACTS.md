@@ -280,3 +280,8 @@ Entries 437–444 are source-traced in [Super Admin subscription operations](API
 ## Super Admin platform billing
 
 Entries 445–450 are source-traced in [Super Admin platform billing configuration APIs](API_DOMAIN_CONTRACTS/superadmin-billing.md). All four plan prices are required on update and must be integer KES amounts from 0 to 100,000,000. Optional feature configuration must provide an array for each plan, rejects unknown feature IDs and always includes billing. Platform settings are read/written in explicit bypass context.
+
+
+## Super Admin user administration
+
+Entries 451–459 are source-traced in [Super Admin user administration API contracts](API_DOMAIN_CONTRACTS/superadmin-users.md). The account-creation route does not assign tenantId to created User/Staff/Agent records while operating in platform bypass context, so resulting records can be tenantless. User deletion cascades Staff/Agent deletes without a transaction and does not remove other related records. Search patterns are not escaped.
