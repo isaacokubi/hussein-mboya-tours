@@ -286,6 +286,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 
 | `server/routes/tenantBrandingRoutes.js` | SOURCE-VERIFIED | [Tenant branding contracts](API_DOMAIN_CONTRACTS/tenant-branding.md) | Tenant resolution and root GET/PUT declarations; no /branding child route |
+| `server/app.js` | SOURCE-VERIFIED | [Tenant branding API contracts](API_DOMAIN_CONTRACTS/tenant-branding.md) | Direct `/api/tenant/branding` mount precedes the consolidated `/api` router; global tenant resolution order |
 | `server/controllers/tenantBrandingController.js` | SOURCE-VERIFIED | [Tenant branding contracts](API_DOMAIN_CONTRACTS/tenant-branding.md) | Public branding projection, admin/manager update allowlist and Organization write behavior |
 
 
