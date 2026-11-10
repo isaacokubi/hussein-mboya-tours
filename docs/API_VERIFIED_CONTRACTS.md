@@ -412,3 +412,7 @@ Entries 585–599 are source-traced in [Public and manager tour catalogue API co
 ## Tenant vehicle management and driver assignment
 
 Entries 618–626 are source-traced in [Tenant vehicle management API contracts](API_DOMAIN_CONTRACTS/vehicles.md). The manager-only PUT spreads body fields and can set isDeleted:false/isActive:true, bypassing the admin-only restore route; it can also change driver/assignedTour references without ownership checks. Driver assignment/removal are non-transactional and can leave Staff availability inconsistent. Detail reads include soft-deleted vehicles, restore leaves isActive=false, and registrationNumber is not unique. The generic upload middleware limits a single image to 5 MB and requires Cloudinary configuration.
+
+## Tenant wishlist
+
+Entries 627–629 are source-traced in [Tenant wishlist API contracts](API_DOMAIN_CONTRACTS/wishlist.md). All three routes require authentication and tenant context and bind the wishlist to req.user._id. Add is idempotent through $addToSet; GET/POST population filters only isDeleted:false and published:true, not availability or tour status. Delete is a successful no-op when the tour was not saved. No focused wishlist route/controller tests were found.
