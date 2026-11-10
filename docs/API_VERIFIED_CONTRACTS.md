@@ -308,3 +308,8 @@ Entries 496–499 are source-traced in [Tenant system health API contracts](API_
 ## Tenant branding
 
 Entries 504–507 are source-traced in [Tenant branding API contracts and inventory reconciliation](API_DOMAIN_CONTRACTS/tenant-branding.md). Current source mounts only GET/PUT /api/tenant. The listed /api/tenant/branding entries 505 and 507 are not declared by the current route module or mounted separately, so they are documented as stale/unmounted inventory paths rather than live routes.
+
+
+## Platform tenant directory
+
+Entries 508–511 are source-traced in [Platform tenant directory APIs](API_DOMAIN_CONTRACTS/platform-tenants.md). The GET /api/tenants handler has a source-level defect: it calls tenantFilter(req), but the platform Super Admin flow intentionally has no req.tenantId, so the helper throws missing tenant context. The tenant create/detail/update paths are also traced, including non-transactional compensating cleanup on create.
