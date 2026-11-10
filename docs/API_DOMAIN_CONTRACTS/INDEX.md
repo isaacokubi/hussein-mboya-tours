@@ -105,3 +105,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Public and manager tour catalogue, CRUD and availability](tour-catalogue.md)
 
 - [Travel voucher, dynamic pricing and loyalty](travel-lifecycle.md)
+
+- [Tenant operations assets and commercial rules](travel-operations.md)
