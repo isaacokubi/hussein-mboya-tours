@@ -2,7 +2,7 @@
 
 See the [source-traced contract index](API_DOMAIN_CONTRACTS/INDEX.md) for authentication, booking creation, M-Pesa initiation/status/callbacks, admin booking operations, admin payment operations and refunds. Those contracts trace mounted routes through middleware, controllers and relevant services/models.
 
-The [domain endpoint guide](API_ENDPOINT_GUIDE/INDEX.md) has one entry for each of the **629 mounted method/path inventory rows (588 unique route-module/method/path declarations plus 41 repeated mount entries)**. The current audit records **411 source-traced entries**, **218 partial entries**, and zero unclassified entries. An endpoint guide entry is not by itself a complete contract.
+The [domain endpoint guide](API_ENDPOINT_GUIDE/INDEX.md) has one entry for each of the **629 mounted method/path inventory rows (588 unique route-module/method/path declarations plus 41 repeated mount entries)**. The current audit records **412 source-traced entries**, **217 partial entries**, and zero unclassified entries. An endpoint guide entry is not by itself a complete contract.
 
 ## Contract and conventions
 
