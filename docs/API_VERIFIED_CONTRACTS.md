@@ -336,3 +336,7 @@ Entries 518–521 are source-traced in [Tour Manager Operations Copilot API cont
 ## Tour Manager routes
 
 Entries 516–583 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). The 34 route declarations are mounted under both /tourmanager and /tour-manager. The contract documents tenant/manager gates, tour CRUD and lifecycle transactions, resource assignment, reminders, itinerary soft deletes, booking completion/cancellation, external notification delivery, directory/report reads and availability capacity updates. Known caveats include cancellation assignmentStatus reset, unescaped search regexes, vehicle directory inclusion of inactive vehicles, and per-date availability divergence after capacity updates.
+
+## Tour Manager calendar reminders
+
+Entries 522–527 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both route prefixes share the same tenant-scoped list/create/delete handlers. Dates are validated as real YYYY-MM-DD calendar dates; duplicate reminders are protected by a unique tenant/date/normalized-title index, and deletion is permanent with 404 for invalid or cross-tenant IDs. The endpoint guide marks all six aliases source-traced. No focused controller/route test was found.
