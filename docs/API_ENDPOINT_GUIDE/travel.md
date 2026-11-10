@@ -4,7 +4,7 @@ This guide contains 6 mounted method/path inventory entries in the **travel** do
 
 ## endpoint-600 — POST /api/travel/vouchers
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelLifecycleRoutes.js](../../server/routes/travelLifecycleRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelLifecycleRoutes.md)<br>
 **Mounted inventory entry:** 600 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `issueVoucher`
@@ -27,11 +27,13 @@ router.post("/vouchers", managerOnly, issueVoucher)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-601 — POST /api/travel/vouchers/redeem
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelLifecycleRoutes.js](../../server/routes/travelLifecycleRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelLifecycleRoutes.md)<br>
 **Mounted inventory entry:** 601 of 629<br>
 **Route declaration pipeline:** `redeemVoucher`
@@ -53,11 +55,13 @@ router.post("/vouchers/redeem", redeemVoucher)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-602 — POST /api/travel/pricing/calculate
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelLifecycleRoutes.js](../../server/routes/travelLifecycleRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelLifecycleRoutes.md)<br>
 **Mounted inventory entry:** 602 of 629<br>
 **Route declaration pipeline:** `calculateDynamicPrice`
@@ -79,11 +83,13 @@ router.post("/pricing/calculate", calculateDynamicPrice)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-603 — GET /api/travel/loyalty/:customerId
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelLifecycleRoutes.js](../../server/routes/travelLifecycleRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelLifecycleRoutes.md)<br>
 **Mounted inventory entry:** 603 of 629<br>
 **Route declaration pipeline:** `loyaltyBalance`
@@ -105,11 +111,13 @@ router.get("/loyalty/:customerId", loyaltyBalance)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-604 — POST /api/travel/loyalty/earn
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelLifecycleRoutes.js](../../server/routes/travelLifecycleRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelLifecycleRoutes.md)<br>
 **Mounted inventory entry:** 604 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `earnLoyalty`
@@ -132,11 +140,13 @@ router.post("/loyalty/earn", managerOnly, earnLoyalty)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-605 — POST /api/travel/loyalty/redeem
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelLifecycleRoutes.js](../../server/routes/travelLifecycleRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelLifecycleRoutes.md)<br>
 **Mounted inventory entry:** 605 of 629<br>
 **Route declaration pipeline:** `redeemLoyalty`
@@ -157,6 +167,8 @@ router.post("/loyalty/redeem", redeemLoyalty)
 - JSON envelope keys observed: `success`, `message`, `data`.
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+
+**Source-traced behavior:** See [Tenant travel voucher, dynamic pricing and loyalty APIs](../API_DOMAIN_CONTRACTS/travel-lifecycle.md) for role gates, token hashing/redemption, pricing rules and loyalty account access.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
