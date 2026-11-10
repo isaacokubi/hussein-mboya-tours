@@ -245,3 +245,8 @@ Entries 394–397 are source-traced in [Stripe checkout and bank-transfer API co
 ## Super Admin maintenance operations
 
 Entries 398–406 are source-traced in [Super Admin maintenance API contracts](API_DOMAIN_CONTRACTS/superadmin-maintenance.md). The nine routes map to five controller handlers: backup listing/creation, cache clearing, backup deletion and download. The contract documents tenant-filter behavior, destructive process-wide cache deletion, filesystem/database partial-failure boundaries and the absence of a restore route. No focused tests were found for these maintenance handlers, and no backup or deletion operation was executed.
+
+
+## Super Admin audit and operational status
+
+Entries 407–409 are source-traced in [Super Admin operational status and audit APIs](API_DOMAIN_CONTRACTS/superadmin-operations.md). The audit listing's queries and aggregate counts are not tenant-filtered despite tenant resolution at the router, so access depends materially on the roles.manage permission boundary. Database/system status expose infrastructure metadata. No focused endpoint tests or live requests were run.
