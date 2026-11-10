@@ -295,3 +295,6 @@ Entries 460–490 are source-traced in [Super Admin audit, security, settings, m
 ## Super Admin backup downloads and tools
 
 Entries 491–492 are source-traced in [Super Admin operations and backups](API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md); platform backup downloads require a valid ObjectId and tenantId:null metadata and use a basename-safe file path. Entries 493–494 are source-traced in [Super Admin tools](API_DOMAIN_CONTRACTS/superadmin-tools.md); those routes use tenant resolution and system.security permission (which is granted to admin compatibility roles), and the settings handler is a static empty placeholder.
+
+
+The duplicate POST /api/superadmin/users/accounts declaration in superAdminUserRoutes (inventory 495) is shadowed by the earlier superAdminRoutes declaration, which applies superAdminOnly before invoking the same createCompanyAccount handler.
