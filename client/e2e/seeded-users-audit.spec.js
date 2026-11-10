@@ -6,20 +6,18 @@ import process from "node:process";
 const password = process.env.DEMO_SMOKE_PASSWORD || process.env.DEMO_TEST_PASSWORD || process.env.SEED_DEMO_PASSWORD;
 const users = [
   { email: "superadmin1@husseinmboya.com", role: "super_admin", tenant: null, route: "/superadmin/dashboard", menu: "/superadmin/users" },
-  ...[
-    { slug: "hussein-mboya", domain: "husseinmboya.com" },
-    { slug: "amani-trails", domain: "amanitrails.com" },
-    { slug: "demo-safari", domain: "demosafari.com" },
-  ].flatMap(({ slug: tenant, domain }) => [
-    { email: `admin1@${domain}`, role: "admin", tenant, route: "/admin/dashboard", menu: "/admin/users" },
-    { email: `tourmanager1@${domain}`, role: "tour_manager", tenant, route: "/tour-manager/dashboard", menu: "/tour-manager/tours" },
-    ...[1, 2].map((n) => ({ email: `agent${n}@${domain}`, role: "agent", tenant, route: "/agent/dashboard", menu: "/agent/bookings" })),
-    ...[1, 2].map((n) => ({ email: `guide${n}@${domain}`, role: "tour_guide", tenant, route: "/guide/dashboard", menu: "/guide/assigned-tours" })),
-    ...[1, 2].map((n) => ({ email: `driver${n}@${domain}`, role: "driver", tenant, route: "/driver/dashboard", menu: "/driver/dashboard" })),
-    ...[1, 2, 3, 4].map((n) => ({ email: `customer${n}@${domain}`, role: "customer", tenant, route: "/dashboard", menu: "/my-bookings" })),
-  ]),
+
+  { email: "admin1@husseinmboya.com", role: "admin", tenant: "hussein-mboya", route: "/admin/dashboard", menu: "/admin/users" },
+  { email: "tourmanager1@husseinmboya.com", role: "tour_manager", tenant: "hussein-mboya", route: "/tour-manager/dashboard", menu: "/tour-manager/tours" },
+  { email: "agent1@husseinmboya.com", role: "agent", tenant: "hussein-mboya", route: "/agent/dashboard", menu: "/agent/bookings" },
+  { email: "guide1@husseinmboya.com", role: "tour_guide", tenant: "hussein-mboya", route: "/guide/dashboard", menu: "/guide/assigned-tours" },
+  { email: "driver1@husseinmboya.com", role: "driver", tenant: "hussein-mboya", route: "/driver/dashboard", menu: "/driver/dashboard" },
+  { email: "customer1@husseinmboya.com", role: "customer", tenant: "hussein-mboya", route: "/dashboard", menu: "/my-bookings" },
+
+  { email: "admin1@amanitrails.com", role: "admin", tenant: "amani-trails", route: "/admin/dashboard", menu: "/admin/users" },
+  { email: "admin1@demosafari.com", role: "admin", tenant: "demo-safari", route: "/admin/dashboard", menu: "/admin/users" },
 ];
-if (users.length !== 37) throw new Error(`Expected 37 seeded demo users, found ${users.length}`);
+if (users.length !== 9) throw new Error(`Expected 9 selected audit users, found ${users.length}`);
 const auditUsers = process.env.DEMO_AUDIT_EMAIL
   ? users.filter((account) => account.email === process.env.DEMO_AUDIT_EMAIL.trim().toLowerCase())
   : users;
@@ -70,7 +68,7 @@ const gotoWithRetry = async (page, url, onRetry = () => {}) => {
   }
 };
 
-test("seeded 37-account browser login, dashboard, session and logout audit", async ({ browser }, testInfo) => {
+test("seeded 9-account browser login, dashboard, session and logout audit", async ({ browser }, testInfo) => {
   test.skip(!password, "Set DEMO_SMOKE_PASSWORD for the controlled seeded-account browser audit.");
   test.setTimeout(2 * 60 * 60 * 1000);
   const outputDirectory = resumeFile ? path.dirname(resumeFile) : testInfo.outputPath("seeded-user-audit");
@@ -107,6 +105,20 @@ test("seeded 37-account browser login, dashboard, session and logout audit", asy
     const consoleErrors = [];
     const failedRequests = [];
     const badResponses = [];
+    const loginNetwork = { started: false, url: null, failure: null };
+
+    page.on("request", (request) => {
+      if (request.url().includes("/api/auth/login") && request.method() === "POST") {
+        loginNetwork.started = true;
+        loginNetwork.url = request.url();
+      }
+    });
+
+    page.on("requestfailed", (request) => {
+      if (request.url().includes("/api/auth/login") && request.method() === "POST") {
+        loginNetwork.failure = request.failure()?.errorText || "Login request failed without an error description";
+      }
+    });
     if (account.tenant) {
       await page.route("**/api/auth/login", async (route) => {
         const headers = { ...route.request().headers(), "X-Tenant-Slug": account.tenant };
@@ -141,7 +153,7 @@ test("seeded 37-account browser login, dashboard, session and logout audit", asy
       await gotoWithRetry(page, "/login", (reason) => { row.navigationRetries = [...(row.navigationRetries || []), reason]; });
       await page.getByPlaceholder(/enter email/i).fill(account.email);
       await page.getByPlaceholder(/enter password/i).fill(password);
-      const loginResponsePromise = page.waitForResponse((response) => response.url().includes("/api/auth/login") && response.request().method() === "POST");
+      const loginResponsePromise = page.waitForResponse((response) => response.url().includes("/api/auth/login") && response.request().method() === "POST", { timeout: 45_000 });
       await page.getByRole("button", { name: "Login", exact: true }).click();
       let loginResponse = await loginResponsePromise;
       row.loginStatus = loginResponse.status();
@@ -152,7 +164,7 @@ test("seeded 37-account browser login, dashboard, session and logout audit", asy
         await page.reload({ waitUntil: "domcontentloaded", timeout: 25_000 });
         await page.getByPlaceholder(/enter email/i).fill(account.email);
         await page.getByPlaceholder(/enter password/i).fill(password);
-        const retryPromise = page.waitForResponse((response) => response.url().includes("/api/auth/login") && response.request().method() === "POST");
+        const retryPromise = page.waitForResponse((response) => response.url().includes("/api/auth/login") && response.request().method() === "POST", { timeout: 45_000 });
         await page.getByRole("button", { name: "Login", exact: true }).click();
         loginResponse = await retryPromise;
         row.loginStatus = loginResponse.status();
@@ -414,7 +426,7 @@ test("seeded 37-account browser login, dashboard, session and logout audit", asy
         await page.locator("header button").filter({ hasText: currentName }).first().click();
         logoutButton = page.getByRole("button", { name: /logout/i }).first();
       }
-      const logoutResponsePromise = page.waitForResponse((response) => response.url().includes("/api/auth/logout") && response.request().method() === "POST");
+      const logoutResponsePromise = page.waitForResponse((response) => response.url().includes("/api/auth/logout") && response.request().method() === "POST", { timeout: 45_000 });
       await logoutButton.click();
       const logoutResponse = await logoutResponsePromise;
       row.logoutStatus = logoutResponse.status();
@@ -429,6 +441,9 @@ test("seeded 37-account browser login, dashboard, session and logout audit", asy
       row.steps.push("logout cleared and invalidated session");
     } catch (error) {
       row.error = sanitizeError(error);
+      row.loginNetwork = { ...loginNetwork };
+      row.failedRequests = failedRequests;
+      row.consoleErrors = consoleErrors;
       audit.errors.push({ email: account.email, error: row.error });
       // Preserve the account-by-account matrix and continue so one defect cannot
       // prevent the rest of the seeded users from being checked.

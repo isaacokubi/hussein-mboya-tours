@@ -1,0 +1,12 @@
+# Privacy request API contracts
+
+## Entries 362–365
+
+**Status: SOURCE-TRACED.** Router `server/routes/privacyRoutes.js` resolves tenant. Public create is unauthenticated and limited to 20 requests/15 minutes per IP. Admin listing/summary require JWT + `finance.view`; update requires JWT + `finance.manage`. Controllers are `privacyController.js` and `privacyComplianceController.js`; model `PrivacyRequest` applies tenant plugin, status/type enums, generated number and a default 30-day due date.
+
+- `POST /api/privacy/requests`: public body requires supported `type` (`access`, `correction`, `deletion`, `portability`, `objection`, `restriction`) and trimmed requesterName length >=2. Optional `customer` must be valid ObjectId and an existing tenant Customer; optional email lowercased/trimmed, phone trimmed. Creates `received` request and returns 201 `{success:true,data:{requestNumber,status,receivedAt,dueAt}}`. No identity verification or requester email/phone requirement is enforced by this endpoint. No email/notification is sent here.
+- `GET /api/privacy/admin/requests`: `finance.view`; optional exact `status` query; tenant-scoped, populated customer/assignee, due-date then newest sorting, limit 500. Returns `{success:true,data}`.
+- `GET /api/privacy/admin/summary`: `finance.view`; no request fields. Tenant-scoped parallel counts total/open/overdue/due within seven days plus by-type aggregation; returns tenantId and generatedAt with metrics.
+- `PATCH /api/privacy/admin/requests/:id`: `finance.manage`; path ID validated (400), missing tenant record 404. Body supports status, assignedTo, resolutionNotes. Status enum enforced; allowed transitions received→identity_verification/in_progress/rejected/cancelled; identity_verification→in_progress/rejected/cancelled; in_progress→completed/rejected/cancelled; terminal statuses cannot transition (409). Assignee must be tenant User (400 invalid ID/404 missing). Resolution notes trim. Returns updated record; model save hook stamps completedAt only when status becomes completed through document save, but this handler uses `findOneAndUpdate`, so the pre-save hook does not run; completedAt may remain unset. This endpoint records workflow status/notes; it does not itself execute data export/deletion/correction or verify requester identity.
+
+Errors not handled locally go to central middleware. The “due soon”/overdue summary tracks operational request records and does not prove statutory compliance. No live personal-data request was created or processed.

@@ -1,0 +1,84 @@
+# Client API module explanation index
+
+Each page includes the actual module source, its exports, detected HTTP method/path calls, response-unwrapping and error-propagation notes, and static caller references. The backend remains authoritative for route authorization, validation and complete response contracts.
+
+
+| Client source | Explanation |
+|---|---|
+| [`client/src/api/accommodationInventoryApi.js`](../../../../client/src/api/accommodationInventoryApi.js) | [accommodationInventoryApi](accommodationInventoryApi.md) |
+| [`client/src/api/accountingApi.js`](../../../../client/src/api/accountingApi.js) | [accountingApi](accountingApi.md) |
+| [`client/src/api/adminAIApi.js`](../../../../client/src/api/adminAIApi.js) | [adminAIApi](adminAIApi.md) |
+| [`client/src/api/adminAgentApi.js`](../../../../client/src/api/adminAgentApi.js) | [adminAgentApi](adminAgentApi.md) |
+| [`client/src/api/adminApi.js`](../../../../client/src/api/adminApi.js) | [adminApi](adminApi.md) |
+| [`client/src/api/adminBookingApi.js`](../../../../client/src/api/adminBookingApi.js) | [adminBookingApi](adminBookingApi.md) |
+| [`client/src/api/adminDestinationApi.js`](../../../../client/src/api/adminDestinationApi.js) | [adminDestinationApi](adminDestinationApi.md) |
+| [`client/src/api/adminExperienceApi.js`](../../../../client/src/api/adminExperienceApi.js) | [adminExperienceApi](adminExperienceApi.md) |
+| [`client/src/api/adminGalleryApi.js`](../../../../client/src/api/adminGalleryApi.js) | [adminGalleryApi](adminGalleryApi.md) |
+| [`client/src/api/adminHeroApi.js`](../../../../client/src/api/adminHeroApi.js) | [adminHeroApi](adminHeroApi.md) |
+| [`client/src/api/adminReportApi.js`](../../../../client/src/api/adminReportApi.js) | [adminReportApi](adminReportApi.md) |
+| [`client/src/api/adminReviewApi.js`](../../../../client/src/api/adminReviewApi.js) | [adminReviewApi](adminReviewApi.md) |
+| [`client/src/api/adminTourApi.js`](../../../../client/src/api/adminTourApi.js) | [adminTourApi](adminTourApi.md) |
+| [`client/src/api/adminUserApi.js`](../../../../client/src/api/adminUserApi.js) | [adminUserApi](adminUserApi.md) |
+| [`client/src/api/admin/adminPaymentApi.js`](../../../../client/src/api/admin/adminPaymentApi.js) | [admin_adminPaymentApi](admin_adminPaymentApi.md) |
+| [`client/src/api/admin/adminRoleApi.js`](../../../../client/src/api/admin/adminRoleApi.js) | [admin_adminRoleApi](admin_adminRoleApi.md) |
+| [`client/src/api/admin/systemHealthApi.js`](../../../../client/src/api/admin/systemHealthApi.js) | [admin_systemHealthApi](admin_systemHealthApi.md) |
+| [`client/src/api/agentApi.js`](../../../../client/src/api/agentApi.js) | [agentApi](agentApi.md) |
+| [`client/src/api/agentBookingApi.js`](../../../../client/src/api/agentBookingApi.js) | [agentBookingApi](agentBookingApi.md) |
+| [`client/src/api/aiApi.js`](../../../../client/src/api/aiApi.js) | [aiApi](aiApi.md) |
+| [`client/src/api/airportTransferApi.js`](../../../../client/src/api/airportTransferApi.js) | [airportTransferApi](airportTransferApi.md) |
+| [`client/src/api/analyticsApi.js`](../../../../client/src/api/analyticsApi.js) | [analyticsApi](analyticsApi.md) |
+| [`client/src/api/apiUrls.js`](../../../../client/src/api/apiUrls.js) | [apiUrls](apiUrls.md) |
+| [`client/src/api/auditApi.js`](../../../../client/src/api/auditApi.js) | [auditApi](auditApi.md) |
+| [`client/src/api/axios.js`](../../../../client/src/api/axios.js) | [axios](axios.md) |
+| [`client/src/api/bookingApi.js`](../../../../client/src/api/bookingApi.js) | [bookingApi](bookingApi.md) |
+| [`client/src/api/categoryApi.js`](../../../../client/src/api/categoryApi.js) | [categoryApi](categoryApi.md) |
+| [`client/src/api/checkoutPaymentsApi.js`](../../../../client/src/api/checkoutPaymentsApi.js) | [checkoutPaymentsApi](checkoutPaymentsApi.md) |
+| [`client/src/api/commissionApi.js`](../../../../client/src/api/commissionApi.js) | [commissionApi](commissionApi.md) |
+| [`client/src/api/complianceApi.js`](../../../../client/src/api/complianceApi.js) | [complianceApi](complianceApi.md) |
+| [`client/src/api/couponApi.js`](../../../../client/src/api/couponApi.js) | [couponApi](couponApi.md) |
+| [`client/src/api/crmApi.js`](../../../../client/src/api/crmApi.js) | [crmApi](crmApi.md) |
+| [`client/src/api/customTourApi.js`](../../../../client/src/api/customTourApi.js) | [customTourApi](customTourApi.md) |
+| [`client/src/api/customerApi.js`](../../../../client/src/api/customerApi.js) | [customerApi](customerApi.md) |
+| [`client/src/api/destinationApi.js`](../../../../client/src/api/destinationApi.js) | [destinationApi](destinationApi.md) |
+| [`client/src/api/driverApi.js`](../../../../client/src/api/driverApi.js) | [driverApi](driverApi.md) |
+| [`client/src/api/financeApi.js`](../../../../client/src/api/financeApi.js) | [financeApi](financeApi.md) |
+| [`client/src/api/financeComplianceApi.js`](../../../../client/src/api/financeComplianceApi.js) | [financeComplianceApi](financeComplianceApi.md) |
+| [`client/src/api/financeLifecycleApi.js`](../../../../client/src/api/financeLifecycleApi.js) | [financeLifecycleApi](financeLifecycleApi.md) |
+| [`client/src/api/galleryApi.js`](../../../../client/src/api/galleryApi.js) | [galleryApi](galleryApi.md) |
+| [`client/src/api/guideApi.js`](../../../../client/src/api/guideApi.js) | [guideApi](guideApi.md) |
+| [`client/src/api/heroApi.js`](../../../../client/src/api/heroApi.js) | [heroApi](heroApi.md) |
+| [`client/src/api/hospitalityOperationsApi.js`](../../../../client/src/api/hospitalityOperationsApi.js) | [hospitalityOperationsApi](hospitalityOperationsApi.md) |
+| [`client/src/api/hospitalityPaymentApi.js`](../../../../client/src/api/hospitalityPaymentApi.js) | [hospitalityPaymentApi](hospitalityPaymentApi.md) |
+| [`client/src/api/hotelApi.js`](../../../../client/src/api/hotelApi.js) | [hotelApi](hotelApi.md) |
+| [`client/src/api/integrationApi.js`](../../../../client/src/api/integrationApi.js) | [integrationApi](integrationApi.md) |
+| [`client/src/admin/rolesApi.js`](../../../../client/src/admin/rolesApi.js) | [legacy-admin-rolesApi](legacy-admin-rolesApi.md) |
+| [`client/src/api/mpesaApi.js`](../../../../client/src/api/mpesaApi.js) | [mpesaApi](mpesaApi.md) |
+| [`client/src/api/notificationApi.js`](../../../../client/src/api/notificationApi.js) | [notificationApi](notificationApi.md) |
+| [`client/src/api/operationsApi.js`](../../../../client/src/api/operationsApi.js) | [operationsApi](operationsApi.md) |
+| [`client/src/api/operationsModuleApi.js`](../../../../client/src/api/operationsModuleApi.js) | [operationsModuleApi](operationsModuleApi.md) |
+| [`client/src/api/packageApi.js`](../../../../client/src/api/packageApi.js) | [packageApi](packageApi.md) |
+| [`client/src/api/passwordResetApi.js`](../../../../client/src/api/passwordResetApi.js) | [passwordResetApi](passwordResetApi.md) |
+| [`client/src/api/paymentGatewayApi.js`](../../../../client/src/api/paymentGatewayApi.js) | [paymentGatewayApi](paymentGatewayApi.md) |
+| [`client/src/api/platformBillingApi.js`](../../../../client/src/api/platformBillingApi.js) | [platformBillingApi](platformBillingApi.md) |
+| [`client/src/api/privacyApi.js`](../../../../client/src/api/privacyApi.js) | [privacyApi](privacyApi.md) |
+| [`client/src/api/publicPackageApi.js`](../../../../client/src/api/publicPackageApi.js) | [publicPackageApi](publicPackageApi.md) |
+| [`client/src/api/quotationApi.js`](../../../../client/src/api/quotationApi.js) | [quotationApi](quotationApi.md) |
+| [`client/src/api/reviewApi.js`](../../../../client/src/api/reviewApi.js) | [reviewApi](reviewApi.md) |
+| [`client/src/api/searchApi.js`](../../../../client/src/api/searchApi.js) | [searchApi](searchApi.md) |
+| [`client/src/api/settingsApi.js`](../../../../client/src/api/settingsApi.js) | [settingsApi](settingsApi.md) |
+| [`client/src/api/staffApi.js`](../../../../client/src/api/staffApi.js) | [staffApi](staffApi.md) |
+| [`client/src/api/superAdminApi.js`](../../../../client/src/api/superAdminApi.js) | [superAdminApi](superAdminApi.md) |
+| [`client/src/api/superAdminTenantsApi.js`](../../../../client/src/api/superAdminTenantsApi.js) | [superAdminTenantsApi](superAdminTenantsApi.md) |
+| [`client/src/api/superadmin/superAdminRoleApi.js`](../../../../client/src/api/superadmin/superAdminRoleApi.js) | [superadmin_superAdminRoleApi](superadmin_superAdminRoleApi.md) |
+| [`client/src/api/taxApi.js`](../../../../client/src/api/taxApi.js) | [taxApi](taxApi.md) |
+| [`client/src/api/tenantApi.js`](../../../../client/src/api/tenantApi.js) | [tenantApi](tenantApi.md) |
+| [`client/src/api/tenantBrandingApi.js`](../../../../client/src/api/tenantBrandingApi.js) | [tenantBrandingApi](tenantBrandingApi.md) |
+| [`client/src/api/tenantSubscriptionApi.js`](../../../../client/src/api/tenantSubscriptionApi.js) | [tenantSubscriptionApi](tenantSubscriptionApi.md) |
+| [`client/src/api/tourApi.js`](../../../../client/src/api/tourApi.js) | [tourApi](tourApi.md) |
+| [`client/src/api/tourAssignmentApi.js`](../../../../client/src/api/tourAssignmentApi.js) | [tourAssignmentApi](tourAssignmentApi.md) |
+| [`client/src/api/tourManagerApi.js`](../../../../client/src/api/tourManagerApi.js) | [tourManagerApi](tourManagerApi.md) |
+| [`client/src/api/travelOperationsApi.js`](../../../../client/src/api/travelOperationsApi.js) | [travelOperationsApi](travelOperationsApi.md) |
+| [`client/src/api/travelServiceRequestApi.js`](../../../../client/src/api/travelServiceRequestApi.js) | [travelServiceRequestApi](travelServiceRequestApi.md) |
+| [`client/src/api/userApi.js`](../../../../client/src/api/userApi.js) | [userApi](userApi.md) |
+| [`client/src/api/vehicleApi.js`](../../../../client/src/api/vehicleApi.js) | [vehicleApi](vehicleApi.md) |
+| [`client/src/api/wishlistApi.js`](../../../../client/src/api/wishlistApi.js) | [wishlistApi](wishlistApi.md) |

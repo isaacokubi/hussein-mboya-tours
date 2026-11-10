@@ -1,0 +1,12 @@
+# Payment link API contracts
+
+## Entries 352, 354, 356 and 358
+
+**Status: SOURCE-TRACED.** Router: `server/routes/paymentLinkRoutes.js`; controller: `server/controllers/paymentLinkController.js`; model: `server/models/PaymentLink.js`. Public lookup is mounted before the protected router chain. Management routes require tenant resolution, JWT and `finance.manage` permission.
+
+- `GET /api/payment-links/public/:token`: no JWT/body/query. Token is a bearer capability. Looks up exact token and populates limited booking/invoice fields; missing/empty token returns 404. It sets tenant context from the matching link, then compares link tenant to required context (the selected link tenant). If active and expired, persists status `expired`, then still returns 200 `{success:true,data}` with public subset of token, amount/currency/status/expiry, booking number/totals/status/travel date, and invoice number/totals/balance/status. No payment is collected by this read route.
+- `GET /api/payment-links`: protected finance permission; no query. Tenant-scoped list populated with booking and invoice summaries, newest first; returns `{success:true,data}`.
+- `POST /api/payment-links`: protected finance permission. Body `bookingId` required; optional amount and expiresAt. Booking must exist in tenant and not be cancelled/refunded; outstanding balance must be positive. Amount defaults to balance, rounds to cents and must be positive and no greater than the current balance. Expiry defaults to seven days and must be valid/future. Creates random 24-byte base64url token, associates optional invoice, amount and KES currency, returns 201 with full created link plus `/contact?paymentToken=<encoded token>` path. Missing booking 404; no balance/invalid amount/expiry or ineligible booking 400. No idempotency key. Multiple links can independently be created against the same balance; creation does not reserve/allocate that balance.
+- `POST /api/payment-links/:id/cancel`: protected finance permission; no body. Tenant-scoped active link only. Missing 404, nonactive state 409, otherwise sets cancelled and returns updated link.
+
+The model constrains status to active/paid/expired/cancelled and has globally unique token, tenant/booking/status/expiry indexes. The public lookup marks expiration as a side effect but does not reject expired links with an error. Settlement is handled by separate checkout flows, not this controller. No focused payment-link controller tests were identified and no payment was initiated.

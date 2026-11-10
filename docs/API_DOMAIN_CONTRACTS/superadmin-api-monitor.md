@@ -1,0 +1,7 @@
+# SuperAdmin API monitor contract
+
+`GET /api/superadmin/api-monitor` is inventory entry 177. The route is declared in both `superAdminRoutes.js` and the later `apiMonitorRoutes.js` mount. `server/routes/index.js` mounts broad `/superadmin` before `/superadmin/api-monitor`, so the broad router's declaration is the effective first handler. Both declarations use `protect` then `superAdminOnly`; this is platform-scoped SuperAdmin access, without tenant-role permissions. No path/query/body parameters.
+
+`getApiMonitor` loads system settings for service display name, reads Node process version/environment/uptime/heap usage and checks Mongoose `readyState === 1`. It constructs a fixed four-entry endpoint array (`Security`, `Dashboard`, `Tours`, `Bookings`) and labels every entry `registered` when Mongo is connected or `degraded` otherwise; responseTime is always `"n/a"`. Health score is 100 or 25. It does not send requests to those endpoints, measure latency, inspect provider status, or validate route reachability. Success is HTTP 200 `{success:true,data:{status,service,healthScore,database:{status},response,server:{nodeVersion,environment,uptime,memory:{used,total}},endpoints,timestamp}}`.
+
+Settings/database exceptions are logged and return HTTP 500 `{success:false,message:"Unable to load API monitor status."}`. No database mutation. Client caller: `getApiMonitor` in `client/src/api/superAdminApi.js`, displayed by `client/src/pages/superadmin/SuperAdminApiMonitor.jsx`. No focused controller test found in the backend search; source-only verification.

@@ -1,0 +1,9 @@
+# Agent commission listing API contract
+
+`GET /api/agents/commission` and `/api/agent/commission` (entries 147–148) are registered by `agentRoutes.js` under both prefixes. Shared middleware is `protect` → `resolveTenant` → `agentMiddleware` → `requireApprovedAgent`; active User, canonical agent role, tenant Agent profile, and approved/active Agent are required. The `GET /commission` handler itself has no query/body parameters or branch filter.
+
+`getMyAgentCommission` resolves the Agent by authenticated user and tenant. Missing profile returns 404 `{success:false,message:"Agent profile not found."}`. It finds non-soft-deleted tenant Commission records for that Agent, populates the full Booking reference, sorts newest first, and returns 200 `{success:true,commissionRate,data:[...]}`. `commissionRate` is loaded from tenant system settings; invalid/missing values fall back to 10. This is a read-only Commission query plus settings lookup. Failures are sent to centralized error handling. It does not calculate new commission or update payment state.
+
+Commission schema has a unique booking reference and amount/rate/state fields, virtual net/isPaid/isPending values, and save hooks that bound refundedAmount to amount and derive adjustment fields. The commission creation service is separate: it checks tenant identity, returns an existing record for the booking, calculates amount from tenant default rate, synchronizes legacy Agent.commissionRate, then creates a pending Commission; a unique index race is resolved by rereading. A passed session is not supported by this service. This list endpoint does not invoke that creator.
+
+Frontend caller: `fetchAgentCommission` in `client/src/api/agentApi.js`, rendered through agent commission navigation. No dedicated request-level test was found. Source-only verification; not live tested.

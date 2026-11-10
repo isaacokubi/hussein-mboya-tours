@@ -1,226 +1,114 @@
-# Global Tours
+# Hussein Mboya Tours
 
-## Tenant payment configuration center
+A React and Express application for publishing tours and destinations, accepting reservations, and coordinating travel operations. The checked-in code has also grown into a tenant-aware platform with agent, staff, hospitality, finance, compliance, and platform-administration modules. The breadth of code should not be taken as proof that every module is production-enabled or externally certified; see the status notes below and the detailed readiness evidence in `docs/`.
 
-Tenant Admins open **Admin Control Center → Finance & Insight → M-Pesa Configuration** for tenant-specific M-Pesa, bank transfer, Stripe card, cash, and PayPal settings. Bank and cash payments remain pending until authorized staff confirm receipt in Payment Management. Stripe credentials remain deployment-managed. PayPal has server-side order, capture, and verified-webhook handling, but checkout remains gated by currency support, OAuth validation, and a completed Sandbox lifecycle before Production. See [Tenant Payment Configuration](docs/TENANT_PAYMENT_CONFIGURATION.md) for current capabilities and verification limits.
+## Problem and users
 
-The 2026-10-29 payment and callback-host changes passed focused tests (7/7 test files), the backend suite (295 tests: 290 passed, 0 failed, 5 skipped), `npm run check:all`, frontend lint, frontend production build, and `git diff --check`. The five skips are opt-in database/integration cases. Provider credentials were not available for live Sandbox certification; automated tests do not establish external Daraja, PayPal, or Stripe connectivity or a completed payment lifecycle.
+Tour operators need a shared place to present travel products, collect customer booking details, coordinate staff and transport, and follow payment status. This application implements public discovery and booking alongside role-oriented operational dashboards. Its intended users include travelers, tenant administrators, tour managers, agents, guides, drivers, and platform super administrators.
 
-The 2026-10-29 follow-up audit found the public checkout settings currently disable every payment method for all three tenants. This is separate from entering credentials: the intended tenant gateway must also be enabled with a complete credential slot and callback configuration. The same follow-up hardens tenant ownership and M-Pesa amount/phone validation, prevents zero traveler totals from displaying as paid, keeps checkout's traveler count editable, and moves mobile dashboard logout controls beside their menus. Current live evidence and the bounded payment-test scope are in [M-Pesa readiness](docs/MPESA_DARAJA_SANDBOX_READINESS.md).
+## Capabilities present in the code
 
-## 2026-10-29 demo credential and readiness update
+- Public tour, destination, hotel, and airport-transfer discovery.
+- Customer accounts, booking requests, booking management, and custom-tour requests.
+- Staff and agent workflows, tour assignments, availability, and operational dashboards.
+- Mongoose models with tenant scoping and tenant-aware request handling.
+- M-Pesa STK Push initiation and callback/status processing; Stripe and PayPal integration code is also present.
+- Hospitality reservations, payment, finance/accounting, reporting, compliance, and platform administration modules.
+- Optional AI, email, messaging, file/media, and real-time capabilities when configured.
 
-The configured backend connection was verified against Atlas `husseindb` on the expected cluster. A compressed local database archive was created before the credential update; its ignored path is `server/backups/husseindb-before-demo-password-reset-2026-10-29.archive.gz`.
+These are implementation capabilities, not a claim that all services have credentials, have passed external certification, or are active for every tenant. See [payments readiness](docs/PAYMENTS_AND_MPESA.md) and [implementation status](docs/PROJECT_OVERVIEW.md).
 
-All 37 existing demo accounts were reset through the guarded password-reset script. The application’s bcrypt verifier accepted the temporary password for all 37 and rejected an incorrect password for all 37. Account roles, active status, the 36 tenant memberships, and the tenantless platform superadmin scope were checked. Treat this shared credential as temporary and issue unique credentials before production onboarding. Do not place the password in source control or documentation.
+## Technology
 
-The local application API verified all 37 accounts: correct logins **37/37**, incorrect-password rejections **37/37**, authenticated `/api/auth/me` checks **37/37**, roles and tenant scopes, seven representative role endpoints, and customer denial on a tenant-admin route. This used the actual Express API connected to `husseindb`, with separate synthetic test-client IPs; it did not call the production API.
+| Area | Implementation |
+| --- | --- |
+| Browser application | React 19, React Router, Vite, TanStack Query |
+| API | Node.js ES modules, Express 5 |
+| Persistence | MongoDB via Mongoose 8 |
+| Authentication | JWT, bcryptjs, HTTP-only cookie support and role/permission middleware |
+| Payments | Daraja/M-Pesa, Stripe and PayPal code paths |
+| Hosting configuration | Render API/static service in `render.yaml`; Vercel frontend build/rewrites in `vercel.json` |
 
-After synchronization to `origin/main` (`a1fe981`), the relevant backend suite passed **199, failed 0, and skipped 5**; five opt-in integration cases were exercised separately. The health test passed 4/4 when isolated. A later expanded first-tenant/Copilot integration run reached the authorized isolated Atlas test database but stopped when fixture creation hit the actual Atlas limit: 503 collections in use against a 500 limit. The test fixture cleaned its own namespace; the post-test read-only count returned to 453 collections. Focused post-sync M-Pesa/payment/Copilot tests passed, including the new Copilot authorization/query-scope contract. `npm run check:all`, client lint/build, and `git diff --check` passed.
+## Architecture at a glance
 
-The local development `.env` selects Daraja sandbox; this does not establish Render's runtime environment. Current inspection found all three tenant M-Pesa gateway records disabled and without tenant credentials or callback URLs. The local callback points to the production Render host, so no KES 1.00 STK Push was attempted. The user-supplied sandbox phone was included only in a mocked sandbox request-format test; Daraja authorization of that phone remains unverified. No provider callback or payment was observed. Production public-catalogue browser smoke passed, but staging and authenticated role/browser acceptance were not run because no staging URL or isolated production accounts are configured. Dedicated eTIMS/KRA tests and actions were excluded.
+```mermaid
+flowchart LR
+  Browser[React SPA] -->|HTTP JSON / cookie or bearer| API[Express API]
+  Browser <-->|Socket.IO| API
+  API --> Tenant[Tenant resolution and access controls]
+  Tenant --> Routes[Express route modules]
+  Routes --> Controllers[Controllers and services]
+  Controllers --> Models[Mongoose models]
+  Models --> Mongo[(MongoDB)]
+  API --> Providers[M-Pesa / Stripe / PayPal / optional services]
+  Providers -->|webhooks or callbacks| API
+```
 
-The account verifier, callback payload helper/tests, payment replay assertion, and local API verification command are recorded in [the 2026-10-29 update record](docs/READINESS_UPDATE_2026-10-29.md). The platform remains **NOT READY for production** until sandbox tenant configuration, a staging callback/site, a genuine sandbox payment/callback lifecycle, staging acceptance, and deployment evidence are available.
+## Quick start
 
-The last read-only production checks showed website/API health and public catalogue access; production authenticated role checks and a genuine sandbox payment remain unverified. The development `.env` principal was confirmed as `readWriteAnyDatabase` on `admin`. Render's production URI is an external `sync:false` setting with no available Render/Atlas administrator access, so its principal and privileges remain BLOCKED. Local `main` is synchronized to `origin/main` at `a1fe981`; readiness changes remain uncommitted and the M-Pesa callback fix is not deployed.
+Prerequisites: Node.js compatible with the installed dependencies, npm, and a MongoDB instance. The server loads `server/.env` (then root `.env`) and requires `MONGODB_URI` and `JWT_SECRET`.
 
-### Tenant Daraja configuration (2026-10-29)
+```bash
+cd server
+npm ci
+cp .env.example .env
+# Set MONGODB_URI and JWT_SECRET in server/.env; configure exact CLIENT_ORIGINS.
+npm run dev
+```
 
-Platform Admins can open **Dashboard → Companies / Tenants → select a tenant → M-Pesa settings**. Tenant Admins can open **Governance → Platform Controls → Payment gateways**. Enter the environment-specific Consumer Key, Consumer Secret, shortcode, passkey, and callback URL, then save and use **Validate configuration**. Validation checks decryptability and requests only a Daraja OAuth token using the selected environment; it never initiates a payment. A successful OAuth result confirms credential connectivity only, not shortcode provisioning, callback delivery, STK acceptance, or production readiness.
+In another terminal:
 
-Sandbox and production credentials, shortcodes, and callback URLs are stored separately. Existing records remain readable as the single environment recorded on the legacy configuration until that environment is explicitly changed; no database migration is required. Render currently has two API services on the same repository and production branch, but neither service is configured or identified as a dedicated Sandbox deployment. The shared callback route is supported: callback attempts are tenant-resolved and pin their environment before Daraja verification. Configure `MPESA_PRODUCTION_CALLBACK_URL` to the canonical production callback route; set `MPESA_SANDBOX_CALLBACK_URL` only when a distinct, intended Sandbox API callback route is deployed. `PAYMENT_CREDENTIAL_ENCRYPTION_KEY` must be set in Render; Daraja provider credentials should be entered by authorized admins in tenant settings. See [M-Pesa readiness](docs/MPESA_DARAJA_SANDBOX_READINESS.md) for deployment variables, test scope, and launch gates.
+```bash
+cd client
+npm ci
+# Set VITE_API_URL to the API origin/base expected by client/src/api/apiUrls.js.
+npm run dev
+```
 
-The 2026-10-29 tenant M-Pesa and callback hardening changes passed the focused M-Pesa tests (4 test files), the full backend suite (267 passed, 0 failed, 5 skipped), `npm run check:all`, client lint, and client production build. The full test run skipped five opt-in MongoDB integration tests. No genuine Daraja payment or production connectivity test was run. See the readiness update for exact results and the other completed pending audit/Copilot work.
+More complete setup and variable references: [installation](docs/INSTALLATION.md), [environment variables](docs/ENVIRONMENT_VARIABLES.md).
 
-The 2026-10-29 verification rerun passed `npm run check:all`, client lint/build, and `git diff --check`. The default backend suite reported 63 passing and one unresolved file-level failure in `healthReadiness.test.js`; two isolated reruns failed without subtest detail. See the readiness update for the distinction between this worker failure and the prior Atlas collection-quota failure. The project remains **NOT READY** pending external database-role evidence, a genuine sandbox lifecycle, and approved authenticated acceptance evidence.
+## Development commands
 
-Follow-up diagnosis found that sandbox networking denied the readiness test's loopback listener with `EPERM`; the child server failed to bind for the same reason. With loopback permitted, `healthReadiness.test.js` passed **3, skipped 1** (its isolated Mongo-backed case was not configured), and the full backend suite passed **257, failed 0, skipped 5**. `npm run check:all` passed. This resolves the test-worker failure without code changes; the Atlas quota limitation for expanded integration tests and all external production acceptance gates remain unresolved. See the readiness update for the exact commands and test distinctions.
+Run from the relevant directory:
 
-Kenya-focused, multi-tenant tours & travel SaaS for tour operators, with tenant isolation, bookings, payments, finance/accounting, compliance, hospitality/operations, website integrations, RBAC and production safeguards.
+| Command | Purpose |
+| --- | --- |
+| `cd server && npm test` | Node built-in test runner for `server/tests/*.js` |
+| `cd server && npm run check:all` | Syntax/contract/readiness checks, including a production readiness script |
+| `cd client && npm run lint` | ESLint over client files |
+| `cd client && npm run build` | Vite production build |
+| `cd client && npm run test:e2e` | Playwright end-to-end tests |
 
-## Latest targeted first-tenant acceptance — 2026-10-10
+These commands can depend on environment variables, a database, or external services. Consult [testing](docs/TESTING.md) before treating a result as a live integration test.
 
-**PASS — 1 test passed, 0 failed, 0 skipped** using `cd server && node --env-file=.env --test tests/firstTenantAcceptance.integration.test.js` (about 111.5 seconds). The flow covered disposable tenant provisioning, tenant-admin/customer access, public catalogue and booking paths, tenant-scoped data, and cross-tenant denial. The login regression correctly asserts Tenant A credentials are rejected by Tenant B login with HTTP 401; the separate authenticated `/api/auth/me` test verifies a Tenant A JWT cannot select Tenant B and expects HTTP 404. The test diagnostic confirms no provider payment was initiated.
+## Screenshots
 
-This is targeted disposable-database acceptance evidence, not a full-suite rerun or live production certification. M-Pesa callback/replay/failure, KRA/eTIMS submissions, current deployed SHA, browser/mobile acceptance, and backup/restore remain external verification gates.
+Screenshots are not included in this repository snapshot. Add current, non-sensitive screenshots here when available.
 
-## Latest verified repository status — 2026-10-09
+## Deployment
 
-The comprehensive three-tenant demo dataset was reconciled on 2026-10-09. Source-level and live checks below were run for this revision; full demo API and browser acceptance still have the limitations noted below. Production/provider certification remains a separate deployment-evidence gate.
+`render.yaml` defines a Render Node web service rooted at `server/` and a Render static frontend rooted at `client/`. `vercel.json` separately defines the Vite frontend build and SPA fallback. Configuration in a manifest does not prove that a service is currently deployed or healthy. See [deployment](docs/DEPLOYMENT.md) and repository readiness evidence.
 
-### Latest verified checks
+## Documentation
 
-| Area | Result |
-|---|---|
-| Backend full suite | **229 passed, 0 failed, 5 skipped** (verified 2026-10-09 after the financial audit changes) |
-| Seed syntax checks (`npm run check:seeds`) | **PASS** |
-| Frontend lint | **PASS** |
-| Frontend production build | **PASS** |
-| Live health and CORS preflight | **PASS** |
-| Live destination and tour APIs | **PASS** — 12 records for each of the three tenants |
-| Live login/API checks | **PASS** — global superadmin and tenant admins authenticated; cross-tenant tenant-ID requests were denied |
-| Complete 37-account API/browser audit | **INCOMPLETE** — API smoke stopped on a transient request failure; public browser smoke reported failed requests |
-| Global superadmin browser audit | **PASS** — tenantless session and stale tenant selection cleared |
-| Frontend lint/build | **PASS** |
+Start at **[docs/INDEX.md](docs/INDEX.md)**. It links the architecture, source guides, all 629 mounted API inventory entries, database models, security/payments, workflows, deployment and interview material. Thirty-three alias-inclusive API entries now have source-traced contracts; the remaining 596 are explicitly partial. The source review registry lists 16 scoped critical-module reviews, not exhaustive file reviews.
 
-### Test and remediation summary — 2026-10-03 through 2026-10-09
+Check documentation coverage after source or route changes:
 
-The following summarizes evidence recorded during the last seven days. Detailed chronology and limitations are in [Test Evidence Register](docs/TEST_EVIDENCE.md).
+```bash
+node scripts/check-documentation-coverage.js
+```
 
-| Date / change | Test evidence | Result / boundary |
-|---|---|---|
-| 2026-10-04 — staging/security verification | Backend suite, seed checks, client lint/build, live health/CORS and role-login smoke were reported; historical suite count was 182 passed. | Automated and selected smoke checks passed. A full 28-account live staging login/RBAC audit was **not completed** because the documented Render/Vercel endpoints were inaccessible at that time. |
-| 2026-10-09 — catalogue uniqueness and tenant isolation | Catalogue repair regression tests; CI server checks, client lint/build, live tenant-isolation regression and three-phase release gate. | Reported PASS, including catalogue repair tests 4/4 and release gate 3/3. Live deployment/browser verification remains separate and must be checked against the deployed SHA. |
-| 2026-10-09 — financial seed and integrity audit | `npm test`; `npm run check:seeds`; `npm run seed:financial-dashboard`; `npm run audit:tenant-dashboards`. | **229 passed, 0 failed, 5 skipped**; seed syntax checks passed; read-only Atlas audit reported **PASS, 0 issues** across all three tenants. Five integration tests were skipped and are not counted as passes. |
-| 2026-10-09 — tenant-specific data and financial reconciliation | Ownership/reference checks, booking/payment and invoice/payment reconciliation, balanced journals, revenue/refund posting rules and seed consistency. | Audit passed for Hussein Mboya Tours, Amani Trails Safaris and Demo Safari Adventures. Each has 8 tours and 12 destinations; matching counts do not alone prove unique content, so catalogue uniqueness is tracked separately. |
-| 2026-10-09 — GitHub Actions | PR #196 CI and release-gate results. | Server production checks, live tenant-isolation regression, client lint/build, tour lifecycle runtime integration, and all three release-gate phases reported successful. |
+The audit reports indexed, structural, deep-linked and fully reviewed source counts separately; it also verifies model pages, endpoint guide entries, local links and selected secret patterns. A passing structural audit does not mean all endpoint contracts or all source behavior are deeply explained.
 
-Recent merged remediation includes [PR #187](https://github.com/isaacokubi/hussein-mboya-tours/pull/187) tenant-scoped dashboard revenue/customer counts; [PR #188](https://github.com/isaacokubi/hussein-mboya-tours/pull/188) tenant-aware cache/session isolation; [PR #189](https://github.com/isaacokubi/hussein-mboya-tours/pull/189), [PR #191](https://github.com/isaacokubi/hussein-mboya-tours/pull/191), and [PR #192](https://github.com/isaacokubi/hussein-mboya-tours/pull/192) tenant-unique catalogues and guarded repair; [PR #193](https://github.com/isaacokubi/hussein-mboya-tours/pull/193) read-only tenant dashboard audit; [PR #194](https://github.com/isaacokubi/hussein-mboya-tours/pull/194) dashboard tenant-context correction; [PR #195](https://github.com/isaacokubi/hussein-mboya-tours/pull/195) financial seed payment synchronization; and [PR #196](https://github.com/isaacokubi/hussein-mboya-tours/pull/196) financial integrity audit and seed reconciliation.
+## Limitations and status
 
-**Important limits:** demo bookings, payments, refunds and financial totals are synthetic test fixtures, not real revenue or evidence of live M-Pesa transactions. Live KRA/eTIMS submissions, payment-provider callbacks/idempotency, full 37-account browser acceptance, current production deployment SHA, backup/restore and production certification are not proven by these automated tests. Do not infer them as PASS.
+- This is a broad, actively evolving codebase. The route and module surface is large; inspect authorization and tenant scope for the specific operation you discuss.
+- Presence of a payment provider adapter does not establish a successful end-to-end provider payment. The repository's readiness notes document missing or unverified credential, callback, sandbox, and production evidence.
+- `render.yaml` and `vercel.json` are deployment definitions, not deployment evidence.
+- Automated tests cover selected behavior; they do not establish production security, financial reconciliation, or provider certification.
+- Some optional modules require external credentials and may be unavailable without them.
 
-### Demo account architecture
+## Maintainer
 
-The authoritative demo login set is `TEST_LOGIN_EMAILS` in `server/seeds/completeTestDemoSeed.js`: one global platform superadmin and 12 tenant users for each of `hussein-mboya`, `amani-trails`, and `demo-safari` (37 total). The database was reseeded and validated on 2026-10-09 with 3 tenants and 37 active users. The 2026-09-28, 28-user seed verification below is historical and does not describe the current account architecture.
-
-Demo credentials use the private `SEED_DEMO_PASSWORD` environment variable; never commit its value to Git. All seeded payment records are synthetic internal fixtures. No live M-Pesa transaction is initiated by the seed.
-
-### Controlled demo seeding
-
-The authoritative seed is `server/seeds/completeTestDemoSeed.js`; the legacy `seed:demo` command delegates to it. Atlas use requires explicit `ALLOW_ATLAS_DEMO_SEED=YES` and `CONFIRM_TEST_SEED=YES`, and writes only under the three exact demo tenant identities after writing a preflight count report. The seed refuses production mode and unsafe fallback configuration. **Do not run it against an unknown or real production database.**
-
-See [Demo Data & Seed Runbook](docs/DEMO_SEEDING.md) for the exact safety gates and verification procedure.
-
-## Staging Verification Status
-
-**Staging/demo verification has been completed for the latest controlled dataset.** The staging database separation, health/readiness, frontend-to-staging API connectivity, CORS, SuperAdmin bootstrap/login, disposable tenant creation, tenant identity/settings, initial empty tour retrieval, access isolation, and endpoint/subscription discovery gates are recorded as passed or observed as expected. The next gate is to create and verify staging tour, customer, and booking records and complete cross-tenant isolation checks. M-Pesa testing must wait until every data-isolation gate passes; no production endpoint or database may be used for these tests.
-
-See the [Staging Test Record](docs/TEST_EVIDENCE.md#2026-09-26--staging-verification-record) for environment boundaries, evidence, historical automated results, pending checks, and the exact staging-only test order. The [Test Evidence Register](docs/TEST_EVIDENCE.md) remains the chronological QA record.
-
-## Current status
-
-**First-tenant decision: TARGETED DATABASE-BACKED ACCEPTANCE PASSED ON 2026-10-10; LIVE PROVIDER/DEPLOYMENT EVIDENCE STILL REQUIRED.** The dedicated disposable-database flow passed 1/1 with no failures. The older 2026-09-25 endpoint probe and its missing health-body/CORS/deployed-SHA evidence are historical and do not describe this acceptance run. Production Atlas state, payment-provider callbacks, eTIMS, backup/restore, current deployment SHA, and complete browser/mobile acceptance remain outstanding.
-
-See [First Tenant Production Acceptance](docs/FIRST_TENANT_ACCEPTANCE.md) for the production environment matrix, onboarding procedure and external actions.
-
-**Historical production-audit source snapshot:** `0b7949865e67a4fa5dd45076a120f9d7f69f1e39`
-**Verification date:** 2026-10-09 (current demo-seed reconciliation; historical production-audit source snapshot above)
-**Repository branch:** `main`
-
-The latest full local verification was completed after the production-audit remediation. Code-level checks and local release gates passed. Production launch certification is **not yet complete** because several acceptance gates require evidence from the actual deployment/provider environment.
-
-### Earlier local release-audit results (historical)
-
-| Area | Result | Evidence |
-|---|---|---|
-| Server static/security/tenant/production checks | PASS | `npm run check:all` under Node 24.18.0 with `NODE_ENV=test` and CI-safe test credentials |
-| Backend automated tests | PASS with skips | `npm test`: 136 total, 131 passed, 0 failed, 5 skipped |
-| Security tests | PASS | `npm run test:security`: 2 passed, 0 failed, 0 skipped |
-| Tour-domain tests | PASS | `npm run test:tour-domain`: 1 test passed, 0 failed, 0 skipped |
-| Client lint/build | PASS | `npm run lint` and production `npm run build` with explicit HTTPS API/socket URLs |
-| Workflow YAML | PASS | Ruby Psych parsed all 7 workflow YAML files |
-| First-tenant live integration | UNVERIFIED | Expanded MongoDB 8 replica-set test is wired into CI; no supported local MongoDB service is available |
-| Production API/frontend integration | NOT VERIFIED | Render root and `/api/health` returned 200 JSON; Vercel root returned 200 HTML. Health body, CORS and deployed commit/version were not established. |
-| Production certification | NOT VERIFIED | External deployment, database, payment, backup, monitoring and compliance evidence remains required |
-
-### Intentionally skipped integration tests
-
-The five skipped cases were:
-
-- first-tenant provisioning and cross-tenant API acceptance (skipped in the 2026-10-09 full-suite run; subsequently passed as a dedicated targeted test on 2026-10-10);
-- database-connected startup and invoice-index readiness;
-- airport-transfer payment completion atomic lifecycle;
-- tour lifecycle transactional capacity reservation/release;
-- payment-completion rollback when accounting posting fails.
-
-A skipped test is not treated as a failure or as production acceptance.
-
-## Production acceptance still required
-
-### API startup and deployment health
-
-The API binds Render's `PORT` before connecting to MongoDB or running the critical invoice-index migration. `/api/health` stays reachable during startup and reports `starting` or `degraded` with the actual Mongoose connection state; it reports `healthy` only after MongoDB is connected and the required migration completes. Database-backed routes return 503 until then. A failed database connection or invoice-index migration terminates the process, and the startup migration has a bounded 60-second default (configurable up to 120 seconds).
-
-Render must provide `MONGODB_URI`, strong `JWT_SECRET`, dedicated `PAYMENT_CREDENTIAL_ENCRYPTION_KEY` and `WEBHOOK_SECRET_KEY`, HTTPS `CLIENT_URL`/`CLIENT_ORIGINS`, and the real `PLATFORM_HOST`. The MongoDB URI must explicitly name the existing `husseindb` database in its path (for Atlas, the URI path ends in `/husseindb` before query options); production startup rejects a missing database name or a different database. Atlas `mongodb+srv://` and standard `mongodb://` connection strings are supported. `ETIMS_CREDENTIAL_ENCRYPTION_KEY` is required when eTIMS is enabled. Cloudinary credentials are optional; without them the API still starts, and upload/image deletion endpoints that need Cloudinary fail closed with HTTP 503. The frontend must set `VITE_API_URL` to the public API origin followed by `/api`; Socket.IO uses explicit `VITE_SOCKET_URL` or derives the origin from that API URL. The GitHub API smoke check allows up to 120 seconds for transient startup/network readiness and still requires HTTP 200 with `success=true`, `status=healthy`, and `database=connected`.
-
-The local source deployment remains **NOT VERIFIED** until the configured GitHub Actions checks succeed against the live services. Vercel deployments must set build-time `VITE_API_URL`; `VITE_SOCKET_URL` is recommended, and `vercel.json` intentionally contains no deployment hostname.
-
-The remaining gates are runtime/provider evidence gates, not unresolved source-code fixes:
-
-- current `main` deployment SHA verification;
-- live tenant-isolation regression against the deployed current release;
-- M-Pesa sandbox callback delivery and completion;
-- duplicate M-Pesa callback/idempotency replay;
-- failed/expired M-Pesa behavior;
-- payment → booking → invoice → accounting reconciliation using completed provider data;
-- live KRA/eTIMS submission and receipt/control-number evidence;
-- full desktop/mobile browser acceptance across customer, Admin, Finance, Tour Manager, Driver and SuperAdmin flows;
-- production read-only MongoDB integrity/reconciliation scan.
-
-Sandbox STK initiation must not be represented as completed payment acceptance.
-
-## Current implementation scope
-
-The platform includes:
-
-- tenant-scoped users, roles and permissions;
-- customer, admin, agent, manager and guide workflows;
-- tours, destinations, bookings and tour lifecycle controls;
-- M-Pesa, card and bank payment architecture;
-- payment lifecycle, refunds, invoices and accounting;
-- Kenyan tax configuration and eTIMS integration architecture;
-- supplier, purchase-order, tour-cost and supplier-payable workflows;
-- profitability, finance reporting and reconciliation controls;
-- hotel/accommodation and airport-transfer foundations;
-- corporate accounts and operational workflows;
-- website booking capture and website integration APIs;
-- developer APIs and webhooks;
-- security controls, tenant isolation and CSRF/session protections;
-- monitoring, health checks and backup/restore safeguards;
-- production release-gate automation and audit documentation.
-
-## Production documentation
-
-- [Performance audit](docs/PERFORMANCE_AUDIT.md) — measured evidence, changes, results and outstanding limits.
-- [Dashboard test matrix](docs/DASHBOARD_TEST_MATRIX.md) — discovered roles, workflows and current verification outcomes.
-- [Performance testing](docs/PERFORMANCE_TESTING.md) — repeatable browser/backend commands and measurement protocol.
-
-- [System from scratch guide](docs/SYSTEM_FROM_SCRATCH_GUIDE.md) — detailed build order, file responsibilities, tenant/database design, offline behavior, payment lifecycle, testing and release acceptance.
-
-- [Production readiness](docs/PRODUCTION_READINESS.md) — current readiness matrix and release rules.
-- [Test evidence register](docs/TEST_EVIDENCE.md) — chronological evidence and explicit pending/not-verified gates.
-- [Documentation automation](scripts/update-documentation.js) — generates the current repository-state section.
-- [Documentation workflow](.github/workflows/documentation.yml) — generates a reviewable documentation snapshot artifact on pushes to `main`.
-
-## Documentation policy
-
-Documentation is part of the release process. The GitHub Actions documentation workflow generates repository metadata after every push to `main` and publishes it as an artifact for review; it does not write to the repository.
-
-Historical test evidence is **not** auto-marked PASS. A test is recorded as PASS only when its required evidence actually exists. External/provider results remain explicitly PENDING, BLOCKED or NOT VERIFIED until verified.
-
-<!-- DOCS-AUTO:START -->
-## Current repository state
-
-This section is maintained by `scripts/update-documentation.js`. The GitHub Actions workflow uploads a generated snapshot artifact for review.
-
-- **Repository:** Global Tours — multi-tenant tours & travel SaaS
-- **Branch:** `main`
-- **Current commit:** `0b7949865e67a4fa5dd45076a120f9d7f69f1e39`
-- **Short commit:** `0b79498`
-- **Documentation snapshot date (UTC):** 2026-09-27
-- **Server package:** `hussein-mboya-tours-server@1.0.0`
-- **Client package:** `client@0.0.0`
-- **Server verification commands:** `npm run check:all`, `npm test`, `npm run test:security`, `npm run test:tour-domain`
-- **Client verification commands:** `npm run lint`, `npm run build`
-- **Production contract:** `npm run check:production`
-- **Release rule:** production certification requires current deployment/provider evidence; local or CI source checks alone do not certify live production.
-
-### Documentation automation
-
-The workflow has read-only repository permissions and does not modify or push repository contents. Manual changes to generated files should be reviewed as regular repository updates.
-
-<!-- DOCS-AUTO:END -->
-
-## 2026-09-28 demo seed verification
-
-The controlled reset completed against the explicitly authorized demo Atlas database `husseindb`. It preserved one platform owner and seeded all three tenants. Actual totals are **28 users, 36 tours, 36 destinations, 36 bookings, 30 payments, 6 staff, 12 customers, 6 quotations, 6 custom-tour requests, 3 vehicles, 9 reviews, and 18 notifications**. Every tenant has 12 unique tour images and destination images. Both public catalogues returned 12 entries through the deployed API. Finance, operations, website-integration, hospitality, hotel, and airport-transfer counts are recorded in [Demo Seeding Verification](docs/DEMO_SEEDING.md). This is demo/staging evidence only; it does not certify production readiness.
+The repository is published at [`isaacokubi/hussein-mboya-tours`](https://github.com/isaacokubi/hussein-mboya-tours), and recent Git commits use the `isaacokubi` author identity. This README avoids adding personal biography or employment claims that are not established by repository evidence.
