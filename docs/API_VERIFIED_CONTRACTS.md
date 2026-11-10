@@ -240,3 +240,8 @@ Entries 200–203 are source-traced in [Administrative commission APIs](API_DOMA
 ## Stripe checkout and bank-transfer lifecycle
 
 Entries 394–397 are source-traced in [Stripe checkout and bank-transfer API contracts](API_DOMAIN_CONTRACTS/stripe-payments.md). The trace distinguishes signed public webhook processing from authenticated checkout/session verification and bank-transfer initiation. Bank-transfer submission remains pending until staff verification; Stripe payment completion uses the transactional payment lifecycle. The focused webhook-signature unit test exists, but endpoint/provider integration tests and live Stripe verification were not run.
+
+
+## Super Admin maintenance operations
+
+Entries 398–406 are source-traced in [Super Admin maintenance API contracts](API_DOMAIN_CONTRACTS/superadmin-maintenance.md). The nine routes map to five controller handlers: backup listing/creation, cache clearing, backup deletion and download. The contract documents tenant-filter behavior, destructive process-wide cache deletion, filesystem/database partial-failure boundaries and the absence of a restore route. No focused tests were found for these maintenance handlers, and no backup or deletion operation was executed.
