@@ -894,7 +894,7 @@ router.patch("/tenants/:id/status", updateTenantStatus)
 
 ## endpoint-437 — POST /api/superadmin/tenants/:id/subscription/activate
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 437 of 629<br>
 **Route declaration pipeline:** `approveTenantSubscription`
@@ -908,20 +908,13 @@ router.patch("/tenants/:id/status", updateTenantStatus)
 router.post("/tenants/:id/subscription/activate", approveTenantSubscription)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `plan`, `periodDays`, `reference`, `note`.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `403`, `404`, `400`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin subscription activation, plan switching, deletion and payment listing](../API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) for manual payment handling, plan transitions, destructive deletion scope and payment-list limits.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-438 — POST /api/superadmin/tenants/:id/subscription/activate
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 438 of 629<br>
 **Route declaration pipeline:** `approveTenantSubscription`
@@ -935,20 +928,13 @@ router.post("/tenants/:id/subscription/activate", approveTenantSubscription)
 router.post("/tenants/:id/subscription/activate", approveTenantSubscription)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `plan`, `periodDays`, `reference`, `note`.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `403`, `404`, `400`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin subscription activation, plan switching, deletion and payment listing](../API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) for manual payment handling, plan transitions, destructive deletion scope and payment-list limits.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-439 — PATCH /api/superadmin/tenants/:id/subscription/plan
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 439 of 629<br>
 **Route declaration pipeline:** `switchTenantSubscription`
@@ -962,20 +948,13 @@ router.post("/tenants/:id/subscription/activate", approveTenantSubscription)
 router.patch("/tenants/:id/subscription/plan", switchTenantSubscription)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `plan`.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `403`, `400`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin subscription activation, plan switching, deletion and payment listing](../API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) for manual payment handling, plan transitions, destructive deletion scope and payment-list limits.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-440 — PATCH /api/superadmin/tenants/:id/subscription/plan
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 440 of 629<br>
 **Route declaration pipeline:** `switchTenantSubscription`
@@ -989,20 +968,13 @@ router.patch("/tenants/:id/subscription/plan", switchTenantSubscription)
 router.patch("/tenants/:id/subscription/plan", switchTenantSubscription)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `plan`.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `403`, `400`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin subscription activation, plan switching, deletion and payment listing](../API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) for manual payment handling, plan transitions, destructive deletion scope and payment-list limits.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-441 — DELETE /api/superadmin/tenants/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 441 of 629<br>
 **Route declaration pipeline:** `deleteTenant`
@@ -1016,20 +988,13 @@ router.patch("/tenants/:id/subscription/plan", switchTenantSubscription)
 router.delete("/tenants/:id", deleteTenant)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `confirmation`.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `403`, `404`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin subscription activation, plan switching, deletion and payment listing](../API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) for manual payment handling, plan transitions, destructive deletion scope and payment-list limits.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-442 — DELETE /api/superadmin/tenants/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 442 of 629<br>
 **Route declaration pipeline:** `deleteTenant`
@@ -1043,20 +1008,13 @@ router.delete("/tenants/:id", deleteTenant)
 router.delete("/tenants/:id", deleteTenant)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `confirmation`.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `403`, `404`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin subscription activation, plan switching, deletion and payment listing](../API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) for manual payment handling, plan transitions, destructive deletion scope and payment-list limits.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-443 — GET /api/superadmin/subscription-payments
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 443 of 629<br>
 **Route declaration pipeline:** `listSubscriptionPayments`
@@ -1070,20 +1028,13 @@ router.delete("/tenants/:id", deleteTenant)
 router.get("/subscription-payments", listSubscriptionPayments)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `403`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin subscription activation, plan switching, deletion and payment listing](../API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) for manual payment handling, plan transitions, destructive deletion scope and payment-list limits.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-444 — GET /api/superadmin/subscription-payments
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [superAdminRoutes.js](../../server/routes/superAdminRoutes.js) · [route module explanation](../code-explanations/backend/routes/superAdminRoutes.md)<br>
 **Mounted inventory entry:** 444 of 629<br>
 **Route declaration pipeline:** `listSubscriptionPayments`
@@ -1097,14 +1048,7 @@ router.get("/subscription-payments", listSubscriptionPayments)
 router.get("/subscription-payments", listSubscriptionPayments)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `403`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Super Admin subscription activation, plan switching, deletion and payment listing](../API_DOMAIN_CONTRACTS/superadmin-subscriptions.md) for manual payment handling, plan transitions, destructive deletion scope and payment-list limits.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
