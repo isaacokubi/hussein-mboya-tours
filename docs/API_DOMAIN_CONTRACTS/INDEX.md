@@ -97,3 +97,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Tenant subscription, M-Pesa checkout and payment status](tenant-subscriptions.md)
 
 - [Tenant-safe tour resource assignment and conflict checks](tour-resource-assignment.md)
+
+- [Tour Manager Operations Copilot summary and preview-only quote drafts](operations-copilot.md)
