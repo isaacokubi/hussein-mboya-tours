@@ -33,3 +33,8 @@ Inventory entry 460 is a repeated mount of the same `DELETE /api/superadmin/user
 ## Model evidence and limitations
 
 User stores role/legacyRole, roleId, tenantId, status, verification and authentication metadata; password is excluded by default and hashed by the User save hook. Its unique email index is tenant-scoped for users with ObjectId tenantId. This controller's account creation path does not provide tenantId. No focused superAdminUserController tests were found in searched paths. No user was created, updated or deleted during this source review.
+
+
+## Duplicate route mount clarification
+
+server/routes/index.js mounts superAdminRoutes at /superadmin before superAdminUserRoutes at /superadmin/users. The earlier router applies protect + superAdminOnly and declares POST /users/accounts using createSuperAdminCompanyAccount, an alias of createCompanyAccount from this same controller. That earlier declaration handles the request first; the later superAdminUserRoutes declaration (protect only) is shadowed for this path. Effective authorization therefore includes superAdminOnly. The account-creation tenantId concern above remains: the handler itself does not assign a tenantId.
