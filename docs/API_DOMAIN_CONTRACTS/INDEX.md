@@ -95,3 +95,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Platform tenant directory, creation and administration](platform-tenants.md)
 
 - [Tenant subscription, M-Pesa checkout and payment status](tenant-subscriptions.md)
+
+- [Tenant-safe tour resource assignment and conflict checks](tour-resource-assignment.md)
