@@ -323,3 +323,7 @@ Entries 512–514 are source-traced in [Tenant subscription and M-Pesa checkout 
 ## Tour resource assignment
 
 Entry 515 is source-traced in [Tenant-safe tour resource assignment API contract](API_DOMAIN_CONTRACTS/tour-resource-assignment.md). Assignment is restricted to tenant managers, checks tenant ownership and resource availability/date overlaps, commits Tour/Staff/Vehicle changes in a Mongo transaction, then queues a webhook after commit.
+
+## Tour manager dashboard aliases
+
+Entries 516–517 are source-traced in [Tour manager dashboard contract](API_DOMAIN_CONTRACTS/tour-manager-dashboard.md). Both route prefixes reach the same tenant-scoped handler and return the same dashboard snapshot. The response's `revenueSource: "paid_booking_value"` label does not match the service's posted-journal revenue calculation; that discrepancy is documented in the contract.
