@@ -168,3 +168,129 @@ test("a valid callback yields verified fields for the transactional payment life
     transactionDate: 20261029123456,
   });
 });
+
+
+import { createMpesaStatusHandlers } from "../controllers/mpesaStatusController.js";
+
+const statusResponse = () => {
+  let statusCode = 200;
+  let body;
+  return {
+    res: {
+      status(code) { statusCode = code; return this; },
+      json(value) { body = value; return this; },
+    },
+    get statusCode() { return statusCode; },
+    get body() { return body; },
+  };
+};
+
+const statusPayment = (overrides = {}) => ({
+  _id: "payment-1",
+  booking: "booking-1",
+  status: "pending",
+  providerResultCode: "",
+  saves: 0,
+  async save() { this.saves += 1; },
+  ...overrides,
+});
+
+const statusBooking = (overrides = {}) => ({
+  _id: "booking-1",
+  user: "customer-1",
+  status: "confirmed",
+  paymentStatus: "pending",
+  saves: 0,
+  async save() { this.saves += 1; },
+  ...overrides,
+});
+
+const makeStatusHandler = ({ payment = statusPayment(), booking = statusBooking(), providerResponse = { ResultCode: 0 }, failPayment } = {}) => {
+  const calls = { tenant: 0, lookups: 0, provider: 0, failures: [] };
+  const handlers = createMpesaStatusHandlers({
+    requireTenant() { calls.tenant += 1; },
+    async findPayment(req, checkoutRequestID) { calls.lookups += 1; calls.checkoutRequestID = checkoutRequestID; return payment; },
+    async findBooking(req, foundPayment) { assert.equal(foundPayment, payment); return booking; },
+    async queryProvider(checkoutRequestID) { calls.provider += 1; calls.providerCheckoutRequestID = checkoutRequestID; return providerResponse; },
+    async failPayment(args) { calls.failures.push(args); if (failPayment) await failPayment(args); },
+    now: () => new Date("2026-11-10T12:00:00.000Z"),
+  });
+  return { queryMpesaPayment: handlers.queryMpesaPayment, calls, payment, booking };
+};
+
+test("M-Pesa status query keeps local payment pending until callback receipt metadata arrives", async () => {
+  const { queryMpesaPayment, calls, payment } = makeStatusHandler();
+  const state = statusResponse();
+  await queryMpesaPayment({
+    params: { checkoutRequestId: " ws_CO_status " },
+    user: { _id: "customer-1" },
+  }, state.res, (error) => { throw error; });
+
+  assert.equal(state.statusCode, 200);
+  assert.equal(state.body.data.providerStatus, "completed");
+  assert.equal(state.body.data.providerQueried, true);
+  assert.equal(payment.status, "pending");
+  assert.equal(payment.providerResultCode, "0");
+  assert.equal(payment.saves, 1);
+  assert.equal(calls.providerCheckoutRequestID, "ws_CO_status");
+});
+
+test("M-Pesa cancellation query marks payment and eligible booking cancelled", async () => {
+  const { queryMpesaPayment, payment, booking } = makeStatusHandler({
+    providerResponse: { ResultCode: 1032, ResultDesc: "Request cancelled by user" },
+  });
+  const state = statusResponse();
+  await queryMpesaPayment({ params: { checkoutRequestId: "ws_CO_cancel" }, user: { _id: "customer-1" } }, state.res, (error) => { throw error; });
+
+  assert.equal(payment.status, "cancelled");
+  assert.equal(payment.failureReason, "Request cancelled by user");
+  assert.equal(booking.paymentStatus, "failed");
+  assert.equal(booking.status, "cancelled");
+  assert.equal(payment.saves, 1);
+  assert.equal(booking.saves, 1);
+});
+
+test("M-Pesa failed query delegates booking failure to the central lifecycle service", async () => {
+  const { queryMpesaPayment, payment, booking, calls } = makeStatusHandler({
+    providerResponse: { ResultCode: 1, ResultDesc: "Provider rejected payment" },
+  });
+  const state = statusResponse();
+  await queryMpesaPayment({ params: { checkoutRequestId: "ws_CO_failed" }, user: { _id: "customer-1" } }, state.res, (error) => { throw error; });
+
+  assert.equal(payment.saves, 1);
+  assert.equal(calls.failures.length, 1);
+  assert.equal(calls.failures[0].payment, payment);
+  assert.equal(calls.failures[0].booking, booking);
+  assert.equal(calls.failures[0].failureReason, "Provider rejected payment");
+  assert.deepEqual(calls.failures[0].paymentData, { checkoutRequestID: "ws_CO_failed" });
+});
+
+test("terminal M-Pesa payments are returned without another provider query", async () => {
+  const { queryMpesaPayment, calls, payment } = makeStatusHandler({ payment: statusPayment({ status: "completed" }) });
+  const state = statusResponse();
+  await queryMpesaPayment({ params: { checkoutRequestId: "ws_CO_done" }, user: { _id: "customer-1" } }, state.res, (error) => { throw error; });
+
+  assert.equal(state.body.data.providerQueried, false);
+  assert.equal(state.body.data.paymentStatus, "completed");
+  assert.equal(calls.provider, 0);
+  assert.equal(payment.saves, 0);
+});
+
+test("M-Pesa status query denies users who do not own the booking", async () => {
+  const { queryMpesaPayment, calls } = makeStatusHandler();
+  const state = statusResponse();
+  await queryMpesaPayment({ params: { checkoutRequestId: "ws_CO_other" }, user: { _id: "customer-2" } }, state.res, (error) => { throw error; });
+
+  assert.equal(state.statusCode, 403);
+  assert.equal(calls.provider, 0);
+});
+
+test("M-Pesa status query rejects blank checkout IDs before database or provider access", async () => {
+  const { queryMpesaPayment, calls } = makeStatusHandler();
+  const state = statusResponse();
+  await queryMpesaPayment({ params: { checkoutRequestId: "  " }, user: { _id: "customer-1" } }, state.res, (error) => { throw error; });
+
+  assert.equal(state.statusCode, 400);
+  assert.equal(calls.lookups, 0);
+  assert.equal(calls.provider, 0);
+});
