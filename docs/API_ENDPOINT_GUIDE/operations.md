@@ -4,7 +4,7 @@ This guide contains 8 mounted method/path inventory entries in the **operations*
 
 ## endpoint-606 — GET /api/operations
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelOperationsRoutes.js](../../server/routes/travelOperationsRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelOperationsRoutes.md)<br>
 **Mounted inventory entry:** 606 of 629<br>
 **Route declaration pipeline:** `listOperations`
@@ -26,11 +26,13 @@ router.get("/", listOperations)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-607 — POST /api/operations
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelOperationsRoutes.js](../../server/routes/travelOperationsRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelOperationsRoutes.md)<br>
 **Mounted inventory entry:** 607 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `createOperation`
@@ -53,11 +55,13 @@ router.post("/", managerOnly, createOperation)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-608 — PATCH /api/operations/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelOperationsRoutes.js](../../server/routes/travelOperationsRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelOperationsRoutes.md)<br>
 **Mounted inventory entry:** 608 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `updateOperation`
@@ -80,11 +84,13 @@ router.patch("/:id", managerOnly, updateOperation)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-609 — DELETE /api/operations/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelOperationsRoutes.js](../../server/routes/travelOperationsRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelOperationsRoutes.md)<br>
 **Mounted inventory entry:** 609 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `deleteOperation`
@@ -107,11 +113,13 @@ router.delete("/:id", managerOnly, deleteOperation)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-610 — GET /api/operations/rules/list
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelOperationsRoutes.js](../../server/routes/travelOperationsRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelOperationsRoutes.md)<br>
 **Mounted inventory entry:** 610 of 629<br>
 **Route declaration pipeline:** `listRules`
@@ -133,11 +141,13 @@ router.get("/rules/list", listRules)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-611 — POST /api/operations/rules
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelOperationsRoutes.js](../../server/routes/travelOperationsRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelOperationsRoutes.md)<br>
 **Mounted inventory entry:** 611 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `createRule`
@@ -160,11 +170,13 @@ router.post("/rules", managerOnly, createRule)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-612 — PATCH /api/operations/rules/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelOperationsRoutes.js](../../server/routes/travelOperationsRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelOperationsRoutes.md)<br>
 **Mounted inventory entry:** 612 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `updateRule`
@@ -187,11 +199,13 @@ router.patch("/rules/:id", managerOnly, updateRule)
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
 
+**Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
+
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-613 — DELETE /api/operations/rules/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [travelOperationsRoutes.js](../../server/routes/travelOperationsRoutes.js) · [route module explanation](../code-explanations/backend/routes/travelOperationsRoutes.md)<br>
 **Mounted inventory entry:** 613 of 629<br>
 **Route declaration pipeline:** `managerOnly`, `deleteRule`
@@ -213,6 +227,8 @@ router.delete("/rules/:id", managerOnly, deleteRule)
 - JSON envelope keys observed: `success`, `message`.
 
 **Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+
+**Source-traced behavior:** See [Tenant travel operations and commercial rule APIs](../API_DOMAIN_CONTRACTS/travel-operations.md) for middleware, filters, schedule conflicts, update allowlists and delete semantics.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
