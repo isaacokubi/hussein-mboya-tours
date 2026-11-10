@@ -109,3 +109,7 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Tenant operations assets and commercial rules](travel-operations.md)
 
 - [Tenant-scoped tour report and financial aggregation](tour-reports.md)
+
+- [Tenant user profile and guide directory](user-profile.md)
+- [Tenant vehicle management and driver assignments](vehicles.md)
+- [Tenant wishlist operations](wishlist.md)
