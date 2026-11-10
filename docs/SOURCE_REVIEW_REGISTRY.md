@@ -323,3 +323,8 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/routes/tourRoutes.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Public tour reads followed by protected manager CRUD, availability and assignment routes |
 | `server/controllers/tourController.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Public visibility filters, search/category/pagination, tenant-aware reads and manager-owned tour list |
 | `server/middleware/tourManagerMiddleware.js` | SOURCE-VERIFIED | [Tour catalogue contracts](API_DOMAIN_CONTRACTS/tour-catalogue.md) | Role allowlist for tour_manager/manager/admin/super_admin |
+
+
+| `server/routes/travelLifecycleRoutes.js` | SOURCE-VERIFIED | [Travel lifecycle contracts](API_DOMAIN_CONTRACTS/travel-lifecycle.md) | Authenticated travel voucher, pricing and loyalty route declarations with mixed manager-only gates |
+| `server/controllers/travelLifecycleController.js` | SOURCE-VERIFIED | [Travel lifecycle contracts](API_DOMAIN_CONTRACTS/travel-lifecycle.md) | Voucher token hashing/redemption, dynamic price rule application and loyalty balance/earn/redeem handlers |
+| `server/models/LoyaltyAccount.js` | SOURCE-VERIFIED | [Travel lifecycle contracts](API_DOMAIN_CONTRACTS/travel-lifecycle.md) | Tenant/customer unique account, points counters and referral code indexes |
