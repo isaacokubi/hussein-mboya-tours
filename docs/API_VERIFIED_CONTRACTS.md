@@ -396,3 +396,7 @@ Entries 538–539 and 544–547 are source-traced in [Tenant-safe tour resource 
 ## Tour Manager completion lifecycle
 
 Entries 540–541 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both aliases run completeTour in a Mongo transaction, mark a tenant-owned tour completed and release assigned resources. The handler does not verify remaining bookings/payment state, reject cancelled tours, or synchronize published/available and per-date capacity flags; these lifecycle gaps are documented. No focused completeTour test was found.
+
+## Tour Manager tour cancellation
+
+Entries 542–543 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both aliases use the shared cancellation transaction with deleted:false: active bookings are cancelled, paid amounts become refund requests (not provider refunds), eligible users are notified, capacity is released and the tour is cancelled/unavailable/unpublished but not soft-deleted. The release helper leaves assignmentStatus=pending. The opt-in integration test covers the service path, not the HTTP route.
