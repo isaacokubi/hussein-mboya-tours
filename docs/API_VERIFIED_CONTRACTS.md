@@ -298,3 +298,8 @@ Entries 491–492 are source-traced in [Super Admin operations and backups](API_
 
 
 The duplicate POST /api/superadmin/users/accounts declaration in superAdminUserRoutes (inventory 495) is shadowed by the earlier superAdminRoutes declaration, which applies superAdminOnly before invoking the same createCompanyAccount handler.
+
+
+## Tenant system health
+
+Entries 496–499 are source-traced in [Tenant system health API contracts](API_DOMAIN_CONTRACTS/system-health.md). Both aliases use the same handler and require tenant resolution, JWT authentication, admin role and system.security permission. Each request performs Cloudinary ping and tenant M-Pesa Daraja OAuth connectivity checks; an unavailable integration is reported in the component payload rather than changing the overall HTTP success status.
