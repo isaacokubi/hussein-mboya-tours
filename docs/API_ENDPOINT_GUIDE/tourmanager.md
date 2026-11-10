@@ -4,7 +4,7 @@ This guide contains 34 mounted method/path inventory entries in the **tourmanage
 
 ## endpoint-516 — GET /api/tourmanager/dashboard
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tourManagerRoutes.js](../../server/routes/tourManagerRoutes.js) · [route module explanation](../code-explanations/backend/routes/tourManagerRoutes.md)<br>
 **Mounted inventory entry:** 516 of 629<br>
 **Route declaration pipeline:** `getTourManagerDashboard`
@@ -25,8 +25,7 @@ router.get("/dashboard", getTourManagerDashboard)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: response shape is dynamic or not a literal object.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
-
+**Source-traced behavior:** See [Tour manager dashboard contract](../API_DOMAIN_CONTRACTS/tour-manager-dashboard.md) for the shared `/tourmanager` and `/tour-manager` aliases, tenant scope, dashboard aggregation, revenue source, result shaping and response schema.
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-518 — GET /api/tourmanager/copilot/summary
