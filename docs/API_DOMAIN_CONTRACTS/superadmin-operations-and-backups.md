@@ -61,3 +61,8 @@ Both aliases invoke deletePlatformDatabaseBackup. Invalid ObjectId returns 400. 
 ## Test evidence and limitations
 
 No focused tests for these route/controller combinations were found in the paths searched. This document is a source trace, not evidence that the security controls are actively probed, settings were changed, caches cleared, or backups created/downloaded/deleted.
+
+
+## GET /api/superadmin/database/backup/:id/download — inventory 491 and 492
+
+Handler downloadPlatformDatabaseBackup. Requires a valid Mongo ObjectId path parameter; invalid IDs return 400. It reads DatabaseBackup through the native collection with both _id and tenantId:null, so only platform backup metadata can be downloaded. Missing metadata returns 404 "Backup not found". The file path is built under BACKUP_DIR using path.basename(backup.file), preventing stored path segments from being used as directories. Missing files return 404 "Backup file missing"; otherwise Express res.download streams the file with its basename as the download filename. Unexpected errors return 500 "Unable to download the selected backup". The endpoint does not create an audit event in this handler. It inherits protect + superAdminOnly from superAdminRoutes.
