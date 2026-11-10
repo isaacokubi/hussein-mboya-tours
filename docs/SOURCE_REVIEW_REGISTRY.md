@@ -272,3 +272,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 
 | `server/controllers/superAdminBackupController.js` | SOURCE-VERIFIED | [Super Admin operations and backup contracts](API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) | Full platform database backup creation, platform-only listing, safe download/delete file paths |
+
+
+| `server/routes/superAdminToolsRoutes.js` | SOURCE-VERIFIED | [Super Admin tools contracts](API_DOMAIN_CONTRACTS/superadmin-tools.md) | Tenant resolution, authentication, system.security permission and two mounted tool routes |
+| `server/controllers/superAdminToolsController.js` | SOURCE-VERIFIED | [Super Admin tools contracts](API_DOMAIN_CONTRACTS/superadmin-tools.md) | Database metadata response and placeholder settings response; unused monitor/system handlers are not mounted |
