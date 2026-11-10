@@ -223,3 +223,9 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/routes/superAdminMaintenanceRoutes.js` | SOURCE-VERIFIED | [Super Admin maintenance contracts](API_DOMAIN_CONTRACTS/superadmin-maintenance.md) | Nine mounted aliases, tenant resolution, JWT protection and super-admin-only boundary |
 | `server/controllers/superAdminOperationsController.js` | SOURCE-VERIFIED | [Super Admin maintenance contracts](API_DOMAIN_CONTRACTS/superadmin-maintenance.md) | Backup list/create/download/delete and process-wide cache clearing; file/database/audit failure boundaries |
 | `server/models/DatabaseBackup.js` | SOURCE-VERIFIED | [Super Admin maintenance contracts](API_DOMAIN_CONTRACTS/superadmin-maintenance.md) | Backup metadata fields and tenant plugin used by maintenance handlers |
+
+
+| `server/routes/superAdminOperationsRoutes.js` | SOURCE-VERIFIED | [Super Admin operational contracts](API_DOMAIN_CONTRACTS/superadmin-operations.md) | Tenant resolution, JWT, roles.manage permission, audit middleware and three mounted route declarations |
+| `server/controllers/superAdminOperationsController.js` | SOURCE-VERIFIED | [Super Admin operational contracts](API_DOMAIN_CONTRACTS/superadmin-operations.md) | Audit query/filter/count behavior and database/system health response fields; maintenance handlers scoped separately |
+| `server/middleware/auditMiddleware.js` | SOURCE-VERIFIED | [Super Admin operational contracts](API_DOMAIN_CONTRACTS/superadmin-operations.md) | Response-finish audit logging, resource mapping, action/status/severity derivation |
+| `server/models/AuditLog.js` | SOURCE-VERIFIED | [Super Admin operational contracts](API_DOMAIN_CONTRACTS/superadmin-operations.md) | Tenant ID, audit event fields, enums and indexes relevant to audit listing |
