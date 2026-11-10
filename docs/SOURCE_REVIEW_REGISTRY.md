@@ -287,3 +287,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 | `server/routes/tenantBrandingRoutes.js` | SOURCE-VERIFIED | [Tenant branding contracts](API_DOMAIN_CONTRACTS/tenant-branding.md) | Tenant resolution and root GET/PUT declarations; no /branding child route |
 | `server/controllers/tenantBrandingController.js` | SOURCE-VERIFIED | [Tenant branding contracts](API_DOMAIN_CONTRACTS/tenant-branding.md) | Public branding projection, admin/manager update allowlist and Organization write behavior |
+
+
+| `server/routes/tenantRoutes.js` | SOURCE-VERIFIED | [Platform tenant contracts](API_DOMAIN_CONTRACTS/platform-tenants.md) | Tenant resolution, authentication and Super Admin-only route boundary |
+| `server/controllers/tenantController.js` | SOURCE-VERIFIED | [Platform tenant contracts](API_DOMAIN_CONTRACTS/platform-tenants.md) | Tenant list context bug, creation validation/cleanup, tenant read and allowlisted update |
