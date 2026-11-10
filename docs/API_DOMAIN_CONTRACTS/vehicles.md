@@ -43,3 +43,12 @@ Requires adminOnly. Tenant-filtered findOneAndUpdate sets isDeleted:false and st
 ## Model and test evidence
 
 Vehicle stores tenant-owned identity/registration/type/capacity, driver and assignedTour refs, status/isActive/isDeleted, service/insurance fields, image/gallery and maintenance history. No focused vehicleRoutes/controller tests were found in searched paths. No vehicle or driver assignment was changed during this review.
+
+## Additional authorization and integrity findings
+
+- Vehicle.create receives a spread of req.body before capacity/year normalization. Vehicle.update likewise copies the entire body and does not use a field allowlist. The tenant plugin protects tenantId, but the controller does not protect createdBy, driver, assignedTour, isActive, isDeleted or status. A manager can therefore spoof creator/reference fields and can set isDeleted:false/isActive:true through the manager-only PUT route, bypassing the dedicated adminOnly restore route.
+- createVehicle does not set createdBy from req.user; it accepts a body-supplied createdBy. updateVehicle can also overwrite it.
+- assignVehicleDriver checks only Staff position=driver and isActive=true; it does not reject isDeleted drivers or require availability=available. It marks the new driver busy before confirming that the target vehicle exists, does not release a vehicle's previous driver, and is not transactional.
+- removeVehicleDriver marks the current driver available without checking other vehicle/tour assignments. deleteVehicle soft-deletes the vehicle without releasing its driver or assignedTour. updateVehicleStatus can set status=available while isActive=false or isDeleted=true.
+- getVehicle does not exclude soft-deleted records; getVehicles does. Neither list nor detail behavior reconciles isActive/status. The read role allowlist is admin/manager/guide and does not include super_admin, while managerOnly and adminOnly do include super_admin.
+- Vehicle.registrationNumber has no unique index, so duplicate registrations are not prevented at the model/index layer. Image replacement does not delete the prior Cloudinary object, so repeated updates can leave orphaned media.
