@@ -269,3 +269,6 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 | `server/controllers/superAdminUserController.js` | SOURCE-VERIFIED | [Super Admin user contracts](API_DOMAIN_CONTRACTS/superadmin-users.md) | User search, role normalization, account creation, status mutation and linked Staff/Agent deletion |
 | `server/models/User.js` | SOURCE-VERIFIED | [Super Admin user contracts](API_DOMAIN_CONTRACTS/superadmin-users.md) | Tenant-scoped email index, role/status fields, password hashing and authentication metadata |
+
+
+| `server/controllers/superAdminBackupController.js` | SOURCE-VERIFIED | [Super Admin operations and backup contracts](API_DOMAIN_CONTRACTS/superadmin-operations-and-backups.md) | Full platform database backup creation, platform-only listing, safe download/delete file paths |
