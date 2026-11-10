@@ -89,3 +89,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Super Admin tools database and placeholder settings routes](superadmin-tools.md)
 
 - [Tenant system health and integration connectivity](system-health.md)
+
+- [Tenant branding, public reads, updates and stale aliases](tenant-branding.md)
