@@ -345,7 +345,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/routes/userRoutes.js` | SOURCE-VERIFIED | [User profile contracts](API_DOMAIN_CONTRACTS/user-profile.md) | Tenant resolution, authentication and profile/guide/admin delete route gates |
 | `server/controllers/userController.js` | SOURCE-VERIFIED | [User profile contracts](API_DOMAIN_CONTRACTS/user-profile.md) | Current-user profile projection/update, active guide list and non-cascading user deletion |
 | `server/routes/vehicleRoutes.js` | SOURCE-VERIFIED | [Vehicle contracts](API_DOMAIN_CONTRACTS/vehicles.md) | Tenant resolution, role-gated vehicle CRUD, driver assignment, status and restore routes |
-| `server/controllers/vehicleController.js` | SOURCE-VERIFIED | [Vehicle contracts](API_DOMAIN_CONTRACTS/vehicles.md) | Vehicle CRUD, soft delete/restore, driver availability mutation and status update |
+| `server/controllers/vehicleController.js` | SOURCE-VERIFIED | [Vehicle contracts](API_DOMAIN_CONTRACTS/vehicles.md) | Vehicle CRUD, unrestricted body fields, restore authorization bypass, soft delete/restore, driver availability mutation and status update |
 | `server/models/Vehicle.js` | SOURCE-VERIFIED | [Vehicle contracts](API_DOMAIN_CONTRACTS/vehicles.md) | Tenant vehicle fields, status enums, maintenance/image fields and indexes |
 | `server/routes/wishlistRoutes.js` | SOURCE-VERIFIED | [Wishlist contracts](API_DOMAIN_CONTRACTS/wishlist.md) | Tenant resolution and authenticated wishlist GET/POST/DELETE declarations |
 | `server/controllers/wishlistController.js` | SOURCE-VERIFIED | [Wishlist contracts](API_DOMAIN_CONTRACTS/wishlist.md) | Owner/tenant filtering, public-tour checks and wishlist add/remove operations |
