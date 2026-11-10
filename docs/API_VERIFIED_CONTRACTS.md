@@ -392,3 +392,7 @@ Entries 614–617 are source-traced in [Tenant user profile and directory API co
 ## Tour resource assignment aliases
 
 Entries 538–539 and 544–547 are source-traced in [Tenant-safe tour resource assignment API contract](API_DOMAIN_CONTRACTS/tour-resource-assignment.md). The tour-manager route aliases validate tenant ownership, active resource state and overlapping active tour windows, then update Tour/Staff/Vehicle records atomically. The post-commit webhook payload uses only supplied body IDs (omitted preserved assignments appear as null), and queue errors are swallowed while the API still returns success. No focused controller test was found.
+
+## Tour Manager completion lifecycle
+
+Entries 540–541 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both aliases run completeTour in a Mongo transaction, mark a tenant-owned tour completed and release assigned resources. The handler does not verify remaining bookings/payment state, reject cancelled tours, or synchronize published/available and per-date capacity flags; these lifecycle gaps are documented. No focused completeTour test was found.
