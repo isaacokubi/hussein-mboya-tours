@@ -375,3 +375,8 @@ Entry 584 (GET /api/tour-reports) is source-traced in [Tour reports API contract
 ## Tour Manager tour deletion
 
 Entries 534–535 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both aliases call the shared transactional cancelTourAndBookings service with deleted:true. The tour is soft-deleted after active bookings are cancelled, paid amounts become refund requests (no provider refund is executed), resources are released and eligible booking users are notified. The release helper overwrites assignmentStatus back to pending, and the opt-in integration test covers deleted:false cancellation rather than the DELETE soft-delete path.
+
+
+## User, vehicle and wishlist APIs
+
+Entries 614–629 are source-traced in [user profile](API_DOMAIN_CONTRACTS/user-profile.md), [vehicle management](API_DOMAIN_CONTRACTS/vehicles.md) and [wishlist](API_DOMAIN_CONTRACTS/wishlist.md) contracts. The source review found hard-delete user behavior without cascade, vehicle driver assignment state changes that are not transactional, vehicle restore that leaves isActive false, and wishlist visibility filters that omit availability/status.
