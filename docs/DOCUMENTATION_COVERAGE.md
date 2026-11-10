@@ -6,16 +6,16 @@ Counts are computed from first-party `server/` and `client/src/` source files, e
 
 ## Measured coverage status
 
-The latest locally supplied audit was run after pulling commit `605facb` on 2026-11-10. The eight commits subsequently added to `main` through `786335a` changed documentation files only; source files were unchanged. The counts below therefore describe that audited source snapshot. Re-run `node scripts/check-documentation-coverage.js` after later source or documentation changes before treating them as a fresh audit.
+The latest locally supplied audit was run after pulling commit `605facb` on 2026-11-10. The counts below have since been reconciled with the current source index and review registry after adding the focused M-Pesa refund callback tests; the coverage script has not yet been rerun against this latest commit. Re-run `node scripts/check-documentation-coverage.js` locally to confirm the refreshed counts and link integrity before treating this as a fresh automated audit.
 
 | Area | Audited count/status | Documentation |
 |---|---:|---|
 | Source files discovered | 1,017 | `client/src/` and `server/` inventory |
 | Source files indexed | 1,017/1,017 | [Source file index](SOURCE_FILE_INDEX.md) |
 | Source files with explanation links | 1,017/1,017 | Link existence, not semantic depth |
-| Source classifications | 259 SOURCE-VERIFIED; 195 PARTIAL; 563 STRUCTURAL; 0 UNREVIEWED | [Source review registry](SOURCE_REVIEW_REGISTRY.md) and [source index](SOURCE_FILE_INDEX.md) |
-| Registered scoped-review rows | 266 rows across 259 distinct source files | [Source review registry](SOURCE_REVIEW_REGISTRY.md) |
-| Source files without registered scoped review | 758/1,017 | Not an exhaustive line-review count |
+| Source classifications | 260 SOURCE-VERIFIED; 195 PARTIAL; 562 STRUCTURAL; 0 UNREVIEWED | [Source review registry](SOURCE_REVIEW_REGISTRY.md) and [source index](SOURCE_FILE_INDEX.md) |
+| Registered scoped-review rows | 267 rows across 260 distinct source files | [Source review registry](SOURCE_REVIEW_REGISTRY.md) |
+| Source files without registered scoped review | 757/1,017 | Not an exhaustive line-review count |
 | Fully reviewed source files | 0 | No file is certified exhaustive line-by-line |
 | AST-derived walkthrough artifacts | 735 | [Walkthrough index](code-explanations/source/INDEX.md) |
 | Structural walkthrough labels | 725 | Navigation classification; not a review certification |
@@ -43,7 +43,7 @@ The latest locally supplied audit was run after pulling commit `605facb` on 2026
 ## Interpretation and known gaps
 
 - **API documentation inventory is complete by its current classification:** all 629 mounted method/path rows have endpoint-guide records marked SOURCE-TRACED. This does not prove every runtime branch, authorization combination, validation failure, or provider interaction has been tested.
-- **Source review is not complete:** 758 source files lack a registered source-verified critical-scope review. The 259 SOURCE-VERIFIED classification applies only to the named scope in each registry row; it is not a whole-file certification.
+- **Source review is not complete:** 757 source files lack a registered source-verified critical-scope review. The 260 SOURCE-VERIFIED classification applies only to the named scope in each registry row; it is not a whole-file certification.
 - **No source file is certified fully reviewed line-by-line.** The 195 PARTIAL and 563 STRUCTURAL classifications are explanatory/indexing states, not evidence that those files are defect-free.
 - **Focused API test coverage remains incomplete:** 58 domain contract documents explicitly report no focused test. The audit does not infer endpoint-level test coverage automatically.
 - Runtime schema pages cover all 96 model files and 2,229 compiled schema paths. Dynamic Mixed subkeys, out-of-band database indexes, database contents, and all controller-level field rules are not established by schema introspection.
@@ -54,7 +54,7 @@ The latest locally supplied audit was run after pulling commit `605facb` on 2026
 
 ### Local verification supplied on 2026-11-10
 
-At local commit `605facb`, the supplied terminal output records:
+At local commit `605facb`, the supplied terminal output records the baseline verification below. The later refund-callback changes are covered by the current GitHub CI run, but the full documentation coverage script should be rerun after pulling them:
 
 - `node scripts/check-documentation-coverage.js`: completed and reported the counts above, with no reported broken links or possible secret matches.
 - `npm --prefix server run check:all`: passed, including server syntax checks, tenant model contract and static production-readiness contract.
@@ -66,9 +66,10 @@ The production-readiness script explicitly states that launch certification rema
 
 ### Runtime and release evidence
 
-- CI on commit `786335a` was still in progress at the time of this report update. Server production checks, automated backend tests, tour lifecycle runtime integration, and live tenant-isolation regression had passed; client ESLint had passed and the production build was still running.
-- The Three-Phase Release Gate on `786335a` had Phase 1 (security and tenant integrity) successful. Phase 2 (Kenya production readiness) was still running; its static readiness and module-presence steps had completed. Do not infer final release-gate success until the workflow reports a completed successful conclusion.
-- Production Smoke Check on `786335a` passed. A smoke check does not prove live M-Pesa or card transactions, verified production credentials, or all production operational controls.
+- CI on commit `ca84f2d` completed successfully: server production checks, automated backend tests, tour lifecycle runtime integration, live tenant-isolation regression, client ESLint and production build all passed.
+- The Three-Phase Release Gate on `ca84f2d` completed successfully, including Phase 1 (security and tenant integrity), Phase 2 (Kenya production readiness) and Phase 3 (final release gate).
+- Production Smoke Check on `ca84f2d` failed at `Check API health when configured`; the public web check was skipped. The failure needs investigation in the deployment environment and must not be described as a passing live API health check. Earlier smoke checks on `786335a` passed.
+- A smoke check does not prove live M-Pesa or card transactions, verified production credentials, or all production operational controls.
 - No live payment or provider transaction is claimed by this report.
 
 ## Historical measurements
