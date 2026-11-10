@@ -300,12 +300,13 @@ router.post("/orders/capture", initiationLimit, capturePaypalOrder)
 **Source-traced contract:** See [PayPal booking payment contracts](../API_DOMAIN_CONTRACTS/paypal-payments.md) for provider verification and state handling.
 ## endpoint-394 — POST /api/payments/stripe/webhook
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [stripeRoutes.js](../../server/routes/stripeRoutes.js) · [route module explanation](../code-explanations/backend/routes/stripeRoutes.md)<br>
 **Mounted inventory entry:** 394 of 629<br>
 **Route declaration pipeline:** `stripeWebhook`
-**Router-wide middleware:** resolveTenant; protect
-**Authentication evidence:** A JWT/authentication guard is visible in route/router middleware.
+**Parent middleware:** resolveTenant; enforcePlanFeature<br>
+**Child router:** webhook is declared before child resolveTenant/protect
+**Authentication evidence:** No JWT guard on this child-router declaration; parent API middleware still applies.
 
 **Source declaration:**
 
@@ -320,13 +321,13 @@ router.post("/webhook", stripeWebhook)
 - Literal HTTP statuses in handler: `503`, `400`, `200`, `500`.
 - JSON envelope keys observed: `success`, `message`, `duplicate`, `ignored`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Stripe checkout and bank-transfer API contracts](../API_DOMAIN_CONTRACTS/stripe-payments.md) for request requirements, middleware boundaries, provider verification, tenant scoping, persistence, idempotency, response behavior and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-395 — POST /api/payments/stripe/checkout
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [stripeRoutes.js](../../server/routes/stripeRoutes.js) · [route module explanation](../code-explanations/backend/routes/stripeRoutes.md)<br>
 **Mounted inventory entry:** 395 of 629<br>
 **Route declaration pipeline:** `paymentInitiationLimit`, `createStripeSession`
@@ -346,13 +347,13 @@ router.post("/checkout",paymentInitiationLimit,createStripeSession)
 - Literal HTTP statuses in handler: `409`, `401`, `400`, `404`, `200`, `201`.
 - JSON envelope keys observed: `success`, `message`, `sessionId`, `url`, `reused`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Stripe checkout and bank-transfer API contracts](../API_DOMAIN_CONTRACTS/stripe-payments.md) for request requirements, middleware boundaries, provider verification, tenant scoping, persistence, idempotency, response behavior and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-396 — GET /api/payments/stripe/verify/:sessionId
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [stripeRoutes.js](../../server/routes/stripeRoutes.js) · [route module explanation](../code-explanations/backend/routes/stripeRoutes.md)<br>
 **Mounted inventory entry:** 396 of 629<br>
 **Route declaration pipeline:** `verifyStripeSession`
@@ -372,13 +373,13 @@ router.get("/verify/:sessionId",verifyStripeSession)
 - Literal HTTP statuses in handler: `401`, `400`, `403`, `404`, `200`.
 - JSON envelope keys observed: `success`, `message`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Stripe checkout and bank-transfer API contracts](../API_DOMAIN_CONTRACTS/stripe-payments.md) for request requirements, middleware boundaries, provider verification, tenant scoping, persistence, idempotency, response behavior and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-397 — POST /api/payments/stripe/bank-transfer
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [stripeRoutes.js](../../server/routes/stripeRoutes.js) · [route module explanation](../code-explanations/backend/routes/stripeRoutes.md)<br>
 **Mounted inventory entry:** 397 of 629<br>
 **Route declaration pipeline:** `paymentInitiationLimit`, `createBankTransferPayment`
@@ -398,7 +399,7 @@ router.post("/bank-transfer",paymentInitiationLimit,createBankTransferPayment)
 - Literal HTTP statuses in handler: `409`, `401`, `400`, `404`, `200`, `201`.
 - JSON envelope keys observed: `success`, `message`, `payment`.
 
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Stripe checkout and bank-transfer API contracts](../API_DOMAIN_CONTRACTS/stripe-payments.md) for request requirements, middleware boundaries, provider verification, tenant scoping, persistence, idempotency, response behavior and limitations.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
