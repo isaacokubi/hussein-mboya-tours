@@ -63,6 +63,7 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/services/bookingRevenueService.js` | SOURCE-VERIFIED | [Canonical admin dashboard metrics](API_DOMAIN_CONTRACTS/admin-dashboard.md) | Posted-journal revenue total plus separate qualifying paid-booking count |
 | `server/controllers/adminDestinationController.js` | SOURCE-VERIFIED | [Admin destination contracts](API_DOMAIN_CONTRACTS/admin-destinations.md) | Tenant destination CRUD, image uploads, Cloudinary cleanup and failure boundaries |
 | `server/controllers/adminGalleryController.js` | SOURCE-VERIFIED | [Admin gallery contracts](API_DOMAIN_CONTRACTS/admin-gallery.md) | Gallery CRUD, media upload separation, tenant scope and Cloudinary cleanup gaps |
+| `server/routes/tourManagerRoutes.js` | SOURCE-VERIFIED | [Tour manager dashboard contract](API_DOMAIN_CONTRACTS/tour-manager-dashboard.md) | Dashboard declaration, protect/tenant/manager middleware and `/tourmanager` plus `/tour-manager` mount aliases |
 | `server/controllers/tourManagerController.js` | SOURCE-VERIFIED | [Tour manager dashboard contract](API_DOMAIN_CONTRACTS/tour-manager-dashboard.md) | Dashboard aggregation, tenant filters, result formatting and revenue service use |
 
 | `server/controllers/agentCustomerController.js` | SOURCE-VERIFIED | [Agent customer API contracts](API_DOMAIN_CONTRACTS/agent-customers.md) | Six customer handlers: allowlist normalization, Agent ownership, tenant assumptions, pagination, CRUD and soft-delete behavior |
