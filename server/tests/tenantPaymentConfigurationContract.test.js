@@ -30,7 +30,8 @@ test("server checks tenant method availability before booking/payment initiation
   assert.match(bookings, /isTenantPaymentMethodAvailable\(tenantSettings, normalizedPaymentMethod\)/);
   assert.match(stripe, /isTenantPaymentMethodAvailable\(tenantSettings, "CARD"\)/);
   assert.match(stripe, /isTenantPaymentMethodAvailable\(tenantSettings, "BANK_TRANSFER"\)/);
-  assert.match(cash, /isTenantPaymentMethodAvailable\(settings, "CASH"\)/);
+  assert.match(cash, /isMethodAvailable = isTenantPaymentMethodAvailable/);
+  assert.match(cash, /isMethodAvailable\(settings, "CASH"\)/);
   assert.match(settings, /enablePaypal: paypalAvailable, paypalAvailable/);
   assert.match(settings, /enableMpesa: Boolean\(tenantSettings\?\.enableMpesa !== false && mpesaReady\)/, "configured tenant gateway and tenant payment setting must be the checkout availability source; stale legacy Organization feature flags must not hide a configured method");
   assert.doesNotMatch(settings, /enableMpesa: Boolean\([^\n]*tenant\.features\?\./);
