@@ -4,7 +4,7 @@ This guide contains 4 mounted method/path inventory entries in the **tenants** d
 
 ## endpoint-508 — GET /api/tenants
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tenantRoutes.js](../../server/routes/tenantRoutes.js) · [route module explanation](../code-explanations/backend/routes/tenantRoutes.md)<br>
 **Mounted inventory entry:** 508 of 629<br>
 **Route declaration pipeline:** `listTenants`
@@ -18,20 +18,13 @@ This guide contains 4 mounted method/path inventory entries in the **tenants** d
 router.get("/", listTenants)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: no literal status code detected; Express default or delegated error handler may apply.
-- JSON envelope keys observed: `success`, `data`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Platform tenant directory APIs](../API_DOMAIN_CONTRACTS/platform-tenants.md). The current list handler calls tenantFilter(req) despite the platform Super Admin route having no tenantId, causing a missing-tenant-context failure.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-509 — POST /api/tenants
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tenantRoutes.js](../../server/routes/tenantRoutes.js) · [route module explanation](../code-explanations/backend/routes/tenantRoutes.md)<br>
 **Mounted inventory entry:** 509 of 629<br>
 **Route declaration pipeline:** `createTenant`
@@ -45,20 +38,13 @@ router.get("/", listTenants)
 router.post("/", createTenant)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: `admin`, `name`, `slug`, `country`, `timezone`, `currency`.
-- Path parameters read: none detected; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `409`, `201`.
-- JSON envelope keys observed: `success`, `message`, `tenant`, `admin`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Platform tenant directory APIs](../API_DOMAIN_CONTRACTS/platform-tenants.md) for Super Admin authorization, body validation, tenant creation/cleanup, tenant detail reads and allowlisted tenant updates.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-510 — GET /api/tenants/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tenantRoutes.js](../../server/routes/tenantRoutes.js) · [route module explanation](../code-explanations/backend/routes/tenantRoutes.md)<br>
 **Mounted inventory entry:** 510 of 629<br>
 **Route declaration pipeline:** `getTenant`
@@ -72,20 +58,13 @@ router.post("/", createTenant)
 router.get("/:id", getTenant)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `400`, `404`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Platform tenant directory APIs](../API_DOMAIN_CONTRACTS/platform-tenants.md) for Super Admin authorization, body validation, tenant creation/cleanup, tenant detail reads and allowlisted tenant updates.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
 ## endpoint-511 — PATCH /api/tenants/:id
 
-**Contract status:** PARTIALLY VERIFIED<br>
+**Contract status:** SOURCE-TRACED<br>
 **Router:** [tenantRoutes.js](../../server/routes/tenantRoutes.js) · [route module explanation](../code-explanations/backend/routes/tenantRoutes.md)<br>
 **Mounted inventory entry:** 511 of 629<br>
 **Route declaration pipeline:** `updateTenant`
@@ -99,14 +78,7 @@ router.get("/:id", getTenant)
 router.patch("/:id", updateTenant)
 ```
 
-**Statically observed handler cues (navigation aid):**
-
-- Request body properties read: none detected by direct property/destructuring scan.
-- Path parameters read: `id`; query parameters read: none detected.
-- Literal HTTP statuses in handler: `404`.
-- JSON envelope keys observed: `success`, `message`.
-
-**Unverified contract details:** PARTIALLY VERIFIED. The route declaration proves the method, mounted path, middleware order and handler pipeline only. The route guide may expose request keys/status/envelope cues, but those cues do not prove requiredness, types, nested schema constraints, authorization inside the controller, all success/error branches, exact response fields, service/model side effects, transaction boundaries or idempotency. Those facts require tracing the linked handler and every service/model it calls; no successful curl example is provided until that trace is complete.
+**Source-traced behavior:** See [Platform tenant directory APIs](../API_DOMAIN_CONTRACTS/platform-tenants.md) for Super Admin authorization, body validation, tenant creation/cleanup, tenant detail reads and allowlisted tenant updates.
 
 **Example:** No curl command is supplied for this entry unless its contract is source-traced above. Substitute-safe examples are not useful when required fields or authentication are unknown.
 
