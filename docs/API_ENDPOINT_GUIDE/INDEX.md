@@ -62,4 +62,4 @@ Generated from the mounted route inventory: **629 entries**, **629 source-traced
 | vehicles | 9 | [vehicles.md](vehicles.md) |
 | wishlist | 3 | [wishlist.md](wishlist.md) |
 
-Each endpoint section identifies evidence available at the route boundary and explicitly lists the missing source trace for partial contracts. A structurally observed key or literal status is not a complete API schema.
+Each of the 629 endpoint sections is labelled SOURCE-TRACED based on repository source inspection. This is not a claim that all endpoints were exercised over HTTP, that all branches have dedicated tests, or that the application has passed a fresh runtime test run. Review the domain contract for the handler-specific request, authorization, persistence, response, and known-gap details.
