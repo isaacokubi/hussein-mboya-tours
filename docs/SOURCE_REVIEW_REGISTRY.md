@@ -291,3 +291,6 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 
 | `server/routes/tenantRoutes.js` | SOURCE-VERIFIED | [Platform tenant contracts](API_DOMAIN_CONTRACTS/platform-tenants.md) | Tenant resolution, authentication and Super Admin-only route boundary |
 | `server/controllers/tenantController.js` | SOURCE-VERIFIED | [Platform tenant contracts](API_DOMAIN_CONTRACTS/platform-tenants.md) | Tenant list context bug, creation validation/cleanup, tenant read and allowlisted update |
+
+
+| `server/routes/tenantSubscriptionRoutes.js` | SOURCE-VERIFIED | [Tenant subscription contracts](API_DOMAIN_CONTRACTS/tenant-subscriptions.md) | Authenticated tenant context and subscription/read/payment route declarations |
