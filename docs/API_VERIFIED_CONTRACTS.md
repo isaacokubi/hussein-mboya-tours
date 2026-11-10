@@ -363,3 +363,7 @@ Entries 530–531 are source-traced in [Tour Manager API contracts](API_DOMAIN_C
 ## Travel operations and commercial rules
 
 Entries 606–613 are source-traced in [Travel operations and commercial rule APIs](API_DOMAIN_CONTRACTS/travel-operations.md). Reads require authentication; mutations require managerOnly. Operations support tenant filters and assigned-resource overlap checks; rule updates use an unfiltered body $set and no explicit controller allowlist.
+
+## Tour Manager tour updates
+
+Entries 532–533 are source-traced in [Tour Manager API contracts](API_DOMAIN_CONTRACTS/tour-manager.md). Both aliases call the shared updateTour handler with tenant-scoped lookup and reject resource-assignment changes. Supplied date fields cannot be in the past. The generic update path is not transactional and accepts destination, availability and availabilitySettings without the cross-document tenant/capacity checks used by creation and the dedicated availability endpoint; this is documented as an integrity risk. The manager route does not enable file uploads.
