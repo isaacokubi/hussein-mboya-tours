@@ -329,3 +329,9 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/routes/travelLifecycleRoutes.js` | SOURCE-VERIFIED | [Travel lifecycle contracts](API_DOMAIN_CONTRACTS/travel-lifecycle.md) | Authenticated travel voucher, pricing and loyalty route declarations with mixed manager-only gates |
 | `server/controllers/travelLifecycleController.js` | SOURCE-VERIFIED | [Travel lifecycle contracts](API_DOMAIN_CONTRACTS/travel-lifecycle.md) | Voucher token hashing/redemption, dynamic price rule application and loyalty balance/earn/redeem handlers |
 | `server/models/LoyaltyAccount.js` | SOURCE-VERIFIED | [Travel lifecycle contracts](API_DOMAIN_CONTRACTS/travel-lifecycle.md) | Tenant/customer unique account, points counters and referral code indexes |
+
+
+| `server/routes/travelOperationsRoutes.js` | SOURCE-VERIFIED | [Travel operations contracts](API_DOMAIN_CONTRACTS/travel-operations.md) | Authenticated operations/rules reads and manager-only mutation routes |
+| `server/controllers/travelOperationsController.js` | SOURCE-VERIFIED | [Travel operations contracts](API_DOMAIN_CONTRACTS/travel-operations.md) | Tenant operations CRUD, commercial rule CRUD, filters and validation |
+| `server/services/travelOperationsService.js` | SOURCE-VERIFIED | [Travel operations contracts](API_DOMAIN_CONTRACTS/travel-operations.md) | Assigned-resource schedule overlap detection on create/update |
+| `server/models/TravelCommercialRule.js` | SOURCE-VERIFIED | [Travel operations contracts](API_DOMAIN_CONTRACTS/travel-operations.md) | Tenant dynamic price/park fee/loyalty/referral rule schema and query index |
