@@ -139,6 +139,14 @@ The four daily/monthly/tour/agent report routes are source-traced in [Admin book
 
 `GET /api/admin/tours` (inventory entry 101) is source-traced in [Admin tour catalogue contracts](API_DOMAIN_CONTRACTS/admin-tours.md). The handler relies on `Tour` query middleware for tenant filtering and does not have a dedicated list-contract integration test.
 
+## Tenant sitemap
+
+`GET /api/sitemap.xml` (inventory entry 381) is source-traced in [its endpoint guide](API_ENDPOINT_GUIDE/sitemap-xml.md). The route is tenant-resolved and unauthenticated; it returns generated XML based on fixed public pages and tenant-filtered active tour/destination reads. No dedicated route test was found.
+
+## Tenant settings aliases
+
+Entries 382–385 (`GET`/`PUT /api/admin/settings` and `/api/settings`) share the settings router and controller and are source-traced in [the settings endpoint guide](API_ENDPOINT_GUIDE/settings.md). All mounts use tenant resolution, JWT authentication and `settings.manage`; tenant setting changes synchronize selected organization fields in separate nontransactional writes.
+
 
 ## Admin tour lifecycle and resource operations
 

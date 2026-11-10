@@ -59,3 +59,5 @@ The API index count is maintained in the coverage report and generated endpoint 
 - [Personalized tour recommendations and fallback behavior](recommendations.md)
 - [Public tour reviews, verified review creation and helpful votes](reviews.md)
 - [Security status metrics and recent event listing](security-status.md)
+- [Tenant-resolved XML sitemap generation](../API_ENDPOINT_GUIDE/sitemap-xml.md)
+- [Tenant settings read/update aliases](../API_ENDPOINT_GUIDE/settings.md)

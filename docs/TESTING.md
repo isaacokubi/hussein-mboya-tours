@@ -22,15 +22,15 @@ Payment tests should cover normalization, amount bounds, booking ownership, dupl
 
 The current test suite includes mock/fixture coverage for M-Pesa payload validation, provider verification branches, payment lifecycle integrity, refund safety and tenant isolation. Passing these tests establishes the covered mocked/application logic only; no real Daraja transaction or settlement was performed.
 
-## Validation run for the documentation quality pass (2026-11-10)
+## Latest local validation run (2026-11-10)
 
-- `cd server && npm run check`: passed (`node --check server.js`).
-- `cd server && npm test`: passed outside the sandbox: 316 tests, 311 passed, 5 skipped, 0 failed. The five skipped cases require isolated Mongo integration configuration. Running inside the sandbox caused `listen EPERM` for the readiness test's `127.0.0.1` listeners; rerunning the suite outside the sandbox resolved that environment restriction.
-- Focused `node tests/healthReadiness.test.js` outside the sandbox: 3 passed, 1 Mongo-backed readiness test skipped because `HEALTH_TEST_MONGODB_URI` was not supplied. Its three runnable cases verify health/root behavior, fail-closed uploads without Cloudinary, and server liveness while Mongo is unavailable.
+- `cd server && npm test`: 322 tests, 317 passed, 0 failed, 5 skipped, 0 todo. Mongo-dependent cases were skipped because this local run did not supply an isolated replica-set test database.
+- `cd server && npm run check:all`: passed, including source syntax checks, tenant model contract check and static production-readiness contract. This is not production launch certification; the script explicitly leaves external deployment evidence gates pending.
 - `cd client && npm run lint`: passed.
 - `cd client && npm run build`: passed; Vite transformed 3,232 modules.
-- Documentation generation/coverage scripts passed `node --check`.
-- `node scripts/check-documentation-coverage.js`: 1,015 source rows; no missing/stale source entries; 42 registered critical source scopes; 96 models and 2,229 schema paths; all 629 mounted API entries accounted for; 78 source-traced contracts, 551 partial, 0 unclassified; 100 interview questions; 9 business workflow sections; 0 broken links; 0 matches for selected credential patterns. It reports incomplete API and source review coverage.
+- `cd client && npm run test:e2e -- --list`: discovered 16 tests in 5 files. The E2E tests were not run: Playwright defaults to the hosted app and some tests use seeded accounts or mutations; no local end-to-end fixture was configured for this run. No frontend unit/component test command is defined.
+- `node --check` passed for documentation audit/generator scripts and the touched sitemap source modules.
+- `node scripts/check-documentation-coverage.js`: 1,017 source rows; 164 SOURCE-VERIFIED, 238 PARTIAL, 615 STRUCTURAL, 0 UNREVIEWED; 170 registered scope rows across 164 files; 96 model guides and 2,229 schema paths; all 629 mounted API entries accounted for; 390 source-traced, 239 partial, 0 unclassified; 100 interview questions; 9 workflow sections; 0 broken links, stale references, or selected credential-pattern matches. The audit reports remaining API/source review work.
 - Eight curl templates are source-shaped but unexecuted. No live API request or M-Pesa/Stripe/PayPal transaction was run. Existing payment tests use mocks/fixtures; they do not establish provider settlement or production integration.
 
-The outstanding readiness check is its Mongo-backed case, which requires `HEALTH_TEST_MONGODB_URI` pointing at the dedicated approved test source database. That case was not run, so successful startup against MongoDB and completion of its index migration remain unverified by this pass.
+The Mongo-backed tests require isolated replica-set MongoDB configuration. Live Playwright and provider verification require a dedicated test deployment/data and genuine sandbox configuration. These tests were not reported as passing.

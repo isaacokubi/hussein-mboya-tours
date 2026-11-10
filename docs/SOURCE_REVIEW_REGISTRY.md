@@ -203,3 +203,8 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/controllers/securityController.js` | SOURCE-VERIFIED | [Security status and event APIs](API_DOMAIN_CONTRACTS/security-status.md) | Security endpoints response/error envelopes and service delegation |
 | `server/services/securityService.js` | SOURCE-VERIFIED | [Security status and event APIs](API_DOMAIN_CONTRACTS/security-status.md) | Heuristic metrics, 24-hour counts and unscoped cross-tenant queries |
 | `server/routes/securityRoutes.js` | SOURCE-VERIFIED | [Security status and event APIs](API_DOMAIN_CONTRACTS/security-status.md) | Tenant/JWT/system.security gates for status and event listing |
+
+| `server/routes/seoRoutes.js` | SOURCE-VERIFIED | [Tenant sitemap contract](API_ENDPOINT_GUIDE/sitemap-xml.md) | Tenant-resolution middleware, public route, XML response and delegated error path |
+| `server/services/sitemapService.js` | SOURCE-VERIFIED | [Tenant sitemap contract](API_ENDPOINT_GUIDE/sitemap-xml.md) | Tenant requirement, static sitemap entries, filtered Tour/Destination reads and XML stream/error behavior |
+| `server/routes/settingsRoutes.js` | SOURCE-VERIFIED | [Tenant settings contracts](API_ENDPOINT_GUIDE/settings.md) | Shared admin/settings mounts, resolveTenant/protect/settings.manage middleware and handler mapping |
+| `server/controllers/settingsController.js` | SOURCE-VERIFIED | [Tenant settings contracts](API_ENDPOINT_GUIDE/settings.md) | `getSettings` and `updateSettings` scope: allowlist, coercion, validation, response/error paths, settings/organization writes; public settings handler excluded |

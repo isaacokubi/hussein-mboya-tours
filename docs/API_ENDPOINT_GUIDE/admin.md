@@ -4170,9 +4170,7 @@ router.get("/", getSettings)
 - Literal HTTP statuses in handler: `200`.
 - JSON envelope keys observed: `success`, `data`, `scope`.
 
-**Source-traced contract:** See [Admin tour management contracts](../API_DOMAIN_CONTRACTS/admin-tour-management.md). Endpoint-specific methods, validation order, transaction boundaries, response differences, and shared resource assignment behavior are documented there.
-
-**Source-traced contract:** See [Admin tour management contracts](../API_DOMAIN_CONTRACTS/admin-tour-management.md).
+**Contract:** No path/query/body input. `getSettings` returns 200 `{success:true,data,settings,scope}`. In tenant context, `data` and `settings` contain tenant settings merged with organization profile overrides plus `tenantProfile`; `scope` is `tenant`. In tenant-bypass/platform context it returns platform settings with `scope:"platform"`. Missing setting records are initialized from defaults; tenant defaults are seeded from `Organization`. Reads include `SystemSetting`, and tenant profile resolution reads `Organization` plus the first matching admin `User`. Exceptions go to centralized error middleware. The mount requires resolved tenant context, JWT authentication, and `settings.manage`; no focused endpoint test was identified.
 
 ## endpoint-384 — PUT /api/admin/settings
 
@@ -4197,9 +4195,7 @@ router.put("/", updateSettings)
 - Literal HTTP statuses in handler: `400`, `200`.
 - JSON envelope keys observed: `success`, `message`.
 
-**Source-traced contract:** See [Admin tour management contracts](../API_DOMAIN_CONTRACTS/admin-tour-management.md). Endpoint-specific methods, validation order, transaction boundaries, response differences, and shared resource assignment behavior are documented there.
-
-**Source-traced contract:** See [Admin tour management contracts](../API_DOMAIN_CONTRACTS/admin-tour-management.md).
+**Contract:** The body is an allowlist of company/contact/location/currency/timezone, booking/tax/commission rates, payment-method flags and instructions, email/social/SEO fields, notifications, theme colors, typography, and homepage sections; unknown properties are dropped. String values are normalized (including currency uppercase and support email lowercase); numeric and boolean string values are coerced, and SEO keywords/homepage sections accept JSON strings. Colors must be six-digit hex; overlay is 0–100; tax/deposit/commission rates are 0–100; company name cannot be blank; support email and enabled cash/bank details are validated. Success is 200 `{success:true,message,data,settings,tenantProfile,scope}`. Tenant updates save `SystemSetting`, then separately update mapped `Organization` profile/brand fields; these writes are not transactional and later organization failure can follow a successful settings write. Validation returns 400 `{success:false,message}`; caught failures return `error.status || 500` with a public message. No multipart middleware is mounted here, so the controller's optional `req.file` logo path is not populated by this route. Permission is `settings.manage`; there is no dedicated endpoint test found.
 
 ## endpoint-500 — GET /api/admin/tax/rules
 
