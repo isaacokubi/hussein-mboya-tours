@@ -327,3 +327,7 @@ Entry 515 is source-traced in [Tenant-safe tour resource assignment API contract
 ## Tour manager dashboard aliases
 
 Entries 516–517 are source-traced in [Tour manager dashboard contract](API_DOMAIN_CONTRACTS/tour-manager-dashboard.md). Both route prefixes reach the same tenant-scoped handler and return the same dashboard snapshot. The response's `revenueSource: "paid_booking_value"` label does not match the service's posted-journal revenue calculation; that discrepancy is documented in the contract.
+
+## Tour Manager Operations Copilot
+
+Entries 518–521 are source-traced in [Tour Manager Operations Copilot API contracts](API_DOMAIN_CONTRACTS/operations-copilot.md). Both route prefixes share the same tenant-scoped summary and preview-only quote handlers. Summary totals are based on bounded samples and its overall estimated margin can mix all bookings with only the first 100 tours; the quote endpoint uses catalogue price and persists no records. Static access tests and pure calculation tests are present; no live HTTP/controller integration was run in this documentation pass.
