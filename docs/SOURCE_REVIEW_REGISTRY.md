@@ -234,3 +234,15 @@ This is an explicit evidence list for implementation-focused explanations. `SOUR
 | `server/routes/superAdminRevenueRoutes.js` | SOURCE-VERIFIED | [Super Admin revenue contract](API_DOMAIN_CONTRACTS/superadmin-revenue.md) | Revenue route uses authorize(admin.dashboard) without a local superAdminOnly guard |
 | `server/controllers/superAdminRevenueController.js` | SOURCE-VERIFIED | [Super Admin revenue contract](API_DOMAIN_CONTRACTS/superadmin-revenue.md) | Platform-bypass payment aggregation, refund qualification and multi-currency response |
 | `server/middleware/permissionMiddleware.js` | SOURCE-VERIFIED | [Super Admin revenue contract](API_DOMAIN_CONTRACTS/superadmin-revenue.md) | admin.dashboard compatibility permission granted to normalized admin role and wildcard platform role behavior |
+
+
+| `server/routes/superAdminRoleRoutes.js` | SOURCE-VERIFIED | [Super Admin role contracts](API_DOMAIN_CONTRACTS/superadmin-roles.md) | Four role/permission endpoints and router-wide protect plus roles.manage authorization |
+| `server/controllers/superAdminRoleController.js` | SOURCE-VERIFIED | [Super Admin role contracts](API_DOMAIN_CONTRACTS/superadmin-roles.md) | Role canonicalization, permission hydration, ObjectId validation and permission replacement edge cases |
+| `server/models/Role.js` | SOURCE-VERIFIED | [Super Admin role contracts](API_DOMAIN_CONTRACTS/superadmin-roles.md) | Tenant-scoped role fields, unique tenant/name index and tenant plugin behavior |
+| `server/models/Permission.js` | SOURCE-VERIFIED | [Super Admin role contracts](API_DOMAIN_CONTRACTS/superadmin-roles.md) | Global permission schema, active flag, field limits and indexes |
+| `server/tenancy/tenantPlugin.js` | SOURCE-VERIFIED | [Super Admin role contracts](API_DOMAIN_CONTRACTS/superadmin-roles.md) | Tenant query filtering and write enforcement applied to Role; global model bypass for Permission |
+| `server/tenancy/context.js` | SOURCE-VERIFIED | [Super Admin role contracts](API_DOMAIN_CONTRACTS/superadmin-roles.md) | AsyncLocalStorage tenant/bypass context and platform-role handling |
+| `server/routes/superAdminRoutes.js` | SOURCE-VERIFIED | [Super Admin dashboard contracts](API_DOMAIN_CONTRACTS/superadmin-dashboard.md) | Dashboard route aliases and router-wide protect/superAdminOnly boundary |
+| `server/controllers/superAdminDashboardMetricsController.js` | SOURCE-VERIFIED | [Super Admin dashboard contracts](API_DOMAIN_CONTRACTS/superadmin-dashboard.md) | Platform user counts, tenant-filtered operational counts, currency revenue aggregation and consistency response |
+| `server/middleware/superAdminOnly.js` | SOURCE-VERIFIED | [Super Admin dashboard contracts](API_DOMAIN_CONTRACTS/superadmin-dashboard.md) | Explicit authenticated platform-super-admin check |
+| `server/services/superAdminDataConsistency.js` | SOURCE-VERIFIED | [Super Admin dashboard contracts](API_DOMAIN_CONTRACTS/superadmin-dashboard.md) | Canonical customer account/profile/admin metric aggregation and legacy tenant reconciliation |
