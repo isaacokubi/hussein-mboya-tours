@@ -1,25 +1,49 @@
+/**
+ * Purpose: Home page-level UI component. Main declarations: Home.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { lazy } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import { ArrowRight, BadgeCheck, CalendarCheck2, CarFront, CheckCircle2, Compass, CreditCard, Hotel, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
+// Load ../components/seo/SEO so this module can use its exported dependencies.
 import SEO from "../components/seo/SEO";
+// Load ../components/home/HeroSlider so this module can use its exported dependencies.
 import HeroSlider from "../components/home/HeroSlider";
+// Load ../components/home/HomeSearch so this module can use its exported dependencies.
 import HomeSearch from "../components/home/HomeSearch";
+// Load ../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../context/SettingsContext";
+// Load ../context/TenantContext so this module can use its exported dependencies.
 import { useTenant } from "../context/TenantContext";
+// Load ../components/common/DeferredSection so this module can use its exported dependencies.
 import DeferredSection from "../components/common/DeferredSection";
 
+// Declare StatsSection for use by the surrounding module or function.
 const StatsSection = lazy(() => import("../components/home/StatsSection"));
+// Declare FeaturedTours for use by the surrounding module or function.
 const FeaturedTours = lazy(() => import("../components/home/FeaturedTours"));
+// Declare PublicPackages for use by the surrounding module or function.
 const PublicPackages = lazy(() => import("../components/home/PublicPackages"));
+// Declare DestinationsSection for use by the surrounding module or function.
 const DestinationsSection = lazy(() => import("../components/home/DestinationsSection"));
+// Declare CategoriesSection for use by the surrounding module or function.
 const CategoriesSection = lazy(() => import("../components/home/CategoriesSection"));
+// Declare TestimonialsSection for use by the surrounding module or function.
 const TestimonialsSection = lazy(() => import("../components/home/TestimonialsSection"));
+// Declare GallerySection for use by the surrounding module or function.
 const GallerySection = lazy(() => import("../components/home/GallerySection"));
+// Declare WhyChooseUs for use by the surrounding module or function.
 const WhyChooseUs = lazy(() => import("../components/home/WhyChooseUs"));
+// Declare MpesaCTA for use by the surrounding module or function.
 const MpesaCTA = lazy(() => import("../components/home/MpesaCTA"));
+// Declare NewsletterSection for use by the surrounding module or function.
 const NewsletterSection = lazy(() => import("../components/home/NewsletterSection"));
 
+// Declare DEFAULT_SECTIONS for use by the surrounding module or function.
 const DEFAULT_SECTIONS = { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true };
+// Declare JOURNEY for use by the surrounding module or function.
 const JOURNEY = [
   ["Discover", "Browse curated tours, destinations and travel services.", Compass],
   ["Enquire", "Request a quote or tailor an itinerary around your needs.", UsersRound],
@@ -29,8 +53,10 @@ const JOURNEY = [
   ["Remember", "Complete your journey, share feedback and stay connected.", BadgeCheck],
 ];
 
+// Declare TRUST_POINTS for use by the surrounding module or function.
 const TRUST_POINTS = [["Kenya specialists", "Local knowledge from people who know the destinations.", Compass], ["Verified local support", "Guides, drivers and partners coordinated around your trip.", ShieldCheck], ["Flexible itineraries", "Choose a ready-made safari or build a trip around you.", Sparkles], ["Secure payments", "Reserve confidently with M-Pesa and supported payment options.", CreditCard]];
 
+// Declare SERVICES for use by the surrounding module or function.
 const SERVICES = [
   ["Safaris & Tours", "Curated and tailor-made Kenya adventures.", Compass, "/tours"],
   ["Hotels & Stays", "Accommodation coordinated around your itinerary.", Hotel, "/hotels"],
@@ -38,14 +64,22 @@ const SERVICES = [
   ["Custom Travel", "Flexible experiences for families, groups, corporates and honeymoons.", Sparkles, "/tours"],
 ];
 
+// Define Home; its parameters and body implement this operation.
 export default function Home() {
+  // Declare { tenant = {} } for use by the surrounding module or function.
   const { tenant = {} } = useTenant() || {};
+  // Declare { companyName: configuredCompanyName = "", settings = {} } for use by the surrounding module or function.
   const { companyName: configuredCompanyName = "", settings = {} } = useSettings() || {};
+  // Declare companyName for use by the surrounding module or function.
   const companyName = configuredCompanyName || tenant.name || tenant.companyName || "Hussein Mboya Tours";
+  // Declare sections for use by the surrounding module or function.
   const sections = { ...DEFAULT_SECTIONS, ...(settings.homepageSections || {}) };
+  // Declare seoTitle for use by the surrounding module or function.
   const seoTitle = settings.seoTitle || `Kenya Safaris & Tours | ${companyName}`;
+  // Declare seoDescription for use by the surrounding module or function.
   const seoDescription = settings.seoDescription || `Discover Kenya with ${companyName}: safaris, wildlife, beach holidays, custom itineraries and seamless travel support.`;
 
+  // Return the expression shown below to the caller.
   return (
     <main className="overflow-hidden bg-[#fbf7ef] text-[#17231e]" style={{ fontFamily: "var(--tenant-font-family,Inter), sans-serif" }}>
       <SEO title={seoTitle} description={seoDescription} image={settings.companyLogo || tenant.logoUrl || "/hero1.jpeg"} />

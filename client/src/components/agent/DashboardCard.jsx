@@ -1,3 +1,7 @@
+/**
+ * Purpose: Dashboard Card reusable UI component. Main declarations: DashboardCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 export default function DashboardCard({
 
 title,
@@ -13,6 +17,7 @@ className = ""
 }){
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div

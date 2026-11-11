@@ -1,8 +1,16 @@
+/**
+ * Purpose: Platform Architecture page-level UI component. Main declarations: PlatformArchitecture.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Boxes, Cloud, Database, GitBranch, Server, ShieldCheck, Sparkles } from "lucide-react";
+// Load ../../components/admin/DeveloperPlatformCenter so this module can use its exported dependencies.
 import DeveloperPlatformCenter from "../../components/admin/DeveloperPlatformCenter";
+// Load ../../components/admin/PaymentGatewayCenter so this module can use its exported dependencies.
 import PaymentGatewayCenter from "../../components/admin/PaymentGatewayCenter";
+// Load ./PrivacyRequests so this module can use its exported dependencies.
 import PrivacyRequests from "./PrivacyRequests";
 
+// Declare layers for use by the surrounding module or function.
 const layers = [
   ["Customer experience", "React + Vite", "Public website, tour discovery, booking, custom requests, checkout and reviews", Boxes],
   ["Business services", "Node.js + Express", "Sales, CRM, quotations, bookings, finance, operations, RBAC and notifications", Server],
@@ -10,13 +18,16 @@ const layers = [
   ["Integrations", "M-Pesa · Stripe · PayPal · PesaPal · Cloudinary · Email · AI", "Payments, media, customer communications and intelligent assistance", Cloud],
 ];
 
+// Declare controlCards for use by the surrounding module or function.
 const controlCards = [
   ["Multi-tenant isolation", "Tenant-aware models, queries, permissions and branding keep business data separated.", ShieldCheck],
   ["Scalable delivery", "Frontend, API, database and integrations remain independently extensible.", GitBranch],
   ["Intelligent operations", "AI assists support, booking risk, operations, analytics and finance while humans retain approval control.", Sparkles],
 ];
 
+// Define PlatformArchitecture; its parameters and body implement this operation.
 export default function PlatformArchitecture() {
+  // Return the expression shown below to the caller.
   return (
     <div className="admin-control-center min-h-screen bg-[var(--tenant-background,#f8fafc)] p-4 text-[var(--tenant-text,#0f172a)] md:p-6">
       <div className="mx-auto max-w-7xl">

@@ -1,17 +1,26 @@
+/**
+ * Purpose: admin AIBooking Risk Controller HTTP controller. Main declarations: getBookingRiskAnalysis.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter } from "../tenancy/context.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../models/Payment.js so this module can use its exported dependencies.
 import Payment from "../models/Payment.js";
 
 
+// Declare getBookingRiskAnalysis for use by the surrounding module or function.
 export const getBookingRiskAnalysis = async (
   req,
   res,
   next
 )=>{
 
+  // Run this operation with a dedicated error-handling path for failures.
   try {
 
 
+    // Declare [ pendingBookings, cancelledBookings, unpaidBookings, oldPendingBookings ] for use by the surrounding module or function.
     const [
       pendingBookings,
       cancelledBookings,
@@ -60,12 +69,15 @@ export const getBookingRiskAnalysis = async (
 
 
 
+    // Declare risks for use by the surrounding module or function.
     const risks=[];
 
 
 
+    // Check the condition (oldPendingBookings > 0) and run the matching branch.
     if(oldPendingBookings > 0){
 
+      // Perform the side effect or state update expressed on the following line.
       risks.push({
 
         level:"high",
@@ -81,8 +93,10 @@ export const getBookingRiskAnalysis = async (
 
 
 
+    // Check the condition (unpaidBookings > 0) and run the matching branch.
     if(unpaidBookings > 0){
 
+      // Perform the side effect or state update expressed on the following line.
       risks.push({
 
         level:"medium",
@@ -98,8 +112,10 @@ export const getBookingRiskAnalysis = async (
 
 
 
+    // Check the condition (cancelledBookings > pendingBookings) and run the matching branch.
     if(cancelledBookings > pendingBookings){
 
+      // Perform the side effect or state update expressed on the following line.
       risks.push({
 
         level:"medium",
@@ -115,8 +131,10 @@ export const getBookingRiskAnalysis = async (
 
 
 
+    // Check the condition (!risks.length) and run the matching branch.
     if(!risks.length){
 
+      // Perform the side effect or state update expressed on the following line.
       risks.push({
 
         level:"low",
@@ -132,6 +150,7 @@ export const getBookingRiskAnalysis = async (
 
 
 
+    // Perform the side effect or state update expressed on the following line.
     res.json({
 
       success:true,
@@ -160,6 +179,7 @@ export const getBookingRiskAnalysis = async (
 
   }catch(error){
 
+    // Perform the side effect or state update expressed on the following line.
     next(error);
 
   }

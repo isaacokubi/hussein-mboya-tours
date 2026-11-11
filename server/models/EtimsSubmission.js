@@ -1,6 +1,12 @@
+/**
+ * Purpose: Etims Submission database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare etimsSubmissionSchema for use by the surrounding module or function.
 const etimsSubmissionSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   documentType: { type: String, enum: ["invoice", "credit", "debit"], required: true, index: true },
@@ -21,8 +27,11 @@ const etimsSubmissionSchema = new mongoose.Schema({
   submittedAt: { type: Date, default: null },
 }, { timestamps: true });
 
+// Perform the side effect or state update expressed on the following line.
 etimsSubmissionSchema.index({ tenantId: 1, documentType: 1, documentId: 1, attempt: 1 }, { unique: true });
+// Perform the side effect or state update expressed on the following line.
 etimsSubmissionSchema.index({ tenantId: 1, idempotencyKey: 1 });
+// Perform the side effect or state update expressed on the following line.
 etimsSubmissionSchema.plugin(tenantPlugin);
 
 export default mongoose.models.EtimsSubmission || mongoose.model("EtimsSubmission", etimsSubmissionSchema);

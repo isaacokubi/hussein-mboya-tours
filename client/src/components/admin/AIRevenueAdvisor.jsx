@@ -1,16 +1,30 @@
+/**
+ * Purpose: AIRevenue Advisor reusable UI component. Main declarations: hasValue, numeric, AIRevenueAdvisor, Metric.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 const hasValue = (value) => value !== undefined && value !== null && value !== "";
+// Declare numeric for use by the surrounding module or function.
 const numeric = (value) => hasValue(value) && Number.isFinite(Number(value)) ? Number(value) : null;
 
+// Define AIRevenueAdvisor; its parameters and body implement this operation.
 export default function AIRevenueAdvisor({ data = {}, fallback = {} }) {
+  // Declare metrics for use by the surrounding module or function.
   const metrics = data.metrics || {};
+  // Declare fallbackMetrics for use by the surrounding module or function.
   const fallbackMetrics = fallback.metrics || {};
+  // Declare recommendations for use by the surrounding module or function.
   const recommendations = data.recommendations?.length ? data.recommendations : fallback.recommendations || [];
+  // Declare topTours for use by the surrounding module or function.
   const topTours = data.topTours?.length ? data.topTours : fallback.topTours || [];
 
+  // Declare totalBookings for use by the surrounding module or function.
   const totalBookings = numeric(metrics.totalBookings) ?? numeric(fallbackMetrics.totalBookings);
+  // Declare totalRevenue for use by the surrounding module or function.
   const totalRevenue = numeric(metrics.totalRevenue) ?? numeric(fallbackMetrics.totalRevenue);
+  // Declare totalTours for use by the surrounding module or function.
   const totalTours = numeric(metrics.totalTours) ?? numeric(fallbackMetrics.totalTours);
 
+  // Return the expression shown below to the caller.
   return (
     <div>
       <div className="mb-5">
@@ -61,12 +75,15 @@ export default function AIRevenueAdvisor({ data = {}, fallback = {} }) {
   );
 }
 
+// Define Metric; its parameters and body implement this operation.
 function Metric({ label, value, tone }) {
+  // Declare styles for use by the surrounding module or function.
   const styles = {
     emerald: "border-emerald-100 bg-emerald-50/70 text-emerald-950",
     amber: "border-amber-100 bg-amber-50/70 text-amber-950",
     blue: "border-blue-100 bg-blue-50/70 text-blue-950"
   };
+  // Return the expression shown below to the caller.
   return (
     <div className={`rounded-2xl border p-5 shadow-sm ${styles[tone]}`}>
       <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>

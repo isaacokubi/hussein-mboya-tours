@@ -1,9 +1,17 @@
+/**
+ * Purpose: Agent Layout reusable UI component. Main declarations: AgentLayout.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Outlet } from "react-router-dom";
 
+// Load ../agent/AgentSidebar so this module can use its exported dependencies.
 import AgentSidebar from "../agent/AgentSidebar";
+// Load ../agent/AgentHeader so this module can use its exported dependencies.
 import AgentHeader from "../agent/AgentHeader";
 
+// Define AgentLayout; its parameters and body implement this operation.
 export default function AgentLayout() {
+  // Return the expression shown below to the caller.
   return (
     <div
       className="

@@ -1,46 +1,80 @@
+/**
+ * Purpose: Admin Reviews page-level UI component. Main declarations: statusOf, dateOf, rating, Badge, AdminReviews.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect, useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { Search, RefreshCw, CheckCircle2, Clock3, XCircle, MessageSquare, Star, Trash2, ShieldCheck } from "lucide-react";
+// Load ../../api/adminReviewApi so this module can use its exported dependencies.
 import { getAdminReviews, approveReview, rejectReview, deleteReview } from "../../api/adminReviewApi";
 
+// Declare statusOf for use by the surrounding module or function.
 const statusOf = (r) => r?.approved ? "approved" : r?.rejected ? "rejected" : "pending";
+// Declare dateOf for use by the surrounding module or function.
 const dateOf = (v) => v ? new Date(v).toLocaleDateString("en-KE", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+// Declare rating for use by the surrounding module or function.
 const rating = (v) => Math.max(0, Math.min(5, Number(v) || 0));
+// Declare META for use by the surrounding module or function.
 const META = {
   pending: ["Pending", "border-amber-200 bg-amber-50 text-amber-700", Clock3],
   approved: ["Approved", "border-sky-200 bg-sky-50 text-sky-700", CheckCircle2],
   rejected: ["Rejected", "border-red-200 bg-red-50 text-red-700", XCircle],
 };
+// Define Badge; its parameters and body implement this operation.
 function Badge({ status }) { const [label, cls, Icon] = META[status]; return <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${cls}`}><Icon size={13} />{label}</span>; }
 
+// Define AdminReviews; its parameters and body implement this operation.
 export default function AdminReviews() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [filter, setFilter] for use by the surrounding module or function.
   const [filter, setFilter] = useState("all");
+  // Declare [page, setPage] for use by the surrounding module or function.
   const [page, setPage] = useState(1);
+  // Declare limit for use by the surrounding module or function.
   const limit = 10;
+  // Declare { data, isLoading, isError, refetch, isFetching } for use by the surrounding module or function.
   const { data, isLoading, isError, refetch, isFetching } = useQuery({ queryKey: ["admin-reviews"], queryFn: getAdminReviews });
+  // Declare reviews for use by the surrounding module or function.
   const reviews = Array.isArray(data?.reviews) ? data.reviews : Array.isArray(data) ? data : [];
+  // Declare mutation for use by the surrounding module or function.
   const mutation = useMutation({
     mutationFn: ({ action, id }) => action === "approve" ? approveReview(id) : action === "reject" ? rejectReview(id) : deleteReview(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-reviews"] }),
   });
+  // Declare filtered for use by the surrounding module or function.
   const filtered = useMemo(() => {
+    // Declare q for use by the surrounding module or function.
     const q = search.trim().toLowerCase();
+    // Return the result of reviews.filter() to the caller.
     return reviews.filter((r) => {
+      // Declare text for use by the surrounding module or function.
       const text = `${r?.user?.name || r?.customer?.name || ""} ${r?.user?.email || r?.customer?.email || ""} ${r?.tour?.title || ""} ${r?.title || ""} ${r?.comment || ""}`.toLowerCase();
+      // Return the expression shown below to the caller.
       return (!q || text.includes(q)) && (filter === "all" || statusOf(r) === filter);
     });
   }, [reviews, search, filter]);
+  // Declare pages for use by the surrounding module or function.
   const pages = Math.max(1, Math.ceil(filtered.length / limit));
+  // Declare currentPage for use by the surrounding module or function.
   const currentPage = Math.min(page, pages);
+  // Declare visible for use by the surrounding module or function.
   const visible = filtered.slice((currentPage - 1) * limit, currentPage * limit);
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => setPage(1), [search, filter]);
+  // Declare counts for use by the surrounding module or function.
   const counts = { total: reviews.length, pending: reviews.filter(r => statusOf(r) === "pending").length, approved: reviews.filter(r => statusOf(r) === "approved").length, rejected: reviews.filter(r => statusOf(r) === "rejected").length };
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <div className="min-h-full bg-slate-50 p-6"><div className="mx-auto max-w-7xl rounded-2xl bg-white p-8 text-center shadow-sm">Loading reviews...</div></div>;
+  // Check the condition (isError) and run the matching branch.
   if (isError) return <div className="min-h-full bg-slate-50 p-6"><div className="mx-auto max-w-7xl rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700"><p className="font-semibold">Failed to load reviews.</p><button onClick={() => refetch()} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-4 py-2 font-semibold text-white"><RefreshCw size={16}/>Retry</button></div></div>;
 
+  // Return the expression shown below to the caller.
   return <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6">
     <header className="rounded-2xl bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 p-6 text-white shadow-xl sm:p-8"><div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"><div><div className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-sky-300"><ShieldCheck size={17}/>Customer Experience</div><h1 className="text-2xl font-bold sm:text-3xl">Review Moderation</h1><p className="mt-2 text-sm text-slate-300 sm:text-base">Review, approve and manage customer feedback before it appears publicly.</p></div><button onClick={() => refetch()} disabled={isFetching} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-indigo-700 disabled:opacity-60"><RefreshCw size={17} className={isFetching ? "animate-spin" : ""}/>Refresh</button></div></header>
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{[["Total Reviews",counts.total,"text-slate-900",MessageSquare],["Pending",counts.pending,"text-amber-700",Clock3],["Approved",counts.approved,"text-sky-700",CheckCircle2],["Rejected",counts.rejected,"text-red-700",XCircle]].map(([label,value,cls,Icon]) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><span className="text-sm font-medium text-slate-500">{label}</span><Icon size={18} className="text-slate-400"/></div><p className={`mt-2 text-2xl font-bold ${cls}`}>{value.toLocaleString()}</p></div>)}</div>

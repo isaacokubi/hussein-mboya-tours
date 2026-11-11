@@ -1,3 +1,7 @@
+/**
+ * Purpose: icon Map reusable UI component. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import {
 
 LayoutDashboard,
@@ -65,6 +69,7 @@ from "lucide-react";
 
 
 
+// Declare iconMap for use by the surrounding module or function.
 export const iconMap = {
 
 

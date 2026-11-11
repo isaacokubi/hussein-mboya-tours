@@ -1,10 +1,18 @@
+/**
+ * Purpose: i18n client application module. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useTenant } from '../context/TenantContext';
+// Load i18next so this module can use its exported dependencies.
 import i18n from "i18next";
 
+// Load react-i18next so this module can use its exported dependencies.
 import { initReactI18next } from "react-i18next";
 
+// Load i18next-browser-languagedetector so this module can use its exported dependencies.
 import LanguageDetector from "i18next-browser-languagedetector";
 
+// Perform the side effect or state update expressed on the following line.
 i18n
 
   .use(LanguageDetector)

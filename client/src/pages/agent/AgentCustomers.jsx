@@ -1,24 +1,45 @@
+/**
+ * Purpose: Agent Customers page-level UI component. Main declarations: fullName, statusOf, statusTone, AgentCustomers.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load lucide-react so this module can use its exported dependencies.
 import { AlertTriangle, Eye, Phone, RefreshCw, Search, UserRound, Users } from "lucide-react";
+// Load ../../hooks/useAgentCustomers so this module can use its exported dependencies.
 import useAgentCustomers from "../../hooks/useAgentCustomers";
 
+// Declare fullName for use by the surrounding module or function.
 const fullName = (customer) => customer?.name || [customer?.firstName, customer?.lastName].filter(Boolean).join(" ") || customer?.user?.name || "Customer unavailable";
+// Declare statusOf for use by the surrounding module or function.
 const statusOf = (customer) => String(customer?.status || "active").toLowerCase();
+// Declare statusTone for use by the surrounding module or function.
 const statusTone = (status) => status === "active" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : status === "inactive" ? "bg-slate-100 text-slate-600 ring-slate-200" : "bg-amber-50 text-amber-700 ring-amber-200";
 
+// Define AgentCustomers; its parameters and body implement this operation.
 export default function AgentCustomers() {
+  // Declare query for use by the surrounding module or function.
   const query = useAgentCustomers({ page: 1, limit: 100 });
+  // Declare data for use by the surrounding module or function.
   const data = Array.isArray(query.data) ? query.data : [];
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [status, setStatus] for use by the surrounding module or function.
   const [status, setStatus] = useState("all");
+  // Declare [selected, setSelected] for use by the surrounding module or function.
   const [selected, setSelected] = useState(null);
+  // Declare filtered for use by the surrounding module or function.
   const filtered = useMemo(() => { const term = search.trim().toLowerCase(); return data.filter((c) => { const s = statusOf(c); const matches = !term || [fullName(c), c?.phone, c?.email, c?.nationality, c?._id].some((v) => String(v || "").toLowerCase().includes(term)); return matches && (status === "all" || s === status); }); }, [data, search, status]);
+  // Declare active for use by the surrounding module or function.
   const active = data.filter((c) => statusOf(c) === "active").length;
+  // Declare withPhone for use by the surrounding module or function.
   const withPhone = data.filter((c) => c?.phone).length;
 
+  // Check the condition (query.isLoading) and run the matching branch.
   if (query.isLoading) return <div className="min-h-full bg-slate-50 p-6"><div className="mx-auto max-w-7xl animate-pulse space-y-5"><div className="h-32 rounded-3xl bg-slate-200"/><div className="h-96 rounded-2xl bg-white"/></div></div>;
+  // Check the condition (query.isError) and run the matching branch.
   if (query.isError) return <div className="min-h-full bg-slate-50 p-6"><div className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-white p-8"><AlertTriangle className="h-7 w-7 text-rose-600"/><h1 className="mt-4 text-2xl font-bold">Customer data unavailable</h1><p className="mt-2 text-sm text-slate-600">The API request failed, so the workspace will not show an artificial empty customer list.</p><p className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{query.error?.response?.data?.message || query.error?.message || "Unable to load customers."}</p><button type="button" onClick={()=>query.refetch()} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white"><RefreshCw className="h-4 w-4"/> Retry</button></div></div>;
 
+  // Return the expression shown below to the caller.
   return <section className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6">
     <header className="rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-6 text-white shadow-xl sm:p-8"><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-indigo-300">Customer relationship management</p><h1 className="mt-2 text-3xl font-black">My Customers</h1><p className="mt-2 text-sm text-slate-300">Customers associated with your agent sales activity.</p></div><button type="button" onClick={()=>query.refetch()} disabled={query.isFetching} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-bold hover:bg-white/15"><RefreshCw className={`h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`}/> Refresh</button></div></header>
     <div className="grid gap-4 sm:grid-cols-3"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><Users className="h-5 w-5 text-indigo-600"/><p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-500">Customers</p><p className="mt-1 text-3xl font-black">{data.length}</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><UserRound className="h-5 w-5 text-emerald-600"/><p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-500">Active</p><p className="mt-1 text-3xl font-black">{active}</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><Phone className="h-5 w-5 text-violet-600"/><p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-500">Phone available</p><p className="mt-1 text-3xl font-black">{withPhone}</p></div></div>

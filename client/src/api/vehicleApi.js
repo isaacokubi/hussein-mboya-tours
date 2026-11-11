@@ -1,3 +1,7 @@
+/**
+ * Purpose: vehicle Api client application module. Main declarations: getVehicles, getVehicleById, createVehicle, updateVehicle, deleteVehicle.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import api from "./axios";
 
 
@@ -12,8 +16,11 @@ import api from "./axios";
 // GET ALL VEHICLES
 // ============================================================
 
+// Declare getVehicles for use by the surrounding module or function.
 export const getVehicles = async () => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.get("/vehicles");
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -24,8 +31,11 @@ export const getVehicles = async () => {
 // GET SINGLE VEHICLE
 // ============================================================
 
+// Declare getVehicleById for use by the surrounding module or function.
 export const getVehicleById = async (id) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.get(`/vehicles/${id}`);
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -45,7 +55,9 @@ export const getVehicleById = async (id) => {
 //
 // ============================================================
 
+// Declare createVehicle for use by the surrounding module or function.
 export const createVehicle = async (data) => {
+  // Declare response for use by the surrounding module or function.
   const response = await api.post(
     "/vehicles",
     data,
@@ -55,6 +67,7 @@ export const createVehicle = async (data) => {
       },
     }
   );
+  // Return the data value to the caller.
   return response.data;
 };
 
@@ -65,7 +78,9 @@ export const createVehicle = async (data) => {
 // UPDATE VEHICLE
 // ============================================================
 
+// Declare updateVehicle for use by the surrounding module or function.
 export const updateVehicle = async (id, data) => {
+  // Declare response for use by the surrounding module or function.
   const response = await api.put(
     `/vehicles/${id}`,
     data,
@@ -75,6 +90,7 @@ export const updateVehicle = async (id, data) => {
       },
     }
   );
+  // Return the data value to the caller.
   return response.data;
 };
 
@@ -85,8 +101,11 @@ export const updateVehicle = async (id, data) => {
 // DELETE VEHICLE
 // ============================================================
 
+// Declare deleteVehicle for use by the surrounding module or function.
 export const deleteVehicle = async (id) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.delete(`/vehicles/${id}`);
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -104,8 +123,11 @@ export const deleteVehicle = async (id) => {
 // GET ALL DRIVERS
 // ============================================================
 
+// Declare getDrivers for use by the surrounding module or function.
 export const getDrivers = async () => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.get("/staff/drivers");
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -116,10 +138,12 @@ export const getDrivers = async () => {
 // ASSIGN DRIVER TO VEHICLE
 // ============================================================
 
+// Declare assignDriver for use by the surrounding module or function.
 export const assignDriver = async (
   vehicleId,
   driverId
 ) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.put(
     `/vehicles/${vehicleId}/assign-driver`,
     {
@@ -127,6 +151,7 @@ export const assignDriver = async (
       driver: driverId,
     }
   );
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -137,10 +162,13 @@ export const assignDriver = async (
 // REMOVE DRIVER FROM VEHICLE
 // ============================================================
 
+// Declare removeDriver for use by the surrounding module or function.
 export const removeDriver = async (vehicleId) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.put(
     `/vehicles/${vehicleId}/remove-driver`
   );
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -158,13 +186,16 @@ export const removeDriver = async (vehicleId) => {
 // UPDATE VEHICLE STATUS
 // ============================================================
 
+// Declare updateVehicleStatus for use by the surrounding module or function.
 export const updateVehicleStatus = async (
   id,
   status
 ) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.put(
     `/vehicles/${id}/status`,
     { status }
   );
+  // Return the value of data to the caller.
   return data;
 };

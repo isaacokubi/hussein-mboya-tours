@@ -1,10 +1,19 @@
+/**
+ * Purpose: repair Husseindb Tenant Catalogues operational script. Main declarations: slugify, isSyntheticSeedRecord, assertSafeTarget, stableRecords, resolveTourDurationDays.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import "dotenv/config";
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load node:url so this module can use its exported dependencies.
 import { pathToFileURL } from "node:url";
 
+// Declare EXPECTED_HOST for use by the surrounding module or function.
 export const EXPECTED_HOST = "cluster0.cdtxzts.mongodb.net";
+// Declare EXPECTED_DATABASE for use by the surrounding module or function.
 export const EXPECTED_DATABASE = "husseindb";
 
+// Declare TENANTS for use by the surrounding module or function.
 export const TENANTS = [
   {
     slug: "hussein-mboya",
@@ -83,41 +92,62 @@ export const TENANTS = [
   }
 ];
 
+// Define slugify; its parameters and body implement this operation.
 export function slugify(value) {
+  // Return the result of String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "")     .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace() to the caller.
   return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
+// Define isSyntheticSeedRecord; its parameters and body implement this operation.
 export function isSyntheticSeedRecord(record) {
+  // Return the expression shown below to the caller.
   return /^\s*TEST\b/i.test(String(record?.title || record?.name || ""))
     || /^test-/i.test(String(record?.slug || ""))
     || /TEST\/DEMO|synthetic sample|synthetic demo/i.test(String(record?.description || ""));
 }
 
+// Define assertSafeTarget; its parameters and body implement this operation.
 export function assertSafeTarget(rawUri, env = process.env) {
+  // Check the condition (env.CONFIRM_HUSSEINDB_CATALOGUE_REPAIR !== "YES") and run the matching branch.
   if (env.CONFIRM_HUSSEINDB_CATALOGUE_REPAIR !== "YES") {
+    // Stop the current operation by raising a new Error instance.
     throw new Error("Set CONFIRM_HUSSEINDB_CATALOGUE_REPAIR=YES to confirm this targeted production catalogue repair.");
   }
+  // Check the condition (!rawUri) and run the matching branch.
   if (!rawUri) throw new Error("MONGODB_URI is required.");
+  // Declare target for use by the surrounding module or function.
   const target = new URL(rawUri);
+  // Declare database for use by the surrounding module or function.
   const database = decodeURIComponent(target.pathname.replace(/^\//, "").split("/")[0] || "");
+  // Check the condition (target.hostname.toLowerCase() !== EXPECTED_HOST || database !== EXPECT) and run the matching branch.
   if (target.hostname.toLowerCase() !== EXPECTED_HOST || database !== EXPECTED_DATABASE) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error(`Refusing to write outside ${EXPECTED_DATABASE} on the approved Atlas cluster.`);
   }
+  // Check the condition (String(env.NODE_ENV || "").toLowerCase() === "production") and run the matching branch.
   if (String(env.NODE_ENV || "").toLowerCase() === "production") {
+    // Stop the current operation by raising a new Error instance.
     throw new Error("Run the reviewed repair manually in an explicitly controlled maintenance session, not with NODE_ENV=production.");
   }
+  // Return the object assembled below to the caller.
   return { host: target.hostname.toLowerCase(), database };
 }
 
+// Define stableRecords; its parameters and body implement this operation.
 function stableRecords(records, label, tenantSlug, minCount = 8) {
+  // Declare sorted for use by the surrounding module or function.
   const sorted = [...records].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
     || String(a._id).localeCompare(String(b._id)));
+  // Check the condition (sorted.length < minCount) and run the matching branch.
   if (sorted.length < minCount) throw new Error(`Expected at least ${minCount} ${label} for ${tenantSlug}; found ${sorted.length}. No records were changed.`);
+  // Return the value of sorted to the caller.
   return sorted;
 }
 
+// Define resolveTourDurationDays; its parameters and body implement this operation.
 export function resolveTourDurationDays(tour) {
+  // Declare candidates for use by the surrounding module or function.
   const candidates = [
     tour?.durationDetails?.days,
     tour?.durationDays,
@@ -125,15 +155,23 @@ export function resolveTourDurationDays(tour) {
   ].map(Number).filter((days) => Number.isInteger(days) && days >= 1 && days <= 365);
   // Older records sometimes retain schema defaults of one day while the
   // explicitly entered duration string still contains the real trip length.
+  // Return the expression shown below to the caller.
   return candidates.find((days) => days > 1) || candidates[0] || 3;
 }
 
+// Define buildCatalogueItinerary; its parameters and body implement this operation.
 export function buildCatalogueItinerary({ tenantSlug, tourTitle, destinationName, destinationDescription, activities = [], durationDays = 3 }) {
+  // Declare days for use by the surrounding module or function.
   const days = Math.max(1, Math.min(365, Math.floor(Number(durationDays) || 3)));
+  // Declare cleanTitle for use by the surrounding module or function.
   const cleanTitle = String(tourTitle || "Kenya journey").replace(/^\s*TEST\s+/i, "").trim();
+  // Declare destination for use by the surrounding module or function.
   const destination = String(destinationName || "the destination").replace(/^\s*TEST\s+/i, "").trim();
+  // Declare activityList for use by the surrounding module or function.
   const activityList = activities.filter((value) => typeof value === "string" && value.trim());
+  // Declare brand for use by the surrounding module or function.
   const brand = tenantSlug === "amani-trails" ? "Amani Trails" : tenantSlug === "demo-safari" ? "Demo Safari" : "Hussein Mboya Tours";
+  // Check the condition (days === 1) and run the matching branch.
   if (days === 1) return [{
     day: 1,
     title: `Guided ${destination} experience`,
@@ -142,14 +180,19 @@ export function buildCatalogueItinerary({ tenantSlug, tourTitle, destinationName
     meals: ["As confirmed before departure"],
     accommodation: "",
   }];
+  // Return the result of Array.from() to the caller.
   return Array.from({ length: days }, (_, index) => {
+    // Declare first for use by the surrounding module or function.
     const first = index === 0;
+    // Declare last for use by the surrounding module or function.
     const last = index === days - 1;
+    // Declare dayActivities for use by the surrounding module or function.
     const dayActivities = first
       ? ["Meet your guide and confirm the route", "Safety and trip briefing", `Transfer toward ${destination}`]
       : last
         ? ["Final morning activity, if time allows", "Check-out and departure preparation", "Return transfer or onward connection"]
         : (activityList.length ? activityList : [`Explore ${destination}`, "Guided nature, wildlife or cultural experience", "Scenic stops and photography"]).slice(0, 4);
+    // Declare title for use by the surrounding module or function.
     const title = first
       ? `Arrival and introduction to ${destination}`
       : last
@@ -157,11 +200,13 @@ export function buildCatalogueItinerary({ tenantSlug, tourTitle, destinationName
         : days === 2
           ? `Discover ${destination}`
           : `Day ${index + 1}: ${destination} guided experience`;
+    // Declare description for use by the surrounding module or function.
     const description = first
       ? `Meet the ${brand} team for the ${cleanTitle}. Review the route and practical arrangements before travelling to ${destination}. Accommodation and inclusions follow the confirmed booking.`
       : last
         ? "Enjoy a final activity where timing allows, then prepare for departure and travel to the agreed drop-off point."
         : `${destinationDescription || `Discover ${destination} with a local guide.`} Activities may be adjusted for weather, wildlife movement, access rules and local operating conditions.`;
+    // Return the object assembled below to the caller.
     return {
       day: index + 1,
       title,
@@ -173,11 +218,17 @@ export function buildCatalogueItinerary({ tenantSlug, tourTitle, destinationName
   });
 }
 
+// Define buildRepairPlan; its parameters and body implement this operation.
 export function buildRepairPlan(tenantSpec, tenant, destinations, tours) {
+  // Declare sortedDestinations for use by the surrounding module or function.
   const sortedDestinations = stableRecords(destinations, "destinations", tenantSpec.slug, 12);
+  // Check the condition (sortedDestinations.length !== 12) and run the matching branch.
   if (sortedDestinations.length !== 12) throw new Error(`Expected exactly 12 seeded destinations for ${tenantSpec.slug}; found ${sortedDestinations.length}. No records were changed.`);
+  // Declare sortedTours for use by the surrounding module or function.
   const sortedTours = stableRecords(tours, "tours", tenantSpec.slug, 8);
+  // Check the condition (sortedTours.length > tenantSpec.tours.length) and run the matching branch.
   if (sortedTours.length > tenantSpec.tours.length) throw new Error(`Found more tour records than the approved catalogue can map for ${tenantSpec.slug}; no records were changed.`);
+  // Return the object assembled below to the caller.
   return {
     tenant,
     destinations: sortedDestinations.map((row, index) => ({ row, spec: tenantSpec.destinations[index] })),
@@ -194,41 +245,64 @@ export function buildRepairPlan(tenantSpec, tenant, destinations, tours) {
   };
 }
 
+// Define main; its parameters and body implement this operation.
 async function main() {
+  // Perform the side effect or state update expressed on the following line.
   assertSafeTarget(process.env.MONGODB_URI);
+  // Perform the side effect or state update expressed on the following line.
   await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 15000, appName: "husseindb-tenant-catalogue-repair" });
+  // Declare db for use by the surrounding module or function.
   const db = mongoose.connection.db;
+  // Declare orgs for use by the surrounding module or function.
   const orgs = await db.collection("organizations").find(
     { slug: { $in: TENANTS.map((tenant) => tenant.slug) } },
     { projection: { _id: 1, slug: 1, name: 1 } }
   ).toArray();
+  // Check the condition (orgs.length !== TENANTS.length) and run the matching branch.
   if (orgs.length !== TENANTS.length) throw new Error("Expected all three known tenants. No records were changed.");
 
+  // Declare plans for use by the surrounding module or function.
   const plans = [];
+  // Repeat the enclosed work for each required iteration.
   for (const spec of TENANTS) {
+    // Declare org for use by the surrounding module or function.
     const org = orgs.find((item) => item.slug === spec.slug);
+    // Declare scope for use by the surrounding module or function.
     const scope = { tenantId: org._id };
+    // Declare [destinations, tours] for use by the surrounding module or function.
     const [destinations, tours] = await Promise.all([
       db.collection("destinations").find(scope).toArray(),
       db.collection("tours").find({ ...scope, isDeleted: { $ne: true } }).toArray()
     ]);
+    // Perform the side effect or state update expressed on the following line.
     plans.push({ spec, ...buildRepairPlan(spec, org, destinations, tours) });
   }
 
+  // Declare slugOwners for use by the surrounding module or function.
   const slugOwners = new Map();
+  // Repeat the enclosed work for each required iteration.
   for (const plan of plans) {
+    // Repeat the enclosed work for each required iteration.
     for (const [index, item] of plan.destinations.entries()) {
+      // Declare slug for use by the surrounding module or function.
       const slug = `${plan.spec.slug}-${slugify(item.spec[0])}`;
+      // Check the condition (slugOwners.has(slug)) and run the matching branch.
       if (slugOwners.has(slug)) throw new Error(`Destination slug collision: ${slug}. No records were changed.`);
+      // Perform the side effect or state update expressed on the following line.
       slugOwners.set(slug, { kind: "destination", tenant: plan.spec.slug, index });
     }
+    // Repeat the enclosed work for each required iteration.
     for (const item of plan.tours) {
+      // Declare slug for use by the surrounding module or function.
       const slug = `${plan.spec.slug}-${slugify(item.title)}`;
+      // Check the condition (slugOwners.has(slug)) and run the matching branch.
       if (slugOwners.has(slug)) throw new Error(`Catalogue slug collision: ${slug}. No records were changed.`);
+      // Perform the side effect or state update expressed on the following line.
       slugOwners.set(slug, { kind: "tour", tenant: plan.spec.slug });
     }
   }
 
+  // Declare summary for use by the surrounding module or function.
   const summary = plans.map((plan) => ({
     tenant: plan.spec.slug,
     destinationCount: plan.destinations.length,
@@ -240,20 +314,30 @@ async function main() {
       Math.max(...plan.tours.map((item) => item.price))
     ] : []
   }));
+  // Perform the side effect or state update expressed on the following line.
   console.log(JSON.stringify({ mode: process.env.APPLY_HUSSEINDB_CATALOGUE_REPAIR === "YES" ? "APPLY" : "DRY_RUN", database: EXPECTED_DATABASE, summary }, null, 2));
 
+  // Check the condition (process.env.APPLY_HUSSEINDB_CATALOGUE_REPAIR !== "YES") and run the matching branch.
   if (process.env.APPLY_HUSSEINDB_CATALOGUE_REPAIR !== "YES") {
+    // Perform the side effect or state update expressed on the following line.
     console.log("Dry run only: no database records were modified. Set APPLY_HUSSEINDB_CATALOGUE_REPAIR=YES after reviewing the plan.");
+    // Return the result to the caller.
     return;
   }
 
   // All tenant/catalogue checks complete before the first write. Existing IDs remain
   // unchanged so bookings, reviews and payments retain their references.
+  // Repeat the enclosed work for each required iteration.
   for (const plan of plans) {
+    // Declare scope for use by the surrounding module or function.
     const scope = { tenantId: plan.tenant._id };
+    // Repeat the enclosed work for each required iteration.
     for (const [index, item] of plan.destinations.entries()) {
+      // Declare [name, description, activities] for use by the surrounding module or function.
       const [name, description, activities] = item.spec;
+      // Declare slug for use by the surrounding module or function.
       const slug = `${plan.spec.slug}-${slugify(name)}`;
+      // Perform the side effect or state update expressed on the following line.
       await db.collection("destinations").updateOne({ _id: item.row._id, ...scope }, { $set: {
         name,
         slug,
@@ -268,9 +352,13 @@ async function main() {
         isDeleted: false
       } });
     }
+    // Repeat the enclosed work for each required iteration.
     for (const item of plan.tours) {
+      // Declare destination for use by the surrounding module or function.
       const destination = plan.destinations[item.destinationIndex];
+      // Declare destinationName for use by the surrounding module or function.
       const destinationName = destination.spec[0];
+      // Perform the side effect or state update expressed on the following line.
       await db.collection("tours").updateOne({ _id: item.row._id, ...scope }, { $set: {
         title: item.title,
         slug: `${plan.spec.slug}-${slugify(item.title)}`,
@@ -304,30 +392,48 @@ async function main() {
     }
   }
 
+  // Declare verification for use by the surrounding module or function.
   const verification = [];
+  // Repeat the enclosed work for each required iteration.
   for (const plan of plans) {
+    // Declare scope for use by the surrounding module or function.
     const scope = { tenantId: plan.tenant._id };
+    // Declare [destinations, tours] for use by the surrounding module or function.
     const [destinations, tours] = await Promise.all([
       db.collection("destinations").find(scope).toArray(),
       db.collection("tours").find({ ...scope, isDeleted: { $ne: true } }).toArray()
     ]);
+    // Declare expectedNames for use by the surrounding module or function.
     const expectedNames = new Set(plan.destinations.map(({ spec }) => spec[0]));
+    // Declare expectedTitles for use by the surrounding module or function.
     const expectedTitles = new Set(plan.tours.map(({ title }) => title));
+    // Declare ownedDestinationIds for use by the surrounding module or function.
     const ownedDestinationIds = new Set(destinations.map((item) => String(item._id)));
+    // Declare invalidTours for use by the surrounding module or function.
     const invalidTours = tours.filter((tour) => !ownedDestinationIds.has(String(tour.destination)));
+    // Declare missingNames for use by the surrounding module or function.
     const missingNames = [...expectedNames].filter((name) => !destinations.some((item) => item.name === name));
+    // Declare missingTitles for use by the surrounding module or function.
     const missingTitles = [...expectedTitles].filter((title) => !tours.some((item) => item.title === title));
+    // Check the condition (invalidTours.length || missingNames.length || missingTitles.length) and run the matching branch.
     if (invalidTours.length || missingNames.length || missingTitles.length) {
+      // Stop the current operation by raising a new Error instance.
       throw new Error(`Post-write verification failed for ${plan.spec.slug}: invalidTours=${invalidTours.length}, missingDestinations=${missingNames.length}, missingTours=${missingTitles.length}.`);
     }
+    // Perform the side effect or state update expressed on the following line.
     verification.push({ tenant: plan.spec.slug, destinations: destinations.length, tours: tours.length, invalidTourDestinationRefs: invalidTours.length, uniqueDestinationNames: new Set(destinations.map((item) => item.name)).size, uniqueTourTitles: new Set(tours.map((item) => item.title)).size });
   }
+  // Perform the side effect or state update expressed on the following line.
   console.log(JSON.stringify({ success: true, applied: true, database: EXPECTED_DATABASE, verification }, null, 2));
 }
 
+// Check the condition (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).) and run the matching branch.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  // Perform the side effect or state update expressed on the following line.
   main().catch((error) => {
+    // Perform the side effect or state update expressed on the following line.
     console.error(`Tenant catalogue repair failed: ${String(error.message || error).replace(/mongodb(?:\+srv)?:\/\/[^\s]+/gi, "[MongoDB URI redacted]")}`);
+    // Perform the side effect or state update expressed on the following line.
     process.exitCode = 1;
   }).finally(() => mongoose.disconnect().catch(() => {}));
 }

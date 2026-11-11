@@ -1,7 +1,14 @@
+/**
+ * Purpose: Tour Manager Sidebar reusable UI component. Main declarations: TourManagerSidebar.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useSettings } from "../../../context/SettingsContext";
+// Load lucide-react so this module can use its exported dependencies.
 import { LayoutDashboard, Map, Calendar, FileText, Users, UserRoundCheck, Car, Settings, BarChart3, ClipboardCheck, FileBarChart2 } from "lucide-react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { NavLink } from "react-router-dom";
 
+// Declare menu for use by the surrounding module or function.
 const menu = [
   { section: "Overview", items: [{ name: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/manager/dashboard" }, { name: "Analytics", icon: <BarChart3 size={20} />, path: "/manager/analytics" }] },
   { section: "Operations", items: [{ name: "Tours", icon: <Map size={20} />, path: "/manager/tours" }, { name: "Calendar", icon: <Calendar size={20} />, path: "/manager/calendar" }, { name: "Bookings", icon: <FileText size={20} />, path: "/manager/bookings" }, { name: "Tour Assignments", icon: <ClipboardCheck size={20} />, path: "/manager/assignments" }] },
@@ -9,11 +16,15 @@ const menu = [
   { section: "Administration", items: [{ name: "Reports", icon: <FileBarChart2 size={20} />, path: "/manager/reports" }, { name: "Settings", icon: <Settings size={20} />, path: "/manager/settings" }] },
 ];
 
+// Define TourManagerSidebar; its parameters and body implement this operation.
 export default function TourManagerSidebar() {
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
 
+  // Declare companyName for use by the surrounding module or function.
   const companyName =
     settings?.companyName || "Company";
+  // Return the expression shown below to the caller.
   return (
     <aside className="w-72 min-h-screen bg-green-900 text-white flex flex-col shadow-xl">
       <div className="px-6 py-8 border-b border-green-800">

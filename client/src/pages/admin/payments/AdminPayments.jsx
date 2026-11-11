@@ -1,7 +1,15 @@
+/**
+ * Purpose: Admin Payments page-level UI component. Main declarations: money, clean, statusOf, customerOf, bookingOf.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { RefreshCw, Search, Download, Eye, RotateCcw, CreditCard, CheckCircle2, Clock3, XCircle, WalletCards } from "lucide-react";
+// Load ../../../api/admin/adminPaymentApi so this module can use its exported dependencies.
 import {
   getAdminPayments,
   getPaymentStats,
@@ -11,19 +19,31 @@ import {
   exportPaymentsPDF,
 } from "../../../api/admin/adminPaymentApi";
 
+// Declare PAYMENT_STATUSES for use by the surrounding module or function.
 const PAYMENT_STATUSES = ["pending", "processing", "completed", "failed", "cancelled", "refunded"];
+// Declare money for use by the surrounding module or function.
 const money = (value) => `KES ${Number(value || 0).toLocaleString("en-KE", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+// Declare clean for use by the surrounding module or function.
 const clean = (value) => (value === null || value === undefined ? "" : String(value).trim());
+// Declare statusOf for use by the surrounding module or function.
 const statusOf = (payment) => {
+  // Declare status for use by the surrounding module or function.
   const status = clean(payment?.status || payment?.paymentStatus || "pending").toLowerCase();
+  // Return the expression shown below to the caller.
   return status === "paid" ? "completed" : PAYMENT_STATUSES.includes(status) ? status : "pending";
 };
+// Declare customerOf for use by the surrounding module or function.
 const customerOf = (payment) => clean(payment?.customer?.name || payment?.customer?.fullName || payment?.customerName || "Guest");
+// Declare bookingOf for use by the surrounding module or function.
 const bookingOf = (payment) => clean(payment?.bookingDisplay || payment?.booking?.bookingNumber || payment?.bookingNumber || payment?.booking?.reference || "—");
+// Declare phoneOf for use by the surrounding module or function.
 const phoneOf = (payment) => clean(payment?.phoneNumber || payment?.phone || payment?.customer?.phone || "—");
+// Declare receiptOf for use by the surrounding module or function.
 const receiptOf = (payment) => clean(payment?.receiptDisplay || payment?.receiptNumber || payment?.mpesaReceiptNumber || payment?.mpesaReceipt || payment?.transactionReference || payment?.transactionId || payment?.refundReference || "—");
+// Declare labelStatus for use by the surrounding module or function.
 const labelStatus = (status) => status.charAt(0).toUpperCase() + status.slice(1);
 
+// Declare statusStyles for use by the surrounding module or function.
 const statusStyles = {
   pending: "bg-amber-50 text-amber-700 ring-amber-200",
   processing: "bg-sky-50 text-sky-700 ring-sky-200",
@@ -33,7 +53,9 @@ const statusStyles = {
   refunded: "bg-violet-50 text-violet-700 ring-violet-200",
 };
 
+// Define Metric; its parameters and body implement this operation.
 function Metric({ icon: Icon, label, value, accent }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
@@ -45,37 +67,56 @@ function Metric({ icon: Icon, label, value, accent }) {
   );
 }
 
+// Define AdminPayments; its parameters and body implement this operation.
 export default function AdminPayments() {
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [statusFilter, setStatusFilter] for use by the surrounding module or function.
   const [statusFilter, setStatusFilter] = useState("all");
+  // Declare [selectedPayment, setSelectedPayment] for use by the surrounding module or function.
   const [selectedPayment, setSelectedPayment] = useState(null);
+  // Declare [refundingPaymentId, setRefundingPaymentId] for use by the surrounding module or function.
   const [refundingPaymentId, setRefundingPaymentId] = useState(null);
 
+  // Declare paymentsQuery for use by the surrounding module or function.
   const paymentsQuery = useQuery({ queryKey: ["adminPayments"], queryFn: getAdminPayments, staleTime: 15_000 });
+  // Declare statsQuery for use by the surrounding module or function.
   const statsQuery = useQuery({ queryKey: ["paymentStats"], queryFn: getPaymentStats, staleTime: 15_000 });
 
+  // Declare payments for use by the surrounding module or function.
   const payments = useMemo(() => {
+    // Declare value for use by the surrounding module or function.
     const value = paymentsQuery.data;
+    // Return the expression shown below to the caller.
     return Array.isArray(value?.payments) ? value.payments : Array.isArray(value?.data?.payments) ? value.data.payments : Array.isArray(value?.data) ? value.data : Array.isArray(value) ? value : [];
   }, [paymentsQuery.data]);
 
+  // Declare stats for use by the surrounding module or function.
   const stats = useMemo(() => {
+    // Declare value for use by the surrounding module or function.
     const value = statsQuery.data;
+    // Return the expression shown below to the caller.
     return Array.isArray(value?.stats) ? value.stats : Array.isArray(value?.data?.stats) ? value.data.stats : Array.isArray(value) ? value : [];
   }, [statsQuery.data]);
 
+  // Declare invalidate for use by the surrounding module or function.
   const invalidate = () => {
+    // Perform the side effect or state update expressed on the following line.
     queryClient.invalidateQueries({ queryKey: ["adminPayments"] });
+    // Perform the side effect or state update expressed on the following line.
     queryClient.invalidateQueries({ queryKey: ["paymentStats"] });
   };
 
+  // Declare statusMutation for use by the surrounding module or function.
   const statusMutation = useMutation({
     mutationFn: ({ id, status, payload = {} }) => updatePaymentStatus(id, { status, ...payload }),
     onSuccess: () => { invalidate(); toast.success("Payment status updated."); },
     onError: (error) => toast.error(error?.response?.data?.message || "Unable to update payment status."),
   });
 
+  // Declare refundMutation for use by the surrounding module or function.
   const refundMutation = useMutation({
     mutationFn: (id) => refundPayment(id),
     onMutate: (id) => setRefundingPaymentId(id),
@@ -84,25 +125,37 @@ export default function AdminPayments() {
     onSettled: () => setRefundingPaymentId(null),
   });
 
+  // Declare filteredPayments for use by the surrounding module or function.
   const filteredPayments = useMemo(() => {
+    // Declare term for use by the surrounding module or function.
     const term = search.trim().toLowerCase();
+    // Return the result of payments.filter() to the caller.
     return payments.filter((payment) => {
+      // Declare haystack for use by the surrounding module or function.
       const haystack = [customerOf(payment), bookingOf(payment), receiptOf(payment), phoneOf(payment), clean(payment?.paymentReference)].join(" ").toLowerCase();
+      // Return the expression shown below to the caller.
       return (!term || haystack.includes(term)) && (statusFilter === "all" || statusOf(payment) === statusFilter);
     });
   }, [payments, search, statusFilter]);
 
+  // Declare statCount for use by the surrounding module or function.
   const statCount = (name) => Number(stats.find((item) => String(item?._id || item?.status).toLowerCase() === name)?.count || 0);
+  // Declare revenue for use by the surrounding module or function.
   const revenue = stats.filter((item) => ["completed", "paid"].includes(String(item?._id || item?.status).toLowerCase())).reduce((sum, item) => sum + Number(item?.netAmount ?? item?.amount ?? 0), 0);
 
+  // Check the condition (paymentsQuery.isLoading || statsQuery.isLoading) and run the matching branch.
   if (paymentsQuery.isLoading || statsQuery.isLoading) {
+    // Return the expression shown below to the caller.
     return <div className="min-h-[60vh] bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 p-4 sm:p-6"><div className="animate-pulse rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">Loading payment management…</div></div>;
   }
 
+  // Check the condition (paymentsQuery.error) and run the matching branch.
   if (paymentsQuery.error) {
+    // Return the expression shown below to the caller.
     return <div className="min-h-[60vh] bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 p-4 sm:p-6"><div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-800"><h1 className="text-lg font-bold">Unable to load payments</h1><p className="mt-1 text-sm">{paymentsQuery.error?.message || "Please try again."}</p><button onClick={invalidate} className="mt-4 rounded-lg bg-rose-700 px-4 py-2 text-sm font-bold text-white">Retry</button></div></div>;
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-full space-y-6 bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 p-4 sm:p-6">
       <section className="overflow-hidden rounded-2xl bg-gradient-to-r from-sky-700 via-indigo-700 to-violet-700 p-5 text-white shadow-lg sm:p-6">

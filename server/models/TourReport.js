@@ -1,7 +1,14 @@
+/**
+ * Purpose: Tour Report database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/TourReport.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -10,6 +17,7 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare imageSchema for use by the surrounding module or function.
 const imageSchema = new mongoose.Schema(
   {
 
@@ -48,6 +56,7 @@ const imageSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Declare tourReportSchema for use by the surrounding module or function.
 const tourReportSchema = new mongoose.Schema(
   {
     /*
@@ -242,11 +251,15 @@ const tourReportSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 tourReportSchema.virtual("imageCount").get(function () {
+  // Return the length value to the caller.
   return this.images.length;
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourReportSchema.virtual("issueCount").get(function () {
+  // Return the length value to the caller.
   return this.issues.length;
 });
 
@@ -256,34 +269,42 @@ tourReportSchema.virtual("issueCount").get(function () {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 tourReportSchema.index({
   tour: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourReportSchema.index({
   booking: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourReportSchema.index({
   guide: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourReportSchema.index({
   driver: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourReportSchema.index({
   vehicle: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourReportSchema.index({
   status: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourReportSchema.index({
   completedAt: -1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourReportSchema.index({
   isDeleted: 1,
 });
@@ -294,7 +315,9 @@ tourReportSchema.index({
 |--------------------------------------------------------------------------
 */
 
+// Declare tenantTourReportSchema for use by the surrounding module or function.
 const tenantTourReportSchema = tourReportSchema.plugin(tenantPlugin);
+// Declare TourReport for use by the surrounding module or function.
 const TourReport = mongoose.models.TourReport || mongoose.model("TourReport", tenantTourReportSchema);
 
 

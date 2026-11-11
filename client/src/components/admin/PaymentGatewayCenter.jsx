@@ -1,9 +1,18 @@
+/**
+ * Purpose: Payment Gateway Center reusable UI component. Main declarations: PaymentGatewayCenter, selectProvider, set.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect, useMemo, useRef, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { CheckCircle2, CreditCard, EyeOff, KeyRound, Save, ShieldCheck, Smartphone, Trash2, XCircle, Wifi } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/paymentGatewayApi so this module can use its exported dependencies.
 import { disablePaymentGateway, getPaymentGateway, listPaymentGateways, savePaymentGateway, validatePaymentGateway } from "../../api/paymentGatewayApi";
 
+// Declare PROVIDERS for use by the surrounding module or function.
 const PROVIDERS = [
   { id: "MPESA", name: "M-Pesa", icon: Smartphone, help: "Safaricom Daraja credentials, shortcode and callback configuration." },
   { id: "STRIPE", name: "Stripe", icon: CreditCard, help: "Stripe account and publishable-key configuration." },
@@ -11,47 +20,82 @@ const PROVIDERS = [
   { id: "PESAPAL", name: "Pesapal", icon: CreditCard, help: "Pesapal merchant configuration." },
   { id: "BANK", name: "Bank transfer", icon: CreditCard, help: "Bank settlement instructions for offline payment." },
 ];
+// Declare secretFields for use by the surrounding module or function.
 const secretFields = ["consumerKey", "consumerSecret", "passkey", "secretKey", "webhookSecret", "initiatorName", "securityCredential"];
 
+// Define PaymentGatewayCenter; its parameters and body implement this operation.
 export default function PaymentGatewayCenter({ mpesaOnly = false, providerOnly = "", initialProvider = "MPESA" }) {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [provider, setProvider] for use by the surrounding module or function.
   const [provider, setProvider] = useState(initialProvider);
+  // Declare [validationResult, setValidationResult] for use by the surrounding module or function.
   const [validationResult, setValidationResult] = useState(null);
+  // Declare initializedEnvironment for use by the surrounding module or function.
   const initializedEnvironment = useRef(false);
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState({ environment: "sandbox", enabled: false, accountName: "", shortcode: "", publicKey: "", merchantId: "", callbackUrl: "", consumerKey: "", consumerSecret: "", passkey: "", secretKey: "", webhookSecret: "", initiatorName: "", securityCredential: "", clientId: "", clientSecret: "", webhookId: "" });
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({ queryKey: ["payment-gateways"], queryFn: listPaymentGateways });
+  // Declare detailQuery for use by the surrounding module or function.
   const detailQuery = useQuery({ queryKey: ["payment-gateway", provider, form.environment], queryFn: () => getPaymentGateway(provider, form.environment), enabled: ["MPESA", "PAYPAL"].includes(provider) });
+  // Declare configs for use by the surrounding module or function.
   const configs = Array.isArray(query.data?.data) ? query.data.data : Array.isArray(query.data) ? query.data : [];
+  // Declare current for use by the surrounding module or function.
   const current = useMemo(() => configs.find((x) => String(x?.provider || "").toUpperCase() === provider), [configs, provider]);
+  // Declare detail for use by the surrounding module or function.
   const detail = detailQuery.data?.data;
+  // Declare isEnabled for use by the surrounding module or function.
   const isEnabled = provider === "PAYPAL" ? Boolean(detail?.checkoutAvailable) : provider === "MPESA" ? Boolean(detail?.enabled && detail?.environment === form.environment) : Boolean(current?.enabled);
+  // Declare isConfigured for use by the surrounding module or function.
   const isConfigured = ["MPESA", "PAYPAL"].includes(provider) ? Boolean(detail?.configured) : Boolean(current?.configured);
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Check the condition (!["MPESA", "PAYPAL"].includes(provider) || !detailQuery.isSuccess) and run the matching branch.
     if (!["MPESA", "PAYPAL"].includes(provider) || !detailQuery.isSuccess) return;
+    // Declare saved for use by the surrounding module or function.
     const saved = detailQuery.data?.data || {};
+    // Check the condition (!initializedEnvironment.current && ["sandbox", "production"].includes() and run the matching branch.
     if (!initializedEnvironment.current && ["sandbox", "production"].includes(saved.activeEnvironment) && saved.activeEnvironment !== form.environment) {
+      // Perform the side effect or state update expressed on the following line.
       initializedEnvironment.current = true;
+      // Perform the side effect or state update expressed on the following line.
       setForm((formState) => ({ ...formState, environment: saved.activeEnvironment }));
+      // Return the result to the caller.
       return;
     }
+    // Perform the side effect or state update expressed on the following line.
     initializedEnvironment.current = true;
+    // Perform the side effect or state update expressed on the following line.
     setForm((formState) => ({ ...formState, enabled: Boolean(saved.enabled && saved.environment === formState.environment), accountName: saved.accountName || "", shortcode: saved.shortcode || "", publicKey: saved.publicKey || "", merchantId: saved.merchantId || "", callbackUrl: saved.callbackUrl || "", webhookId: saved.webhookId || "", clientId: "", clientSecret: "", ...Object.fromEntries(secretFields.map((field) => [field, ""])) }));
   }, [provider, form.environment, detailQuery.data, detailQuery.isSuccess]);
 
+  // Declare selectProvider for use by the surrounding module or function.
   const selectProvider = (id) => {
+    // Perform the side effect or state update expressed on the following line.
     initializedEnvironment.current = false;
+    // Perform the side effect or state update expressed on the following line.
     setValidationResult(null);
+    // Perform the side effect or state update expressed on the following line.
     setProvider(id);
+    // Declare item for use by the surrounding module or function.
     const item = configs.find((x) => String(x?.provider || "").toUpperCase() === id);
+    // Perform the side effect or state update expressed on the following line.
     setForm((f) => ({ ...f, environment: item?.environment || "sandbox", enabled: Boolean(item?.enabled), accountName: item?.accountName || "", shortcode: item?.shortcode || "", publicKey: item?.publicKey || "", merchantId: item?.merchantId || "", callbackUrl: item?.callbackUrl || "", clientId: "", clientSecret: "", webhookId: "", ...Object.fromEntries(secretFields.map((k) => [k, ""])) }));
   };
+  // Declare set for use by the surrounding module or function.
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+  // Declare save for use by the surrounding module or function.
   const save = useMutation({ mutationFn: () => savePaymentGateway(provider, form), onSuccess: () => { qc.invalidateQueries({ queryKey: ["payment-gateways"] }); qc.invalidateQueries({ queryKey: ["payment-gateway", provider, form.environment] }); toast.success(`${provider} gateway configuration saved securely.`); setForm((f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, secretFields.includes(k) || k === "clientSecret" ? "" : v]))); }, onError: (e) => toast.error(e?.response?.data?.message || "Unable to save payment gateway.") });
+  // Declare disable for use by the surrounding module or function.
   const disable = useMutation({ mutationFn: () => disablePaymentGateway(provider), onSuccess: () => { qc.invalidateQueries({ queryKey: ["payment-gateways"] }); set("enabled", false); toast.success(`${provider} gateway disabled.`); }, onError: (e) => toast.error(e?.response?.data?.message || "Unable to disable gateway.") });
+  // Declare check for use by the surrounding module or function.
   const check = useMutation({ mutationFn: () => validatePaymentGateway(provider, form.environment), onSuccess: (result) => { setValidationResult(result.data || null); toast.info(result.data?.message || "Configuration check completed."); qc.invalidateQueries({ queryKey: ["payment-gateway", provider, form.environment] }); qc.invalidateQueries({ queryKey: ["payment-gateways"] }); }, onError: (e) => toast.error(e?.response?.data?.message || "Configuration check failed.") });
 
+  // Declare visibleProviders for use by the surrounding module or function.
   const visibleProviders = mpesaOnly ? PROVIDERS.filter(({ id }) => id === "MPESA") : providerOnly ? PROVIDERS.filter(({ id }) => id === providerOnly) : PROVIDERS;
+  // Return the expression shown below to the caller.
   return <section className="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Tenant payment infrastructure</p><h2 className="mt-1 flex items-center gap-2 text-2xl font-bold"><ShieldCheck size={22}/> {mpesaOnly ? "M-Pesa Configuration" : "Payment gateways"}</h2><p className="mt-1 max-w-3xl text-sm text-slate-500">Configure encrypted, tenant-specific provider credentials. Secret values are never returned to the browser after they are saved.</p></div><div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold ${isEnabled ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-100 text-slate-600"}`} aria-live="polite">{isEnabled ? <CheckCircle2 size={15}/> : <XCircle size={15}/>} {isEnabled ? "Enabled" : "Disabled"}</div></div>
     {["MPESA", "PAYPAL"].includes(provider) && detailQuery.isFetching && <p role="status" className="mt-4 rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-800">Loading saved settings for {form.environment}…</p>}
     {["MPESA", "PAYPAL"].includes(provider) && detailQuery.isError && <p role="alert" className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">Could not load saved settings. Check your access or connection, then retry.</p>}

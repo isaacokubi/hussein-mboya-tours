@@ -1,6 +1,12 @@
+/**
+ * Purpose: Security Log database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare securityLogSchema for use by the surrounding module or function.
 const securityLogSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, default: null },
@@ -32,22 +38,32 @@ const securityLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Perform the side effect or state update expressed on the following line.
 securityLogSchema.index({ user: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 securityLogSchema.index({ email: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 securityLogSchema.index({ action: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 securityLogSchema.index({ ipAddress: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 securityLogSchema.index({ severity: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 securityLogSchema.index({ status: 1, createdAt: -1 });
 
+// Perform the side effect or state update expressed on the following line.
 securityLogSchema.statics.logEvent = function ({
   user = null, email = "", action, ipAddress = "", userAgent = "", method = "",
   endpoint = "", status = "success", severity = "low", details = {}, country = "", city = "",
   tenantId = null,
 }) {
+  // Return the result of this.create() to the caller.
   return this.create({ user, email, action, ipAddress, userAgent, method, endpoint, status, severity, details, country, city, tenantId });
 };
 
+// Declare tenantSecurityLogSchema for use by the surrounding module or function.
 const tenantSecurityLogSchema = securityLogSchema.plugin(tenantPlugin);
+// Declare SecurityLog for use by the surrounding module or function.
 const SecurityLog = mongoose.models.SecurityLog || mongoose.model("SecurityLog", tenantSecurityLogSchema);
 
 export default SecurityLog;

@@ -1,13 +1,20 @@
+/**
+ * Purpose: Tenant Branding page-level UI component. Main declarations: TenantBranding, load, update, updateColor, save.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import React, {useEffect,useState} from "react";
 
+// Load ../../api/tenantBrandingApi so this module can use its exported dependencies.
 import {
     getTenantBranding,
     updateTenantBranding
 } from "../../api/tenantBrandingApi";
 
 
+// Define TenantBranding; its parameters and body implement this operation.
 export default function TenantBranding(){
 
+// Declare [form,setForm] for use by the surrounding module or function.
 const [form,setForm]=useState({
     name:"",
     logo:"",
@@ -28,20 +35,25 @@ const [form,setForm]=useState({
 });
 
 
+// Declare [loading,setLoading] for use by the surrounding module or function.
 const [loading,setLoading]=useState(true);
 
 
 
 
 
+// Define load; its parameters and body implement this operation.
 async function load(){
 
+// Run this operation with a dedicated error-handling path for failures.
 try{
 
+// Declare data for use by the surrounding module or function.
 const data =
 await getTenantBranding();
 
 
+// Perform the side effect or state update expressed on the following line.
 setForm(prev=>({
 ...prev,
 ...data.branding
@@ -50,27 +62,33 @@ setForm(prev=>({
 
 }catch(error){
 
+// Perform the side effect or state update expressed on the following line.
 console.error(error);
 
 }
 
 finally{
 
+// Perform the side effect or state update expressed on the following line.
 setLoading(false);
 
 }
 
 }
 
+// Perform the side effect or state update expressed on the following line.
 useEffect(() => {
+  // Perform the side effect or state update expressed on the following line.
   load();
 }, []);
 
 
 
 
+// Define update; its parameters and body implement this operation.
 function update(field,value){
 
+// Perform the side effect or state update expressed on the following line.
 setForm({
 
 ...form,
@@ -82,8 +100,10 @@ setForm({
 
 
 
+// Define updateColor; its parameters and body implement this operation.
 function updateColor(field,value){
 
+// Perform the side effect or state update expressed on the following line.
 setForm({
 
 ...form,
@@ -99,12 +119,16 @@ brandColors:{
 
 
 
+// Define save; its parameters and body implement this operation.
 async function save(){
 
+// Run this operation with a dedicated error-handling path for failures.
 try{
 
+// Perform the side effect or state update expressed on the following line.
 await updateTenantBranding(form);
 
+// Perform the side effect or state update expressed on the following line.
 alert(
 "Branding updated successfully"
 );
@@ -112,6 +136,7 @@ alert(
 
 }catch(error){
 
+// Perform the side effect or state update expressed on the following line.
 alert(
 "Failed updating branding"
 );
@@ -122,11 +147,14 @@ alert(
 
 
 
+// Check the condition (loading) and run the matching branch.
 if(loading)
+// Return the expression shown below to the caller.
 return <h3>Loading branding...</h3>;
 
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="admin-page">

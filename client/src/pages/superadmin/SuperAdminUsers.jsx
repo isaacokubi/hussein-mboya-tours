@@ -1,6 +1,13 @@
+/**
+ * Purpose: Super Admin Users page-level UI component. Main declarations: getUsers, updateStatus, removeUser, roleLabel, statusLabel.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import React, { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   Activity,
   Ban,
@@ -18,16 +25,24 @@ import {
   UserCog,
   XCircle,
 } from "lucide-react";
+// Load ../../api/axios so this module can use its exported dependencies.
 import api from "../../api/axios";
+// Load ../../api/superAdminApi so this module can use its exported dependencies.
 import { getSuperAdminDashboardMetrics } from "../../api/superAdminApi";
+// Load ../../api/superAdminTenantsApi so this module can use its exported dependencies.
 import { createSuperAdminTenant, getSuperAdminTenantPlans } from "../../api/superAdminTenantsApi";
+// Load ../../components/admin/Pagination so this module can use its exported dependencies.
 import Pagination from "../../components/admin/Pagination";
 
+// Declare PAGE_SIZE for use by the surrounding module or function.
 const PAGE_SIZE = 10;
+// Declare STATUS_VALUES for use by the surrounding module or function.
 const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"];
+// Declare PLATFORM_HOST for use by the surrounding module or function.
 const PLATFORM_HOST = String(import.meta.env.VITE_PLATFORM_HOST || "globaltours.com")
   .replace(/^https?:\/\//, "")
   .replace(/\/$/, "");
+// Declare INITIAL_FORM for use by the surrounding module or function.
 const INITIAL_FORM = {
   companyName: "",
   legalName: "",
@@ -47,26 +62,36 @@ const INITIAL_FORM = {
   adminPassword: "",
 };
 
+// Declare getUsers for use by the surrounding module or function.
 const getUsers = async (search, page) =>
   (await api.get("/superadmin/users", { params: { search, page, limit: PAGE_SIZE } })).data;
+// Declare updateStatus for use by the surrounding module or function.
 const updateStatus = async (id, status) =>
   (await api.put(`/superadmin/users/${id}/status`, { status })).data;
+// Declare removeUser for use by the surrounding module or function.
 const removeUser = async (id) => (await api.delete(`/superadmin/users/${id}`)).data;
 
+// Declare roleLabel for use by the surrounding module or function.
 const roleLabel = (role) =>
   String(role || "customer")
     .replace(/_/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+// Declare statusLabel for use by the surrounding module or function.
 const statusLabel = (status) =>
   String(status || "active")
     .replace(/_/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+// Define CompanyTenantForm; its parameters and body implement this operation.
 function CompanyTenantForm({ onCreated, onCancel }) {
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState(INITIAL_FORM);
+  // Declare [saving, setSaving] for use by the surrounding module or function.
   const [saving, setSaving] = useState(false);
+  // Declare [error, setError] for use by the surrounding module or function.
   const [error, setError] = useState("");
+  // Declare { data: planData, isLoading: plansLoading, isError: plansError, } for use by the surrounding module or function.
   const {
     data: planData,
     isLoading: plansLoading,
@@ -77,48 +102,72 @@ function CompanyTenantForm({ onCreated, onCancel }) {
     staleTime: 600000,
     retry: 1,
   });
+  // Declare plans for use by the surrounding module or function.
   const plans = planData?.plans || [];
+  // Declare selectedPlan for use by the surrounding module or function.
   const selectedPlan = plans.find((plan) => plan.value === form.plan);
+  // Declare tenantSlug for use by the surrounding module or function.
   const tenantSlug = String(form.slug || form.companyName || "")
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+  // Declare platformUrl for use by the surrounding module or function.
   const platformUrl = tenantSlug
     ? `https://${tenantSlug}.${PLATFORM_HOST}`
     : `https://<company-slug>.${PLATFORM_HOST}`;
 
+  // Declare handleChange for use by the surrounding module or function.
   const handleChange = ({ target: { name, value } }) => {
+    // Check the condition (name === "plan") and run the matching branch.
     if (name === "plan") {
+      // Declare nextPlan for use by the surrounding module or function.
       const nextPlan = plans.find((plan) => plan.value === value);
+      // Perform the side effect or state update expressed on the following line.
       setForm((current) => ({
         ...current,
         plan: value,
         seats: nextPlan?.seats || current.seats,
       }));
+      // Return the result to the caller.
       return;
     }
+    // Perform the side effect or state update expressed on the following line.
     setForm((current) => ({ ...current, [name]: value }));
   };
 
+  // Declare submit for use by the surrounding module or function.
   const submit = async (event) => {
+    // Perform the side effect or state update expressed on the following line.
     event.preventDefault();
+    // Perform the side effect or state update expressed on the following line.
     setSaving(true);
+    // Perform the side effect or state update expressed on the following line.
     setError("");
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Declare result for use by the surrounding module or function.
       const result = await createSuperAdminTenant({ ...form, seats: Number(form.seats) });
+      // Perform the side effect or state update expressed on the following line.
       toast.success(result.message || "Company created successfully.");
+      // Perform the side effect or state update expressed on the following line.
       await onCreated?.();
+      // Perform the side effect or state update expressed on the following line.
       setForm(INITIAL_FORM);
     } catch (err) {
+      // Declare message for use by the surrounding module or function.
       const message = err?.response?.data?.message || err?.message || "Unable to create company.";
+      // Perform the side effect or state update expressed on the following line.
       setError(message);
+      // Perform the side effect or state update expressed on the following line.
       toast.error(message);
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       setSaving(false);
     }
   };
 
+  // Return the expression shown below to the caller.
   return (
     <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_18px_60px_-28px_rgba(15,23,42,0.35)]">
       <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 px-6 py-6 text-white md:px-8">
@@ -218,7 +267,9 @@ function CompanyTenantForm({ onCreated, onCancel }) {
   );
 }
 
+// Define Field; its parameters and body implement this operation.
 function Field({ label, name, value, onChange, type = "text", ...props }) {
+  // Return the expression shown below to the caller.
   return (
     <label className="flex flex-col gap-2">
       <span className="text-sm font-semibold text-slate-700">{label}</span>
@@ -234,7 +285,9 @@ function Field({ label, name, value, onChange, type = "text", ...props }) {
   );
 }
 
+// Define SectionTitle; its parameters and body implement this operation.
 function SectionTitle({ title, subtitle }) {
+  // Return the expression shown below to the caller.
   return (
     <div>
       <h3 className="font-bold text-slate-950">{title}</h3>
@@ -243,7 +296,9 @@ function SectionTitle({ title, subtitle }) {
   );
 }
 
+// Define MetricCard; its parameters and body implement this operation.
 function MetricCard({ icon: Icon, title, value, hint, tone = "slate" }) {
+  // Declare tones for use by the surrounding module or function.
   const tones = {
     slate: "border-slate-200 bg-slate-50 text-slate-950",
     emerald: "border-emerald-200 bg-emerald-50 text-emerald-950",
@@ -251,6 +306,7 @@ function MetricCard({ icon: Icon, title, value, hint, tone = "slate" }) {
     amber: "border-amber-200 bg-amber-50 text-amber-950",
     rose: "border-rose-200 bg-rose-50 text-rose-950",
   };
+  // Declare iconTones for use by the surrounding module or function.
   const iconTones = {
     slate: "bg-slate-950 text-white",
     emerald: "bg-emerald-600 text-white",
@@ -258,6 +314,7 @@ function MetricCard({ icon: Icon, title, value, hint, tone = "slate" }) {
     amber: "bg-amber-500 text-white",
     rose: "bg-rose-600 text-white",
   };
+  // Return the expression shown below to the caller.
   return (
     <div className={`rounded-2xl border p-5 ${tones[tone]}`}>
       <div className="flex items-start justify-between gap-3">
@@ -272,8 +329,11 @@ function MetricCard({ icon: Icon, title, value, hint, tone = "slate" }) {
   );
 }
 
+// Define StatusBadge; its parameters and body implement this operation.
 function StatusBadge({ status }) {
+  // Declare value for use by the surrounding module or function.
   const value = String(status || "active").toLowerCase();
+  // Declare styles for use by the surrounding module or function.
   const styles = {
     active: "border-emerald-200 bg-emerald-50 text-emerald-700",
     suspended: "border-amber-200 bg-amber-50 text-amber-700",
@@ -281,7 +341,9 @@ function StatusBadge({ status }) {
     disabled: "border-slate-200 bg-slate-100 text-slate-600",
     blocked: "border-rose-200 bg-rose-50 text-rose-700",
   };
+  // Declare Icon for use by the surrounding module or function.
   const Icon = value === "active" ? CheckCircle2 : value === "blocked" ? Ban : Clock3;
+  // Return the expression shown below to the caller.
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${styles[value] || styles.inactive}`}>
       <Icon className="h-3.5 w-3.5" /> {statusLabel(value)}
@@ -289,12 +351,18 @@ function StatusBadge({ status }) {
   );
 }
 
+// Define SuperAdminUsers; its parameters and body implement this operation.
 export default function SuperAdminUsers() {
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [page, setPage] for use by the surrounding module or function.
   const [page, setPage] = useState(1);
+  // Declare [showCreateAccount, setShowCreateAccount] for use by the surrounding module or function.
   const [showCreateAccount, setShowCreateAccount] = useState(false);
+  // Declare [busyUserId, setBusyUserId] for use by the surrounding module or function.
   const [busyUserId, setBusyUserId] = useState("");
 
+  // Declare { data, isLoading, isError, error, refetch, isFetching } for use by the surrounding module or function.
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["superadmin-users", search, page],
     queryFn: () => getUsers(search, page),
@@ -302,6 +370,7 @@ export default function SuperAdminUsers() {
     staleTime: 15000,
     keepPreviousData: true,
   });
+  // Declare { data: metricsData, isError: metricsError, isFetching: metricsFetching, refetch: refetchMetrics, } for use by the surrounding module or function.
   const {
     data: metricsData,
     isError: metricsError,
@@ -316,50 +385,78 @@ export default function SuperAdminUsers() {
     refetchOnWindowFocus: true,
   });
 
+  // Declare users for use by the surrounding module or function.
   const users = data?.users || data?.data || [];
+  // Declare totalUsers for use by the surrounding module or function.
   const totalUsers = Number(data?.total ?? metricsData?.data?.users ?? 0);
+  // Declare pages for use by the surrounding module or function.
   const pages = Math.max(1, Number(data?.pages || Math.ceil(totalUsers / PAGE_SIZE) || 1));
+  // Declare metrics for use by the surrounding module or function.
   const metrics = metricsData?.data || metricsData || {};
+  // Declare tenantMap for use by the surrounding module or function.
   const tenantMap = useMemo(
     () => new Map((metrics.tenants || []).map((tenant) => [String(tenant.tenantId), tenant])),
     [metrics.tenants]
   );
 
+  // Declare refreshAll for use by the surrounding module or function.
   const refreshAll = async () => {
+    // Perform the side effect or state update expressed on the following line.
     await Promise.all([refetch(), refetchMetrics()]);
   };
 
+  // Declare status for use by the surrounding module or function.
   const status = async (id, value) => {
+    // Perform the side effect or state update expressed on the following line.
     setBusyUserId(id);
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       await updateStatus(id, value);
+      // Perform the side effect or state update expressed on the following line.
       await refreshAll();
+      // Perform the side effect or state update expressed on the following line.
       toast.success(`User ${value === "active" ? "activated" : "suspended"}.`);
     } catch (err) {
+      // Perform the side effect or state update expressed on the following line.
       toast.error(err?.response?.data?.message || "Unable to update user status.");
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       setBusyUserId("");
     }
   };
 
+  // Declare remove for use by the surrounding module or function.
   const remove = async (id) => {
+    // Declare user for use by the surrounding module or function.
     const user = users.find((item) => item._id === id);
+    // Declare label for use by the surrounding module or function.
     const label = user?.name || user?.email || "this user";
+    // Check the condition (!window.confirm(`Delete ${label} permanently? This action cannot be un) and run the matching branch.
     if (!window.confirm(`Delete ${label} permanently? This action cannot be undone.`)) return;
+    // Perform the side effect or state update expressed on the following line.
     setBusyUserId(id);
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       await removeUser(id);
+      // Perform the side effect or state update expressed on the following line.
       await refreshAll();
+      // Perform the side effect or state update expressed on the following line.
       toast.success("User account deleted successfully.");
     } catch (err) {
+      // Perform the side effect or state update expressed on the following line.
       toast.error(err?.response?.data?.message || "Unable to delete user.");
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       setBusyUserId("");
     }
   };
 
+  // Declare metricFailure for use by the surrounding module or function.
   const metricFailure = metricsError && !metricsData;
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-full bg-slate-50/70 p-4 md:p-6 lg:p-8">
       <div className="mx-auto max-w-[1600px] space-y-6">
@@ -567,7 +664,9 @@ export default function SuperAdminUsers() {
   );
 }
 
+// Define InfoCard; its parameters and body implement this operation.
 function InfoCard({ icon: Icon, title, text }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start gap-3">

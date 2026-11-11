@@ -1,19 +1,38 @@
+/**
+ * Purpose: Notifications page-level UI component. Main declarations: Notifications.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load react so this module can use its exported dependencies.
 import { useState } from "react";
+// Load lucide-react so this module can use its exported dependencies.
 import { Bell, Check, RefreshCw } from "lucide-react";
+// Load ../api/axios so this module can use its exported dependencies.
 import api from "../api/axios";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../components/admin/Pagination so this module can use its exported dependencies.
 import Pagination from "../components/admin/Pagination";
 
+// Declare PAGE_SIZE for use by the surrounding module or function.
 const PAGE_SIZE = 10;
 
+// Define Notifications; its parameters and body implement this operation.
 export default function Notifications() {
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [page, setPage] for use by the surrounding module or function.
   const [page, setPage] = useState(1);
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({ queryKey: ["notifications", page], queryFn: async () => (await api.get("/notifications", { params: { page, limit: PAGE_SIZE } })).data });
+  // Declare markRead for use by the surrounding module or function.
   const markRead = useMutation({ mutationFn: async (id) => (await api.put(`/notifications/${id}/read`)).data, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }), onError: (error) => toast.error(error?.response?.data?.message || "Unable to update notification.") });
+  // Declare notifications for use by the surrounding module or function.
   const notifications = query.data?.notifications || query.data?.data || [];
+  // Declare unread for use by the surrounding module or function.
   const unread = notifications.filter((item) => !item.read).length;
+  // Declare pages for use by the surrounding module or function.
   const pages = Math.max(1, Number(query.data?.pages || 1));
+  // Return the expression shown below to the caller.
   return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-4xl space-y-5"><div className="flex items-center justify-between gap-4"><div><div className="flex items-center gap-2"><Bell className="h-6 w-6 text-emerald-600" /><h1 className="text-3xl font-bold text-slate-900">Notification Center</h1></div><p className="mt-1 text-slate-500">Bookings, payments, tours and subscription alerts for your account.</p></div><button type="button" onClick={() => query.refetch()} className="rounded-xl border bg-white p-3 text-slate-600 hover:bg-slate-50" aria-label="Refresh notifications"><RefreshCw className="h-5 w-5" /></button></div><div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100"><span className="text-sm font-semibold text-slate-700">Unread on this page: {unread}</span></div><section className="space-y-3">{query.isLoading && <div className="rounded-2xl bg-white p-8 text-center text-slate-500">Loading notifications...</div>}{!query.isLoading && !notifications.length && <div className="rounded-2xl bg-white p-8 text-center text-slate-500">You have no notifications.</div>}{notifications.map((item) => <article key={item._id} className={`rounded-2xl bg-white p-5 shadow-sm ring-1 ${item.read ? "ring-slate-100" : "ring-emerald-200"}`}><div className="flex items-start gap-4"><div className={`mt-1 rounded-full p-2 ${item.read ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700"}`}><Bell className="h-4 w-4" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-bold text-slate-900">{item.title}</h2><span className="text-xs font-semibold uppercase tracking-wide text-slate-400">{item.type}</span></div><p className="mt-1 text-slate-600">{item.message}</p><p className="mt-2 text-xs text-slate-400">{item.createdAt ? new Date(item.createdAt).toLocaleString("en-KE") : ""}</p></div>{!item.read && <button type="button" disabled={markRead.isPending} onClick={() => markRead.mutate(item._id)} className="rounded-lg border px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><Check className="mr-1 inline h-4 w-4" />Mark read</button>}</div></article>)}</section><Pagination page={page} pages={pages} total={Number(query.data?.total || notifications.length)} pageSize={PAGE_SIZE} onPageChange={setPage} /></div></div>;
 }

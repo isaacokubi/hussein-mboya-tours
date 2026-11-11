@@ -1,6 +1,12 @@
+/**
+ * Purpose: Module Coverage reusable UI component. Main declarations: ModuleCoverage.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Link } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import { Building2, FileCheck2, Receipt, ShieldCheck, Wallet } from "lucide-react";
 
+// Declare modules for use by the surrounding module or function.
 const modules = [
   ["Accounting & Finance", "/admin/finance", "Revenue, refunds, commissions, payables and corporate exposure.", Wallet],
   ["Operations & Procurement", "/admin/operations", "Suppliers, purchase orders, tour costs, payables and resource conflicts.", FileCheck2],
@@ -9,6 +15,8 @@ const modules = [
   ["Reconciliation", "/admin/finance/reconciliation", "Payment matching and finance exception review.", Receipt],
 ];
 
+// Define ModuleCoverage; its parameters and body implement this operation.
 export default function ModuleCoverage() {
+  // Return the expression shown below to the caller.
   return <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Platform modules</p><h2 className="text-xl font-bold text-slate-900">Implemented business modules</h2><p className="mt-1 text-sm text-slate-500">The commercial, finance, operations and compliance capabilities are accessible directly from the dashboard.</p></div></div><div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">{modules.map(([title,path,text,Icon])=><Link key={title} to={path} className="rounded-xl border border-slate-200 p-4 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50/30"><Icon size={21} className="text-emerald-700"/><h3 className="mt-3 font-bold text-slate-900">{title}</h3><p className="mt-1 text-xs leading-5 text-slate-500">{text}</p><span className="mt-3 inline-block text-xs font-semibold text-emerald-700">Open module →</span></Link>)}</div></section>;
 }

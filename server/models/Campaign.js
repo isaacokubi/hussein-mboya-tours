@@ -1,5 +1,11 @@
+/**
+ * Purpose: Campaign database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -8,6 +14,7 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare campaignSchema for use by the surrounding module or function.
 const campaignSchema = new mongoose.Schema(
   {
 
@@ -243,25 +250,34 @@ const campaignSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.virtual("openRate").get(function () {
+  // Check the condition (!this.sentCount) and run the matching branch.
   if (!this.sentCount) return 0;
 
+  // Return the result of Number() to the caller.
   return Number(
     ((this.openedCount / this.sentCount) * 100).toFixed(2)
   );
 });
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.virtual("clickRate").get(function () {
+  // Check the condition (!this.sentCount) and run the matching branch.
   if (!this.sentCount) return 0;
 
+  // Return the result of Number() to the caller.
   return Number(
     ((this.clickedCount / this.sentCount) * 100).toFixed(2)
   );
 });
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.virtual("deliveryRate").get(function () {
+  // Check the condition (!this.sentCount) and run the matching branch.
   if (!this.sentCount) return 0;
 
+  // Return the result of Number() to the caller.
   return Number(
     ((this.deliveredCount / this.sentCount) * 100).toFixed(2)
   );
@@ -273,15 +289,23 @@ campaignSchema.virtual("deliveryRate").get(function () {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.methods.markSending = function () {
+  // Perform the side effect or state update expressed on the following line.
   this.status = "sending";
+  // Perform the side effect or state update expressed on the following line.
   this.startedAt = new Date();
+  // Return the result of this.save() to the caller.
   return this.save();
 };
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.methods.markCompleted = function () {
+  // Perform the side effect or state update expressed on the following line.
   this.status = "sent";
+  // Perform the side effect or state update expressed on the following line.
   this.completedAt = new Date();
+  // Return the result of this.save() to the caller.
   return this.save();
 };
 
@@ -291,30 +315,37 @@ campaignSchema.methods.markCompleted = function () {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.index({
   status: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.index({
   audience: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.index({
   type: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.index({
   scheduledAt: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.index({
   createdBy: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.index({
   createdAt: -1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 campaignSchema.index({
   isDeleted: 1,
 });
@@ -325,7 +356,9 @@ campaignSchema.index({
 |--------------------------------------------------------------------------
 */
 
+// Declare tenantCampaignSchema for use by the surrounding module or function.
 const tenantCampaignSchema = campaignSchema.plugin(tenantPlugin);
+// Declare Campaign for use by the surrounding module or function.
 const Campaign = mongoose.models.Campaign || mongoose.model("Campaign", tenantCampaignSchema);
 
 

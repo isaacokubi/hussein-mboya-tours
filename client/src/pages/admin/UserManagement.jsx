@@ -1,38 +1,75 @@
+/**
+ * Purpose: User Management page-level UI component. Main declarations: labelRole, roleTone, UserManagement, refresh, openCreate.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { Search, Trash2, UserCheck, UserX, UserPlus, Pencil, X, ShieldCheck, Users, UserRoundCheck, UserRoundX } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../hooks/useDebouncedValue so this module can use its exported dependencies.
 import useDebouncedValue from "../../hooks/useDebouncedValue";
+// Load ../../api/adminUserApi so this module can use its exported dependencies.
 import { getAdminUsers, updateUserStatus, updateUserProfile, deleteUser, createStaffAccount } from "../../api/adminUserApi";
 
+// Declare roles for use by the surrounding module or function.
 const roles = ["admin", "manager", "agent", "guide", "driver"];
+// Declare emptyForm for use by the surrounding module or function.
 const emptyForm = { name: "", email: "", phone: "", password: "", role: "guide", companyName: "" };
+// Declare labelRole for use by the surrounding module or function.
 const labelRole = (role) => String(role || "customer").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+// Declare roleTone for use by the surrounding module or function.
 const roleTone = (role) => ({ customer: "bg-sky-100 text-sky-700 ring-sky-200", admin: "bg-violet-100 text-violet-700 ring-violet-200", manager: "bg-indigo-100 text-indigo-700 ring-indigo-200", agent: "bg-fuchsia-100 text-fuchsia-700 ring-fuchsia-200", guide: "bg-cyan-100 text-cyan-700 ring-cyan-200", driver: "bg-orange-100 text-orange-700 ring-orange-200" }[String(role || "").toLowerCase()] || "bg-slate-100 text-slate-700 ring-slate-200");
 
+// Define UserManagement; its parameters and body implement this operation.
 export default function UserManagement() {
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [page, setPage] for use by the surrounding module or function.
   const [page, setPage] = useState(1);
+  // Declare [modal, setModal] for use by the surrounding module or function.
   const [modal, setModal] = useState(null);
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState(emptyForm);
+  // Declare debouncedSearch for use by the surrounding module or function.
   const debouncedSearch = useDebouncedValue(search, 350);
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({ queryKey: ["admin-users", debouncedSearch, page], queryFn: () => getAdminUsers({ search: debouncedSearch, page, limit: 10 }), placeholderData: (previous) => previous, staleTime: 15_000 });
+  // Declare users for use by the surrounding module or function.
   const users = useMemo(() => Array.isArray(query.data?.data) ? query.data.data : [], [query.data]);
+  // Declare totalPages for use by the surrounding module or function.
   const totalPages = Math.max(1, Number(query.data?.pages || query.data?.pagination?.pages || 1));
+  // Declare active for use by the surrounding module or function.
   const active = users.filter((u) => u.isActive).length;
+  // Declare disabled for use by the surrounding module or function.
   const disabled = users.length - active;
+  // Declare refresh for use by the surrounding module or function.
   const refresh = () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); queryClient.invalidateQueries({ queryKey: ["staff", "admin"] }); queryClient.invalidateQueries({ queryKey: ["agents"] }); };
+  // Declare statusMutation for use by the surrounding module or function.
   const statusMutation = useMutation({ mutationFn: updateUserStatus, onSuccess: () => { refresh(); toast.success("User status updated."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not update user.") });
+  // Declare saveMutation for use by the surrounding module or function.
   const saveMutation = useMutation({ mutationFn: modal?.mode === "edit" ? updateUserProfile : createStaffAccount, onSuccess: () => { setModal(null); setForm(emptyForm); refresh(); toast.success(modal?.mode === "edit" ? "User updated successfully." : "Account created successfully."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not save account.") });
+  // Declare deleteMutation for use by the surrounding module or function.
   const deleteMutation = useMutation({ mutationFn: deleteUser, onSuccess: () => { refresh(); toast.success("User account deleted."); }, onError: (e) => toast.error(e?.response?.data?.message || "Could not delete user.") });
+  // Declare openCreate for use by the surrounding module or function.
   const openCreate = () => { setForm(emptyForm); setModal({ mode: "create" }); };
+  // Declare openEdit for use by the surrounding module or function.
   const openEdit = (user) => { setForm({ id: user._id, name: user.name || "", email: user.email || "", phone: user.phone || "", password: "", role: user.role || "customer", companyName: user.companyName || user.agent?.companyName || "" }); setModal({ mode: "edit" }); };
+  // Declare submit for use by the surrounding module or function.
   const submit = (e) => { e.preventDefault(); const payload = { ...form }; if (!payload.password) delete payload.password; if (payload.role !== "agent") delete payload.companyName; saveMutation.mutate(payload); };
+  // Declare roleOptions for use by the surrounding module or function.
   const roleOptions = modal?.mode === "edit" && form.role === "customer" ? ["customer", ...roles] : roles;
+  // Declare customerLocked for use by the surrounding module or function.
   const customerLocked = modal?.mode === "edit" && form.role === "customer";
+  // Check the condition (query.isLoading) and run the matching branch.
   if (query.isLoading) return <div className="min-h-full bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 p-8 text-slate-600">Loading users...</div>;
+  // Check the condition (query.isError) and run the matching branch.
   if (query.isError) return <div className="min-h-full bg-gradient-to-br from-slate-100 via-rose-50 to-indigo-100 p-8 text-red-600">Failed to load users. Please refresh and try again.</div>;
+  // Return the expression shown below to the caller.
   return <section className="min-h-full bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6">
     <header className="overflow-hidden rounded-3xl bg-gradient-to-r from-sky-700 via-indigo-700 to-violet-700 p-6 text-white shadow-xl sm:p-8"><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center"><div><div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-100"><ShieldCheck size={17}/> Administration</div><h1 className="text-2xl font-black tracking-tight sm:text-3xl">User & Staff Management</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-indigo-100">Manage login identities, access roles and account lifecycle from one secure workspace.</p></div><button type="button" onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-indigo-700 shadow-lg transition hover:-translate-y-0.5 hover:bg-sky-50"><UserPlus size={18}/> Create account</button></div></header>
     <div className="grid gap-4 sm:grid-cols-3"><Metric icon={Users} label="Accounts shown" value={query.data?.total ?? users.length} tone="sky"/><Metric icon={UserRoundCheck} label="Active on this page" value={active} tone="emerald"/><Metric icon={UserRoundX} label="Disabled on this page" value={disabled} tone="rose"/></div>
@@ -40,6 +77,9 @@ export default function UserManagement() {
     <div className="overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-indigo-100"><div className="overflow-x-auto"><table className="w-full min-w-[820px]"><thead className="bg-gradient-to-r from-slate-100 via-sky-50 to-indigo-100"><tr>{["User","Role","Phone","Status","Actions"].map((h) => <th key={h} className={`whitespace-nowrap px-5 py-4 text-left text-xs font-black uppercase tracking-wider text-indigo-700 ${h === "Actions" ? "text-right" : ""}`}>{h}</th>)}</tr></thead><tbody>{users.map((user, index) => <tr key={user._id} className={`border-t border-slate-100 transition hover:bg-sky-50/70 ${index % 2 ? "bg-slate-50/40" : "bg-white"}`}><td className="px-5 py-4"><div className="font-bold text-slate-900">{user.name || "Unnamed user"}</div><div className="mt-0.5 text-sm text-slate-500">{user.email || "No email"}</div></td><td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ring-1 ${roleTone(user.role)}`}>{labelRole(user.role)}</span></td><td className="px-5 py-4 text-sm font-medium text-slate-600">{user.phone || "—"}</td><td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${user.isActive ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200" : "bg-rose-100 text-rose-700 ring-1 ring-rose-200"}`}>{user.isActive ? "Active" : "Disabled"}</span></td><td className="px-5 py-4"><div className="flex justify-end gap-2"><button type="button" title="Edit user" onClick={() => openEdit(user)} className="rounded-xl border border-indigo-200 bg-indigo-50 p-2.5 text-indigo-700 shadow-sm transition hover:bg-indigo-100"><Pencil size={17}/></button><button type="button" title={user.isActive ? "Disable user" : "Enable user"} disabled={statusMutation.isPending} onClick={() => statusMutation.mutate({ id: user._id, status: user.isActive ? "disabled" : "active" })} className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50">{user.isActive ? <UserX size={17}/> : <UserCheck size={17}/>}</button><button type="button" title="Delete user" disabled={deleteMutation.isPending} onClick={() => window.confirm(`Delete ${user.name || "this user"}? Historical bookings and payments will be preserved.`) && deleteMutation.mutate(user._id)} className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-rose-600 shadow-sm transition hover:bg-rose-100 disabled:opacity-50"><Trash2 size={17}/></button></div></td></tr>)}{!users.length && <tr><td colSpan="5" className="p-12 text-center text-slate-500">No users match your search.</td></tr>}</tbody></table></div><div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-5 py-4"><span className="text-sm font-medium text-slate-600">Page {page} of {totalPages} · {query.data?.total ?? users.length} total</span><div className="flex gap-2"><button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-700 disabled:opacity-40">Previous</button><button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-700 disabled:opacity-40">Next</button></div></div></div>
   </div>{modal && <Modal title={modal.mode === "edit" ? "Edit user account" : "Create user account"} onClose={() => setModal(null)}><form onSubmit={submit} className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><Field label="Full name"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoComplete="name" className="input"/></Field><Field label="Email address"><input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" className="input"/></Field><Field label="Phone number"><input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} placeholder="0700000000" className="input"/></Field><Field label="Role"><select required disabled={customerLocked} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, companyName: "" })} className={`input ${customerLocked ? "cursor-not-allowed bg-slate-100 text-slate-600" : ""}`}>{roleOptions.map((r) => <option key={r} value={r}>{labelRole(r)}</option>)}</select>{customerLocked && <span className="mt-1 block text-xs text-blue-700">Customer role is locked because this account is linked to a CRM customer profile.</span>}</Field></div>{modal.mode === "create" && form.role === "agent" && <Field label="Agent company name" hint="Travel company or agency represented by the agent."><input required maxLength={150} value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} placeholder="e.g. Safari Adventures Ltd" autoComplete="organization" className="input"/></Field>}{modal.mode === "edit" && form.role === "agent" && <Field label="Agent company name"><input maxLength={150} value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} placeholder="Agent company name" autoComplete="organization" className="input"/></Field>}{modal.mode === "create" && <Field label="Temporary password" hint="Minimum 12 characters, including an uppercase letter and a number."><input required minLength={12} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="new-password" className="input"/></Field>}{modal.mode === "edit" && <Field label="New password (optional)" hint="Password changes are handled separately by the secure account service."><input disabled type="password" value="" placeholder="Password reset workflow" className="input bg-slate-50"/></Field>}<div className="flex justify-end gap-3 border-t pt-5"><button type="button" onClick={() => setModal(null)} className="rounded-xl border border-slate-200 px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-50">Cancel</button><button disabled={saveMutation.isPending} className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 font-bold text-white shadow-lg disabled:opacity-50">{saveMutation.isPending ? "Saving..." : modal.mode === "edit" ? "Save changes" : "Create account"}</button></div></form></Modal>}</section>;
 }
+// Define Metric; its parameters and body implement this operation.
 function Metric({ icon: Icon, label, value, tone }) { const tones = { sky: "bg-gradient-to-br from-sky-500 to-indigo-600", emerald: "bg-gradient-to-br from-emerald-500 to-teal-600", rose: "bg-gradient-to-br from-rose-500 to-fuchsia-600" }; return <div className={`relative overflow-hidden rounded-2xl p-5 text-white shadow-xl ${tones[tone] || tones.sky}`}><div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-white/10"/><Icon size={20}/><p className="mt-3 text-sm font-semibold text-white/80">{label}</p><p className="mt-1 text-3xl font-black">{value}</p></div>; }
+// Define Field; its parameters and body implement this operation.
 function Field({ label, hint, children }) { return <label className="block"><span className="mb-1.5 block text-sm font-bold text-slate-700">{label}</span>{children}{hint && <span className="mt-1 block text-xs text-slate-500">{hint}</span>}</label>; }
+// Define Modal; its parameters and body implement this operation.
 function Modal({ title, onClose, children }) { return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"><div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-indigo-200"><div className="flex items-center justify-between bg-gradient-to-r from-indigo-700 to-violet-700 px-6 py-5 text-white"><div><h2 className="text-xl font-black">{title}</h2><p className="mt-0.5 text-sm text-indigo-100">Changes apply only to the current company.</p></div><button type="button" onClick={onClose} className="rounded-xl bg-white/10 p-2 hover:bg-white/20"><X size={20}/></button></div><div className="max-h-[75vh] overflow-y-auto p-6">{children}</div></div></div>; }

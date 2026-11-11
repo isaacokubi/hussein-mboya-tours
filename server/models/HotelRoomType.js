@@ -1,8 +1,16 @@
+/**
+ * Purpose: Hotel Room Type database model. Main declarations: syncLegacyInventory.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ./AccommodationInventory.js so this module can use its exported dependencies.
 import AccommodationInventory from "./AccommodationInventory.js";
+// Declare { Schema } for use by the surrounding module or function.
 const { Schema } = mongoose;
 
+// Declare HotelRoomTypeSchema for use by the surrounding module or function.
 const HotelRoomTypeSchema = new Schema({
   tenantId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   hotel: { type: Schema.Types.ObjectId, ref: "Hotel", required: true, index: true },
@@ -23,15 +31,24 @@ const HotelRoomTypeSchema = new Schema({
   updatedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
+// Perform the side effect or state update expressed on the following line.
 HotelRoomTypeSchema.index({ tenantId: 1, hotel: 1, name: 1 }, { unique: true });
+// Perform the side effect or state update expressed on the following line.
 HotelRoomTypeSchema.index({ tenantId: 1, hotel: 1, status: 1 });
+// Perform the side effect or state update expressed on the following line.
 HotelRoomTypeSchema.index({ tenantId: 1, hotel: 1, inventoryVersion: 1 });
 
+// Declare syncLegacyInventory for use by the surrounding module or function.
 const syncLegacyInventory = async (room) => {
+  // Check the condition (!room?.tenantId || !room?.hotel) and run the matching branch.
   if (!room?.tenantId || !room?.hotel) return;
+  // Declare Hotel for use by the surrounding module or function.
   const Hotel = mongoose.model("Hotel");
+  // Declare hotel for use by the surrounding module or function.
   const hotel = await Hotel.findOne({ _id: room.hotel, tenantId: room.tenantId }).select("name location").lean();
+  // Check the condition (!hotel) and run the matching branch.
   if (!hotel) return;
+  // Perform the side effect or state update expressed on the following line.
   await AccommodationInventory.findOneAndUpdate(
     { tenantId: room.tenantId, propertyName: hotel.name, roomType: room.name },
     { tenantId: room.tenantId, propertyName: hotel.name, location: hotel.location || "", roomType: room.name, totalRooms: room.totalRooms, availableRooms: room.availableRooms, nightlyRate: room.nightlyRate, currency: room.currency, status: room.status, notes: room.description || "", updatedBy: room.updatedBy || null },
@@ -39,9 +56,12 @@ const syncLegacyInventory = async (room) => {
   );
 };
 
+// Perform the side effect or state update expressed on the following line.
 HotelRoomTypeSchema.post("save", async (room) => { try { await syncLegacyInventory(room); } catch (error) { console.error("HOTEL ROOM LEGACY SYNC ERROR:", error.message); } });
+// Perform the side effect or state update expressed on the following line.
 HotelRoomTypeSchema.post("findOneAndUpdate", async (room) => { try { await syncLegacyInventory(room); } catch (error) { console.error("HOTEL ROOM LEGACY SYNC ERROR:", error.message); } });
 
+// Perform the side effect or state update expressed on the following line.
 HotelRoomTypeSchema.plugin(tenantPlugin);
 
 export default mongoose.models.HotelRoomType || mongoose.model("HotelRoomType", HotelRoomTypeSchema);

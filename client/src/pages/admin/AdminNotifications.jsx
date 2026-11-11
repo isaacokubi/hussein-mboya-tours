@@ -1,51 +1,93 @@
+/**
+ * Purpose: Admin Notifications page-level UI component. Main declarations: roleLabel, userLabel, AdminNotifications, toggleRole, toggleRecipient.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { Bell, Check, ChevronLeft, ChevronRight, Loader2, RefreshCw, Search, Send, Users, X } from "lucide-react";
+// Load ../../api/axios so this module can use its exported dependencies.
 import api from "../../api/axios";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
 
+// Declare groups for use by the surrounding module or function.
 const groups = [["guide", "Guides"], ["driver", "Drivers"], ["agent", "Agents"], ["manager", "Managers"], ["admin", "Administrators"]];
+// Declare types for use by the surrounding module or function.
 const types = [["system", "System"], ["assignment", "Assignment"], ["tour_update", "Tour Update"], ["alert", "Alert"], ["promotion", "Promotion"]];
+// Declare priorities for use by the surrounding module or function.
 const priorities = [["normal", "Normal"], ["low", "Low"], ["high", "High"], ["urgent", "Urgent"]];
 
+// Declare roleLabel for use by the surrounding module or function.
 const roleLabel = (user) => user?.roleId?.displayName || user?.role || user?.legacyRole || "Staff";
+// Declare userLabel for use by the surrounding module or function.
 const userLabel = (user) => user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.email || "Unnamed user";
+// Declare typeClass for use by the surrounding module or function.
 const typeClass = { system: "bg-sky-50 text-sky-700 ring-sky-200", assignment: "bg-violet-50 text-violet-700 ring-violet-200", tour_update: "bg-emerald-50 text-emerald-700 ring-emerald-200", alert: "bg-orange-50 text-orange-700 ring-orange-200", promotion: "bg-pink-50 text-pink-700 ring-pink-200" };
+// Declare priorityClass for use by the surrounding module or function.
 const priorityClass = { low: "bg-slate-100 text-slate-600 ring-slate-200", normal: "bg-blue-50 text-blue-700 ring-blue-200", high: "bg-amber-50 text-amber-700 ring-amber-200", urgent: "bg-red-50 text-red-700 ring-red-200" };
 
+// Define AdminNotifications; its parameters and body implement this operation.
 export default function AdminNotifications() {
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [roles, setRoles] for use by the surrounding module or function.
   const [roles, setRoles] = useState([]);
+  // Declare [recipientIds, setRecipientIds] for use by the surrounding module or function.
   const [recipientIds, setRecipientIds] = useState([]);
+  // Declare [recipientSearch, setRecipientSearch] for use by the surrounding module or function.
   const [recipientSearch, setRecipientSearch] = useState("");
+  // Declare [title, setTitle] for use by the surrounding module or function.
   const [title, setTitle] = useState("");
+  // Declare [message, setMessage] for use by the surrounding module or function.
   const [message, setMessage] = useState("");
+  // Declare [type, setType] for use by the surrounding module or function.
   const [type, setType] = useState("system");
+  // Declare [priority, setPriority] for use by the surrounding module or function.
   const [priority, setPriority] = useState("normal");
+  // Declare [actionUrl, setActionUrl] for use by the surrounding module or function.
   const [actionUrl, setActionUrl] = useState("");
+  // Declare [page, setPage] for use by the surrounding module or function.
   const [page, setPage] = useState(1);
 
+  // Declare recipientsQuery for use by the surrounding module or function.
   const recipientsQuery = useQuery({ queryKey: ["notification-recipients"], queryFn: async () => (await api.get("/notifications/recipients", { params: { roles: "guide,driver,agent,manager,admin" } })).data });
+  // Declare notificationsQuery for use by the surrounding module or function.
   const notificationsQuery = useQuery({ queryKey: ["admin-notifications", page], queryFn: async () => (await api.get("/notifications", { params: { page, limit: 5 } })).data });
+  // Declare recipients for use by the surrounding module or function.
   const recipients = recipientsQuery.data?.recipients || [];
+  // Declare notifications for use by the surrounding module or function.
   const notifications = notificationsQuery.data?.notifications || notificationsQuery.data?.data || [];
+  // Declare totalPages for use by the surrounding module or function.
   const totalPages = Math.max(1, Number(notificationsQuery.data?.pages || notificationsQuery.data?.totalPages || 1));
+  // Declare filteredRecipients for use by the surrounding module or function.
   const filteredRecipients = useMemo(() => { const term = recipientSearch.trim().toLowerCase(); if (!term) return recipients; return recipients.filter((user) => `${userLabel(user)} ${user?.email || ""} ${roleLabel(user)}`.toLowerCase().includes(term)); }, [recipients, recipientSearch]);
+  // Declare selectedCount for use by the surrounding module or function.
   const selectedCount = recipientIds.length;
+  // Declare canSend for use by the surrounding module or function.
   const canSend = Boolean(title.trim() && message.trim() && (roles.length || recipientIds.length));
 
+  // Declare sendMutation for use by the surrounding module or function.
   const sendMutation = useMutation({
     mutationFn: async (payload) => (await api.post("/notifications/internal", payload)).data,
     onSuccess: (data) => { toast.success(data?.message || "Notification sent successfully."); setTitle(""); setMessage(""); setActionUrl(""); setRecipientIds([]); setRoles([]); queryClient.invalidateQueries({ queryKey: ["admin-notifications"] }); },
     onError: (error) => toast.error(error?.response?.data?.message || "Failed to send notification."),
   });
+  // Declare toggleRole for use by the surrounding module or function.
   const toggleRole = (role) => setRoles((current) => current.includes(role) ? current.filter((item) => item !== role) : [...current, role]);
+  // Declare toggleRecipient for use by the surrounding module or function.
   const toggleRecipient = (id) => setRecipientIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  // Declare toggleVisibleRecipients for use by the surrounding module or function.
   const toggleVisibleRecipients = () => { const visibleIds = filteredRecipients.map((user) => user._id).filter(Boolean); const allSelected = visibleIds.length > 0 && visibleIds.every((id) => recipientIds.includes(id)); setRecipientIds((current) => allSelected ? current.filter((id) => !visibleIds.includes(id)) : [...new Set([...current, ...visibleIds])]); };
+  // Declare clearComposer for use by the surrounding module or function.
   const clearComposer = () => { setTitle(""); setMessage(""); setActionUrl(""); setRecipientIds([]); setRoles([]); };
+  // Declare submit for use by the surrounding module or function.
   const submit = (event) => { event.preventDefault(); if (!title.trim() || !message.trim()) return toast.error("Enter a notification title and message."); if (!roles.length && !recipientIds.length) return toast.error("Select at least one recipient group or specific recipient."); if (actionUrl && !actionUrl.startsWith("/") && !/^https?:\/\//i.test(actionUrl)) return toast.error("Action URL must be a relative path or a valid http(s) URL."); sendMutation.mutate({ roles, recipientIds, title: title.trim(), message: message.trim(), type, priority, actionUrl: actionUrl.trim() }); };
+  // Declare formatDate for use by the surrounding module or function.
   const formatDate = (value) => { if (!value) return "Date unavailable"; const date = new Date(value); return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString(); };
 
+  // Return the expression shown below to the caller.
   return <div className="min-h-screen bg-gradient-to-br from-emerald-50/70 via-slate-50 to-sky-50/50 p-4 sm:p-6">
     <div className="mx-auto max-w-7xl space-y-6">
       <header className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 p-6 text-white shadow-xl shadow-emerald-900/10 sm:p-7">

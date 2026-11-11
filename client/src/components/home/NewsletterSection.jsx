@@ -1,15 +1,25 @@
+/**
+ * Purpose: Newsletter Section reusable UI component. Main declarations: NewsletterSection.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useSettings } from "../../context/SettingsContext";
+// Load ../../context/TenantContext so this module can use its exported dependencies.
 import { useTenant } from "../../context/TenantContext";
 
+// Define NewsletterSection; its parameters and body implement this operation.
 export default function NewsletterSection() {
+  // Declare { tenant } for use by the surrounding module or function.
   const { tenant } = useTenant() || {};
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
+  // Declare companyName for use by the surrounding module or function.
   const companyName =
     settings?.companyName ||
     tenant?.name ||
     tenant?.companyName ||
     "Hussein Mboya Tours";
 
+  // Return the expression shown below to the caller.
   return (
     <section className="py-16 bg-slate-900 text-slate-100" aria-labelledby="newsletter-heading">
       <div className="container mx-auto px-6 text-center">

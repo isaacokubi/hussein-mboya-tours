@@ -1,31 +1,62 @@
+/**
+ * Purpose: financial Dashboard Seed database seed module. Main declarations: round, daysFromNow, seededPaymentAmounts, clearTransactionalData, seedTenant.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load dotenv so this module can use its exported dependencies.
 import dotenv from "dotenv";
+// Load node:path so this module can use its exported dependencies.
 import path from "node:path";
+// Load node:url so this module can use its exported dependencies.
 import { fileURLToPath } from "node:url";
+// Load ../models/Organization.js so this module can use its exported dependencies.
 import Organization from "../models/Organization.js";
+// Load ../models/User.js so this module can use its exported dependencies.
 import User from "../models/User.js";
+// Load ../models/Customer.js so this module can use its exported dependencies.
 import Customer from "../models/Customer.js";
+// Load ../models/Destination.js so this module can use its exported dependencies.
 import Destination from "../models/Destination.js";
+// Load ../models/Tour.js so this module can use its exported dependencies.
 import Tour from "../models/Tour.js";
+// Load ../models/Review.js so this module can use its exported dependencies.
 import Review from "../models/Review.js";
+// Load ../models/Staff.js so this module can use its exported dependencies.
 import Staff from "../models/Staff.js";
+// Load ../models/Vehicle.js so this module can use its exported dependencies.
 import Vehicle from "../models/Vehicle.js";
+// Load ../models/Agent.js so this module can use its exported dependencies.
 import Agent from "../models/Agent.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../models/Payment.js so this module can use its exported dependencies.
 import Payment from "../models/Payment.js";
+// Load ../models/Invoice.js so this module can use its exported dependencies.
 import Invoice from "../models/Invoice.js";
+// Load ../models/Commission.js so this module can use its exported dependencies.
 import Commission from "../models/Commission.js";
+// Load ../models/Expense.js so this module can use its exported dependencies.
 import Expense from "../models/Expense.js";
+// Load ../models/CreditDebitNote.js so this module can use its exported dependencies.
 import CreditDebitNote from "../models/CreditDebitNote.js";
+// Load ../models/Supplier.js so this module can use its exported dependencies.
 import Supplier from "../models/Supplier.js";
+// Load ../models/PurchaseOrder.js so this module can use its exported dependencies.
 import PurchaseOrder from "../models/PurchaseOrder.js";
+// Load ../models/TourCost.js so this module can use its exported dependencies.
 import TourCost from "../models/TourCost.js";
+// Load ../models/SupplierPayable.js so this module can use its exported dependencies.
 import SupplierPayable from "../models/SupplierPayable.js";
+// Load ../models/JournalEntry.js so this module can use its exported dependencies.
 import JournalEntry from "../models/JournalEntry.js";
+// Load ../models/Quotation.js so this module can use its exported dependencies.
 import Quotation from "../models/Quotation.js";
+// Load ../tenancy/context.js so this module can use its exported dependencies.
 import { runWithTenant } from "../tenancy/context.js";
+// Load ../services/operationalAccountingService.js so this module can use its exported dependencies.
 import { postInvoiceToLedger, postPaymentToLedger, postPaymentRefundToLedger } from "../services/operationalAccountingService.js";
 
+// Perform the side effect or state update expressed on the following line.
 dotenv.config();
 
 /*
@@ -37,17 +68,24 @@ dotenv.config();
  * This script intentionally refuses to run unless exactly three tenants exist.
  */
 
+// Declare round for use by the surrounding module or function.
 const round = (n) => Math.round(Number(n) * 100) / 100;
+// Declare daysFromNow for use by the surrounding module or function.
 const daysFromNow = (n) => new Date(Date.now() + n * 86400000);
 
+// Define seededPaymentAmounts; its parameters and body implement this operation.
 export function seededPaymentAmounts(status, total, paid) {
+  // Declare netPaid for use by the surrounding module or function.
   const netPaid = status === "refunded"
     ? 0
     : Math.min(Math.max(0, Number(total) || 0), Math.max(0, Number(paid) || 0));
+  // Declare totalAmount for use by the surrounding module or function.
   const totalAmount = Math.max(0, Number(total) || 0);
+  // Return the object assembled below to the caller.
   return { amountPaid: netPaid, balance: round(totalAmount - netPaid) };
 }
 
+// Declare paymentPlans for use by the surrounding module or function.
 const paymentPlans = [
   ["paid", "completed", 1],
   ["paid", "completed", 1],
@@ -63,6 +101,7 @@ const paymentPlans = [
   ["paid", "completed", 1],
 ];
 
+// Declare providers for use by the surrounding module or function.
 const providers = [
   ["MPESA", "mpesa"],
   ["STRIPE", "card"],
@@ -71,8 +110,11 @@ const providers = [
   ["CASH", "cash"],
 ];
 
+// Define clearTransactionalData; its parameters and body implement this operation.
 async function clearTransactionalData(tenantId) {
+  // Declare filter for use by the surrounding module or function.
   const filter = { tenantId };
+  // Perform the side effect or state update expressed on the following line.
   await Promise.all([
     Booking.deleteMany(filter),
     Payment.deleteMany(filter),
@@ -89,10 +131,14 @@ async function clearTransactionalData(tenantId) {
   ]);
 }
 
+// Define seedTenant; its parameters and body implement this operation.
 async function seedTenant(tenant, tenantIndex) {
+  // Return the result of runWithTenant() to the caller.
   return runWithTenant({ tenantId: tenant._id, role: "manager", bypass: false }, async () => {
+    // Perform the side effect or state update expressed on the following line.
     await clearTransactionalData(tenant._id);
 
+    // Declare [customers, tours, users, staff, agents, suppliers, vehicles] for use by the surrounding module or function.
     const [customers, tours, users, staff, agents, suppliers, vehicles] = await Promise.all([
       Customer.find({ isDeleted: { $ne: true } }).limit(30).lean(),
       Tour.find({ isDeleted: { $ne: true }, published: true }).limit(50).lean(),
@@ -103,37 +149,61 @@ async function seedTenant(tenant, tenantIndex) {
       Vehicle.find({ isDeleted: { $ne: true }, status: { $nin: ["maintenance", "retired"] } }).lean(),
     ]);
 
+    // Check the condition (!customers.length) and run the matching branch.
     if (!customers.length) throw new Error(`Tenant ${tenant.name || tenant._id} has no customers; refusing to invent replacement master data.`);
+    // Check the condition (!tours.length) and run the matching branch.
     if (!tours.length) throw new Error(`Tenant ${tenant.name || tenant._id} has no tours; refusing to modify master data.`);
+    // Check the condition (!suppliers.length) and run the matching branch.
     if (!suppliers.length) throw new Error(`Tenant ${tenant.name || tenant._id} has no suppliers; refusing to create transactional records without supplier master data.`);
 
+    // Declare actor for use by the surrounding module or function.
     const actor = users.find((u) => ["admin", "manager", "super_admin", "superadmin"].includes(String(u.role || "").toLowerCase())) || users[0] || null;
+    // Declare customerUsers for use by the surrounding module or function.
     const customerUsers = users.filter((u) => String(u.role || "").toLowerCase() === "customer");
+    // Declare paymentUser for use by the surrounding module or function.
     const paymentUser = customerUsers[0] || actor;
+    // Declare guides for use by the surrounding module or function.
     const guides = staff.filter((s) => s.position === "guide" || s.role === "guide");
+    // Declare drivers for use by the surrounding module or function.
     const drivers = staff.filter((s) => s.position === "driver" || s.role === "driver");
+    // Declare vehicleByTour for use by the surrounding module or function.
     const vehicleByTour = new Map(vehicles.filter((vehicle) => vehicle.assignedTour)
       .map((vehicle) => [String(vehicle.assignedTour), vehicle]));
 
+    // Declare bookings for use by the surrounding module or function.
     const bookings = [];
     // Deliberately vary synthetic transaction volume by tenant so the three demo dashboards do not share identical totals.
+    // Declare bookingCountBySlug for use by the surrounding module or function.
     const bookingCountBySlug = { "hussein-mboya": 9, "amani-trails": 12, "demo-safari": 7 };
+    // Declare bookingCount for use by the surrounding module or function.
     const bookingCount = bookingCountBySlug[String(tenant.slug || "").toLowerCase()] ?? [9, 12, 7][tenantIndex];
+    // Repeat the enclosed work for each required iteration.
     for (let i = 0; i < bookingCount; i += 1) {
+      // Declare customer for use by the surrounding module or function.
       const customer = customers[i % customers.length];
+      // Declare tour for use by the surrounding module or function.
       const tour = tours[(i + tenantIndex * 3) % tours.length];
+      // Declare plan for use by the surrounding module or function.
       const plan = paymentPlans[(i + tenantIndex * 3) % paymentPlans.length];
+      // Declare amount for use by the surrounding module or function.
       const amount = round(Math.max(1500, Number(tour.price || 0) * (1 + (i % 3) * 0.35)));
+      // Declare guests for use by the surrounding module or function.
       const guests = 1 + (i % 5);
+      // Declare status for use by the surrounding module or function.
       const status = plan[1];
+      // Declare travelOffset for use by the surrounding module or function.
       const travelOffset = status === "completed"
         ? -(Number(tour.durationDetails?.days || tour.durationDays || 1) + 5 + i)
         : status === "ongoing" ? -1
           : ["pending", "confirmed", "assigned"].includes(status) ? 7 + i * 3
             : i < 8 ? 7 + i * 3 : 25 + i * 4;
+      // Declare travelDate for use by the surrounding module or function.
       const travelDate = daysFromNow(travelOffset);
+      // Declare paid for use by the surrounding module or function.
       const paid = round(amount * plan[2]);
+      // Declare paymentMethod for use by the surrounding module or function.
       const paymentMethod = ["MPESA", "CARD", "BANK_TRANSFER", "CARD", "CASH"][i % 5];
+      // Declare booking for use by the surrounding module or function.
       const booking = new Booking({
         tenantId: tenant._id,
         bookingNumber: `DEMO-${String(tenantIndex + 1).padStart(2, "0")}-${String(i + 1).padStart(4, "0")}`,
@@ -190,26 +260,42 @@ async function seedTenant(tenant, tenantIndex) {
         updatedBy: actor?._id || null,
         notes: "Synthetic dashboard seed data — not a real customer transaction.",
       });
+      // Check the condition (status === "completed") and run the matching branch.
       if (status === "completed") {
+        // Declare durationDays for use by the surrounding module or function.
         const durationDays = Math.max(1, Number(tour.durationDetails?.days || tour.durationDays || 1));
+        // Perform the side effect or state update expressed on the following line.
         booking.completedAt = new Date(travelDate.getTime() + durationDays * 86400000);
       }
+      // Check the condition (["confirmed", "assigned", "ongoing"].includes(status)) and run the matching branch.
       if (["confirmed", "assigned", "ongoing"].includes(status)) booking.confirmedAt = new Date(Math.min(Date.now(), travelDate.getTime() - 86400000));
+      // Check the condition (status === "refunded") and run the matching branch.
       if (status === "refunded") {
+        // Perform the side effect or state update expressed on the following line.
         booking.refundAmount = paid;
+        // Perform the side effect or state update expressed on the following line.
         booking.refundStatus = "completed";
+        // Perform the side effect or state update expressed on the following line.
         booking.refundReason = "Synthetic dashboard refund record";
       }
+      // Perform the side effect or state update expressed on the following line.
       bookings.push(await booking.save());
     }
 
+    // Declare invoices for use by the surrounding module or function.
     const invoices = [];
+    // Declare payments for use by the surrounding module or function.
     const payments = [];
+    // Repeat the enclosed work for each required iteration.
     for (let i = 0; i < bookings.length; i += 1) {
+      // Declare booking for use by the surrounding module or function.
       const booking = bookings[i];
+      // Declare paid for use by the surrounding module or function.
       const paid = round(booking.depositAmount);
       // Reuse the exact plan used to create this booking. Tenant-specific plan rotation must not desynchronize invoice/payment status from the booking.
+      // Declare plan for use by the surrounding module or function.
       const plan = [booking.paymentStatus, booking.status, 0];
+      // Declare invoice for use by the surrounding module or function.
       const invoice = await Invoice.create({
         tenantId: tenant._id,
         booking: booking._id,
@@ -236,11 +322,16 @@ async function seedTenant(tenant, tenantIndex) {
         etimsStatus: i % 5 === 0 ? "pending" : "not_configured",
         notes: "Synthetic dashboard seed data — no KRA/eTIMS submission has occurred.",
       });
+      // Perform the side effect or state update expressed on the following line.
       invoices.push(invoice);
+      // Perform the side effect or state update expressed on the following line.
       await postInvoiceToLedger(invoice);
 
+      // Check the condition (paid > 0 && paymentUser) and run the matching branch.
       if (paid > 0 && paymentUser) {
+        // Declare provider for use by the surrounding module or function.
         const provider = providers[i % providers.length];
+        // Declare payment for use by the surrounding module or function.
         const payment = await Payment.create({
           tenantId: tenant._id,
           customer: booking.user || paymentUser._id,
@@ -264,14 +355,21 @@ async function seedTenant(tenant, tenantIndex) {
           refundedAt: plan[0] === "refunded" ? new Date() : null,
           notes: "Synthetic dashboard seed payment — not a real customer transaction.",
         });
+        // Perform the side effect or state update expressed on the following line.
         payments.push(payment);
+        // Perform the side effect or state update expressed on the following line.
         await postPaymentToLedger(payment);
+        // Check the condition (plan[0] === "refunded") and run the matching branch.
         if (plan[0] === "refunded") await postPaymentRefundToLedger(payment, paid, `DEMO-REFUND-${tenantIndex + 1}-${i + 1}`);
+        // Perform the side effect or state update expressed on the following line.
         booking.payments = [payment._id];
+        // Perform the side effect or state update expressed on the following line.
         await booking.save();
       }
 
+      // Check the condition (booking.agent) and run the matching branch.
       if (booking.agent) {
+        // Perform the side effect or state update expressed on the following line.
         await Commission.create({
           tenantId: tenant._id,
           agent: booking.agent,
@@ -291,11 +389,17 @@ async function seedTenant(tenant, tenantIndex) {
       }
     }
 
+    // Repeat the enclosed work for each required iteration.
     for (let i = 0; i < Math.min(6, suppliers.length, tours.length); i += 1) {
+      // Declare supplier for use by the surrounding module or function.
       const supplier = suppliers[i % suppliers.length];
+      // Declare tour for use by the surrounding module or function.
       const tour = tours[i % tours.length];
+      // Declare booking for use by the surrounding module or function.
       const booking = bookings[i % bookings.length];
+      // Declare cost for use by the surrounding module or function.
       const cost = round(Math.max(4500, Number(tour.price || 0) * (0.35 + (i % 3) * 0.1)));
+      // Declare po for use by the surrounding module or function.
       const po = await PurchaseOrder.create({
         tenantId: tenant._id,
         supplier: supplier._id,
@@ -311,6 +415,7 @@ async function seedTenant(tenant, tenantIndex) {
         createdBy: actor?._id || null,
         notes: "Synthetic purchase order for dashboard demonstration.",
       });
+      // Declare expense for use by the surrounding module or function.
       const expense = await Expense.create({
         tenantId: tenant._id,
         category: ["Transport", "Accommodation", "Park fees", "Guide services"][i % 4],
@@ -330,6 +435,7 @@ async function seedTenant(tenant, tenantIndex) {
         createdBy: actor?._id || null,
         notes: "Synthetic expense for dashboard demonstration.",
       });
+      // Perform the side effect or state update expressed on the following line.
       await SupplierPayable.create({
         tenantId: tenant._id,
         supplier: supplier._id,
@@ -344,6 +450,7 @@ async function seedTenant(tenant, tenantIndex) {
         createdBy: actor?._id || null,
         notes: "Synthetic supplier payable for dashboard demonstration.",
       });
+      // Perform the side effect or state update expressed on the following line.
       await TourCost.create({
         tenantId: tenant._id,
         tour: tour._id,
@@ -362,26 +469,40 @@ async function seedTenant(tenant, tenantIndex) {
       });
     }
 
+    // Check the condition (invoices.length >= 2) and run the matching branch.
     if (invoices.length >= 2) {
+      // Perform the side effect or state update expressed on the following line.
       await CreditDebitNote.create({ tenantId: tenant._id, type: "credit", originalInvoice: invoices[0]._id, originalInvoiceNumber: invoices[0].invoiceNumber, reason: "Synthetic partial refund adjustment", amount: 500, taxAmount: 0, totalAmount: 500, taxRate: 0, status: "issued", etimsStatus: "not_submitted", createdBy: actor?._id || null });
+      // Perform the side effect or state update expressed on the following line.
       await CreditDebitNote.create({ tenantId: tenant._id, type: "debit", originalInvoice: invoices[1]._id, originalInvoiceNumber: invoices[1].invoiceNumber, reason: "Synthetic service adjustment", amount: 750, taxAmount: 0, totalAmount: 750, taxRate: 0, status: "issued", etimsStatus: "not_submitted", createdBy: actor?._id || null });
     }
 
+    // Repeat the enclosed work for each required iteration.
     for (const customer of customers) {
+      // Declare customerBookings for use by the surrounding module or function.
       const customerBookings = bookings.filter((b) => String(b.customer) === String(customer._id));
+      // Declare completed for use by the surrounding module or function.
       const completed = customerBookings.filter((b) => b.status === "completed").length;
+      // Declare spent for use by the surrounding module or function.
       const spent = round(customerBookings.reduce((sum, b) => sum + Number(b.amountPaid || 0), 0));
+      // Perform the side effect or state update expressed on the following line.
       await Customer.updateOne({ _id: customer._id, tenantId: tenant._id }, { $set: { totalBookings: customerBookings.length, completedBookings: completed, cancelledBookings: customerBookings.filter((b) => b.status === "cancelled").length, totalSpent: spent, averageBookingValue: customerBookings.length ? round(spent / customerBookings.length) : 0, lastBookingDate: customerBookings.map((b) => b.createdAt).filter(Boolean).sort((a, b) => b - a)[0] || null, loyaltyPoints: Math.floor(spent / 100) } });
     }
 
+    // Repeat the enclosed work for each required iteration.
     for (const tour of tours) {
+      // Declare activeBookings for use by the surrounding module or function.
       const activeBookings = bookings.filter((b) => String(b.tour) === String(tour._id) && !["cancelled", "refunded"].includes(b.status));
+      // Declare bookedSlots for use by the surrounding module or function.
       const bookedSlots = activeBookings.reduce((sum, b) => sum + Number(b.numberOfGuests || 0), 0);
+      // Declare tourBookings for use by the surrounding module or function.
       const tourBookings = bookings.filter((booking) => String(booking.tour) === String(tour._id));
+      // Declare availability for use by the surrounding module or function.
       const availability = (tour.availability || []).map((slot) => ({
         ...(typeof slot.toObject === "function" ? slot.toObject() : slot),
         bookedSlots,
       }));
+      // Perform the side effect or state update expressed on the following line.
       await Tour.updateOne({ _id: tour._id, tenantId: tenant._id }, {
         $set: {
           "availabilitySettings.bookedSlots": bookedSlots,
@@ -396,8 +517,11 @@ async function seedTenant(tenant, tenantIndex) {
 
     // Rebuild reviews against eligible bookings after the old booking rows
     // have been removed, then derive public tour review counters from those rows.
+    // Declare reviewBookings for use by the surrounding module or function.
     const reviewBookings = bookings.filter((booking) => booking.status === "completed").slice(0, 3);
+    // Repeat the enclosed work for each required iteration.
     for (const [index, booking] of reviewBookings.entries()) {
+      // Perform the side effect or state update expressed on the following line.
       await Review.create({
         tenantId: tenant._id,
         user: booking.user,
@@ -413,36 +537,54 @@ async function seedTenant(tenant, tenantIndex) {
       });
     }
 
+    // Declare reviewStats for use by the surrounding module or function.
     const reviewStats = await Review.aggregate([
       { $match: { tenantId: tenant._id, approved: true } },
       { $group: { _id: "$tour", totalReviews: { $sum: 1 }, averageRating: { $avg: "$rating" } } },
     ]);
+    // Declare reviewsByTour for use by the surrounding module or function.
     const reviewsByTour = new Map(reviewStats.map((row) => [String(row._id), row]));
+    // Declare bookingsByDestination for use by the surrounding module or function.
     const bookingsByDestination = new Map();
+    // Declare toursByDestination for use by the surrounding module or function.
     const toursByDestination = new Map();
+    // Declare destinationReviewTotals for use by the surrounding module or function.
     const destinationReviewTotals = new Map();
+    // Declare destinationRatingSums for use by the surrounding module or function.
     const destinationRatingSums = new Map();
+    // Repeat the enclosed work for each required iteration.
     for (const tour of tours) {
+      // Declare stats for use by the surrounding module or function.
       const stats = reviewsByTour.get(String(tour._id));
+      // Perform the side effect or state update expressed on the following line.
       await Tour.updateOne({ _id: tour._id, tenantId: tenant._id }, {
         $set: {
           totalReviews: Number(stats?.totalReviews || 0),
           averageRating: Number(stats?.averageRating || 0),
         },
       });
+      // Declare destinationId for use by the surrounding module or function.
       const destinationId = String(tour.destination);
+      // Perform the side effect or state update expressed on the following line.
       toursByDestination.set(destinationId, (toursByDestination.get(destinationId) || 0) + 1);
+      // Declare reviewCount for use by the surrounding module or function.
       const reviewCount = Number(stats?.totalReviews || 0);
+      // Perform the side effect or state update expressed on the following line.
       destinationReviewTotals.set(destinationId,
         (destinationReviewTotals.get(destinationId) || 0) + reviewCount);
+      // Perform the side effect or state update expressed on the following line.
       destinationRatingSums.set(destinationId,
         (destinationRatingSums.get(destinationId) || 0) + Number(stats?.averageRating || 0) * reviewCount);
+      // Declare destinationBookings for use by the surrounding module or function.
       const destinationBookings = bookings.filter((booking) =>
         String(booking.tour) === String(tour._id));
+      // Perform the side effect or state update expressed on the following line.
       bookingsByDestination.set(destinationId,
         (bookingsByDestination.get(destinationId) || 0) + destinationBookings.length);
     }
+    // Repeat the enclosed work for each required iteration.
     for (const [destinationId, totalTours] of toursByDestination) {
+      // Perform the side effect or state update expressed on the following line.
       await Destination.updateOne(
         { _id: destinationId, tenantId: tenant._id },
         { $set: {
@@ -456,21 +598,34 @@ async function seedTenant(tenant, tenantIndex) {
       );
     }
 
+    // Declare tourById for use by the surrounding module or function.
     const tourById = new Map(tours.map((tour) => [String(tour._id), tour]));
+    // Declare convertedQuotes for use by the surrounding module or function.
     const convertedQuotes = await Quotation.find({ tenantId: tenant._id, status: "converted", isDeleted: { $ne: true } });
+    // Repeat the enclosed work for each required iteration.
     for (const quote of convertedQuotes) {
+      // Declare booking for use by the surrounding module or function.
       const booking = bookings.find((row) => String(row.customer) === String(quote.customer)
         && String(row.tour) === String(quote.tour))
         || bookings.find((row) => String(row.customer) === String(quote.customer))
         || bookings[0];
+      // Check the condition (!booking) and run the matching branch.
       if (!booking) continue;
+      // Declare tour for use by the surrounding module or function.
       const tour = tourById.get(String(booking.tour));
+      // Declare total for use by the surrounding module or function.
       const total = Number(booking.totalAmount || 0);
+      // Declare quantity for use by the surrounding module or function.
       const quantity = Math.max(1, Number(booking.numberOfGuests || 1));
+      // Perform the side effect or state update expressed on the following line.
       quote.booking = booking._id;
+      // Perform the side effect or state update expressed on the following line.
       quote.customer = booking.customer;
+      // Perform the side effect or state update expressed on the following line.
       quote.tour = booking.tour;
+      // Perform the side effect or state update expressed on the following line.
       quote.agent = booking.agent || quote.agent;
+      // Perform the side effect or state update expressed on the following line.
       quote.items = [{
         tenantId: tenant._id,
         name: tour?.title || "Demo tour booking",
@@ -480,23 +635,38 @@ async function seedTenant(tenant, tenantIndex) {
         unitPrice: round(total / quantity),
         total,
       }];
+      // Perform the side effect or state update expressed on the following line.
       quote.subtotal = total;
+      // Perform the side effect or state update expressed on the following line.
       quote.tax = 0;
+      // Perform the side effect or state update expressed on the following line.
       quote.discount = 0;
+      // Perform the side effect or state update expressed on the following line.
       quote.grandTotal = total;
+      // Perform the side effect or state update expressed on the following line.
       quote.currency = "KES";
+      // Perform the side effect or state update expressed on the following line.
       await quote.save();
     }
 
+    // Declare actualExpenseCount for use by the surrounding module or function.
     const actualExpenseCount = await Expense.countDocuments({});
+    // Declare actualPurchaseOrderCount for use by the surrounding module or function.
     const actualPurchaseOrderCount = await PurchaseOrder.countDocuments({});
+    // Declare actualSupplierPayableCount for use by the surrounding module or function.
     const actualSupplierPayableCount = await SupplierPayable.countDocuments({});
+    // Declare actualTourCostCount for use by the surrounding module or function.
     const actualTourCostCount = await TourCost.countDocuments({});
+    // Check the condition (actualExpenseCount < 1) and run the matching branch.
     if (actualExpenseCount < 1) throw new Error(`Tenant ${tenant.name || tenant._id} produced zero expenses after seeding; refusing to report a successful populated financial dashboard.`);
+    // Check the condition (actualPurchaseOrderCount < 1) and run the matching branch.
     if (actualPurchaseOrderCount < 1) throw new Error(`Tenant ${tenant.name || tenant._id} produced zero purchase orders after seeding.`);
+    // Check the condition (actualSupplierPayableCount < 1) and run the matching branch.
     if (actualSupplierPayableCount < 1) throw new Error(`Tenant ${tenant.name || tenant._id} produced zero supplier payables after seeding.`);
+    // Check the condition (actualTourCostCount < 1) and run the matching branch.
     if (actualTourCostCount < 1) throw new Error(`Tenant ${tenant.name || tenant._id} produced zero tour costs after seeding.`);
 
+    // Return the object assembled below to the caller.
     return {
       tenant: tenant.name,
       bookings: bookings.length,
@@ -510,10 +680,14 @@ async function seedTenant(tenant, tenantIndex) {
   });
 }
 
+// Define main; its parameters and body implement this operation.
 export async function main() {
   // Prevent Booking.post('save') from auto-creating a second payment while this seed writes its explicit ledger records.
+  // Perform the side effect or state update expressed on the following line.
   process.env.DEMO_SEED_MODE = "true";
+  // Check the condition (!process.env.MONGODB_URI) and run the matching branch.
   if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required.");
+  // Perform the side effect or state update expressed on the following line.
   await mongoose.connect(process.env.MONGODB_URI, {
     maxPoolSize: 5,
     minPoolSize: 0,
@@ -522,29 +696,47 @@ export async function main() {
     socketTimeoutMS: 120000,
     waitQueueTimeoutMS: 30000,
   });
+  // Declare tenants for use by the surrounding module or function.
   const tenants = await Organization.find({ isDeleted: { $ne: true } }).sort({ createdAt: 1 }).lean();
+  // Check the condition (tenants.length !== 3) and run the matching branch.
   if (tenants.length !== 3) throw new Error(`Expected exactly 3 active tenants, found ${tenants.length}. Refusing to seed.`);
 
+  // Perform the side effect or state update expressed on the following line.
   console.log("Verified exactly 3 active tenants. Master data will be preserved.");
+  // Perform the side effect or state update expressed on the following line.
   console.log("============================================");
+  // Perform the side effect or state update expressed on the following line.
   console.log("GLOBAL TOURS FINANCIAL DASHBOARD SEED");
+  // Perform the side effect or state update expressed on the following line.
   console.log("============================================");
+  // Perform the side effect or state update expressed on the following line.
   console.log("Preserving all three tenants and master data.");
+  // Perform the side effect or state update expressed on the following line.
   console.log("Replacing bookings and transactional/financial demo data only.");
 
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare results for use by the surrounding module or function.
     const results = [];
+    // Repeat the enclosed work for each required iteration.
     for (let i = 0; i < tenants.length; i += 1) results.push(await seedTenant(tenants[i], i));
+    // Perform the side effect or state update expressed on the following line.
     console.table(results);
+    // Perform the side effect or state update expressed on the following line.
     console.log("Seed complete. All generated transactions are synthetic dashboard/demo records.");
   } finally {
+    // Perform the side effect or state update expressed on the following line.
     await mongoose.disconnect();
   }
 }
 
+// Check the condition (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(imp) and run the matching branch.
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  // Perform the side effect or state update expressed on the following line.
   main().catch((error) => {
+    // Perform the side effect or state update expressed on the following line.
     console.error(`Financial dashboard seed failed: ${error.message}`);
+    // Perform the side effect or state update expressed on the following line.
     process.exitCode = 1;
   });
 }

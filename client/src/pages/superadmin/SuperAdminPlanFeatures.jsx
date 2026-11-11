@@ -1,41 +1,70 @@
+/**
+ * Purpose: Super Admin Plan Features page-level UI component. Main declarations: money, SuperAdminPlanFeatures, load, updateFeature, save.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import React, { useEffect, useMemo, useState } from "react";
+// Load lucide-react so this module can use its exported dependencies.
 import { Check, LockKeyhole, RefreshCw, Save, ShieldCheck, X, AlertTriangle } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/platformBillingApi so this module can use its exported dependencies.
 import { getPlatformBillingConfig, updatePlatformBillingConfig } from "../../api/platformBillingApi";
 
+// Declare PLAN_ORDER for use by the surrounding module or function.
 const PLAN_ORDER = ["starter", "professional", "business", "enterprise"];
+// Declare PLAN_META for use by the surrounding module or function.
 const PLAN_META = {
   starter: { label: "Starter", subtitle: "Core tools for a small travel business" },
   professional: { label: "Professional", subtitle: "Operations, sales, CRM and core finance" },
   business: { label: "Business", subtitle: "Advanced operations, accounting, compliance and AI" },
   enterprise: { label: "Enterprise", subtitle: "Full platform capability" },
 };
+// Declare money for use by the surrounding module or function.
 const money = (value) => value === undefined || value === null || value === "" ? "—" : `KES ${Number(value).toLocaleString("en-KE")}`;
 
+// Define SuperAdminPlanFeatures; its parameters and body implement this operation.
 export default function SuperAdminPlanFeatures() {
+  // Declare [billing, setBilling] for use by the surrounding module or function.
   const [billing, setBilling] = useState({ prices: {}, features: {}, featureCatalog: [] });
+  // Declare [saving, setSaving] for use by the surrounding module or function.
   const [saving, setSaving] = useState(false);
+  // Declare [loading, setLoading] for use by the surrounding module or function.
   const [loading, setLoading] = useState(true);
+  // Declare [loadError, setLoadError] for use by the surrounding module or function.
   const [loadError, setLoadError] = useState("");
 
+  // Declare load for use by the surrounding module or function.
   const load = async () => {
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       setLoading(true);
+      // Perform the side effect or state update expressed on the following line.
       setLoadError("");
+      // Declare response for use by the surrounding module or function.
       const response = await getPlatformBillingConfig();
+      // Perform the side effect or state update expressed on the following line.
       setBilling({ prices: response?.prices || {}, features: response?.features || {}, featureCatalog: response?.featureCatalog || [] });
     } catch (error) {
+      // Perform the side effect or state update expressed on the following line.
       console.error("PLAN FEATURE LOAD ERROR", error);
+      // Perform the side effect or state update expressed on the following line.
       setLoadError(error?.response?.data?.message || error?.message || "Plan catalogue is currently unavailable.");
     } finally { setLoading(false); }
   };
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => { void load(); }, []);
+  // Declare updateFeature for use by the surrounding module or function.
   const updateFeature = (plan, featureId, enabled) => setBilling((current) => ({ ...current, features: { ...current.features, [plan]: enabled ? [...new Set([...(current.features?.[plan] || []), featureId])] : (current.features?.[plan] || []).filter((id) => id !== featureId) } }));
+  // Declare save for use by the surrounding module or function.
   const save = async () => { try { setSaving(true); const payload = { ...Object.fromEntries(PLAN_ORDER.map((plan) => [plan, Number(billing.prices?.[plan] || 0)])), features: Object.fromEntries(PLAN_ORDER.map((plan) => [plan, billing.features?.[plan] || []])) }; const response = await updatePlatformBillingConfig(payload); setBilling((current) => ({ ...current, prices: response?.prices || current.prices, features: response?.features || current.features })); setLoadError(""); toast.success("Plan pricing and feature entitlements saved successfully."); } catch (error) { toast.error(error?.response?.data?.message || "Unable to save plan features. No changes were applied."); } finally { setSaving(false); } };
+  // Declare catalog for use by the surrounding module or function.
   const catalog = useMemo(() => billing.featureCatalog || [], [billing.featureCatalog]);
+  // Check the condition (loading) and run the matching branch.
   if (loading) return <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-center gap-3 text-sm font-semibold text-slate-600"><RefreshCw className="animate-spin text-emerald-600" size={18} />Loading plan catalogue...</div></div>;
 
+  // Return the expression shown below to the caller.
   return <div className="space-y-5">
     <header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8"><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Global Tours · Commercial Plans</p><h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Plan features & entitlements</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">The product catalogue tenants pay for. Active subscription plans determine protected workspace modules and APIs.</p></div><button onClick={load} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-slate-50"><RefreshCw size={16} />Refresh catalogue</button></div></header>
     {loadError && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 shrink-0 text-amber-600" size={19}/><div><p className="font-black">Plan catalogue unavailable</p><p className="mt-1">{loadError}</p><button onClick={load} className="mt-3 rounded-lg bg-amber-700 px-3 py-2 text-xs font-bold text-white">Retry catalogue</button></div></div></div>}

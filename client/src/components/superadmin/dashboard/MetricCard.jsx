@@ -1,10 +1,16 @@
+/**
+ * Purpose: Metric Card reusable UI component. Main declarations: MetricCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 
+// Define MetricCard; its parameters and body implement this operation.
 export default function MetricCard({
   title,
   value,
   subtitle,
   icon
 }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="bg-white rounded-2xl shadow-sm border p-5">
       <div className="flex justify-between items-start">

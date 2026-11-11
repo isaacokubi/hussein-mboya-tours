@@ -1,28 +1,48 @@
+/**
+ * Purpose: Tenant Footer reusable UI component. Main declarations: cleanPhone, TenantFooter.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useTenant } from "../../context/TenantContext";
+// Load ../../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../../context/SettingsContext";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load react-icons/fa6 so this module can use its exported dependencies.
 import { FaEnvelope, FaFacebookF, FaInstagram, FaLocationDot, FaPhone, FaXTwitter, FaYoutube } from "react-icons/fa6";
 
+// Declare cleanPhone for use by the surrounding module or function.
 const cleanPhone = (value = "") => String(value).replace(/\s+/g, "");
 
+// Define TenantFooter; its parameters and body implement this operation.
 export default function TenantFooter() {
+  // Declare { tenant } for use by the surrounding module or function.
   const { tenant } = useTenant() || {};
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
 
+  // Declare companyName for use by the surrounding module or function.
   const companyName = settings.companyName || tenant?.name || "Hussein Mboya Tours";
+  // Declare supportEmail for use by the surrounding module or function.
   const supportEmail = settings.supportEmail || tenant?.contactEmail || "";
+  // Declare supportPhone for use by the surrounding module or function.
   const supportPhone = settings.supportPhone || tenant?.contactPhone || "";
+  // Declare address for use by the surrounding module or function.
   const address = settings.address || tenant?.address || "";
+  // Declare city for use by the surrounding module or function.
   const city = settings.city || tenant?.city || "Nairobi";
+  // Declare country for use by the surrounding module or function.
   const country = settings.country || tenant?.country || "Kenya";
+  // Declare social for use by the surrounding module or function.
   const social = {
     facebook: settings.facebook || "",
     instagram: settings.instagram || "",
     twitter: settings.twitter || "",
     youtube: settings.youtube || "",
   };
+  // Declare year for use by the surrounding module or function.
   const year = new Date().getFullYear();
 
+  // Return the expression shown below to the caller.
   return (
     <footer className="bg-gray-900 text-gray-300">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 py-16 sm:grid-cols-2 lg:grid-cols-4">

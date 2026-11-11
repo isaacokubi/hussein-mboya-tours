@@ -1,5 +1,11 @@
+/**
+ * Purpose: Super Admin Audit page-level UI component. Main declarations: numberValue, label, formatDate, getInitials, SuperAdminAudit.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   Activity,
   AlertTriangle,
@@ -15,14 +21,22 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+// Load ../../api/auditApi so this module can use its exported dependencies.
 import { getAuditLogs } from "../../api/auditApi";
+// Load ../../components/admin/Pagination so this module can use its exported dependencies.
 import Pagination from "../../components/admin/Pagination";
 
+// Declare PAGE_SIZE for use by the surrounding module or function.
 const PAGE_SIZE = 10;
+// Declare INITIAL_FILTERS for use by the surrounding module or function.
 const INITIAL_FILTERS = { search: "", severity: "", status: "", action: "", resource: "" };
+// Declare ACTIONS for use by the surrounding module or function.
 const ACTIONS = ["login", "create", "update", "delete", "logout", "approve", "reject", "export"];
+// Declare SEVERITIES for use by the surrounding module or function.
 const SEVERITIES = ["critical", "high", "medium", "low"];
+// Declare STATUSES for use by the surrounding module or function.
 const STATUSES = ["success", "failed"];
+// Declare RESOURCES for use by the surrounding module or function.
 const RESOURCES = [
   "Authentication",
   "User",
@@ -36,16 +50,23 @@ const RESOURCES = [
   "System",
 ];
 
+// Declare numberValue for use by the surrounding module or function.
 const numberValue = (value) => (Number.isFinite(Number(value)) ? Number(value) : null);
+// Declare label for use by the surrounding module or function.
 const label = (value) =>
   String(value || "—")
     .replace(/_/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "—";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Check the condition (Number.isNaN(date.getTime())) and run the matching branch.
   if (Number.isNaN(date.getTime())) return "Invalid date";
+  // Return the result of new Intl.DateTimeFormat("en-KE", {     dateStyle: "medium",     timeStyle: "short",     timeZone: "Africa/Nairobi",   }).format() to the caller.
   return new Intl.DateTimeFormat("en-KE", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -53,6 +74,7 @@ const formatDate = (value) => {
   }).format(date);
 };
 
+// Declare getInitials for use by the surrounding module or function.
 const getInitials = (value) =>
   String(value || "System")
     .trim()
@@ -62,11 +84,16 @@ const getInitials = (value) =>
     .join("")
     .toUpperCase() || "SY";
 
+// Define SuperAdminAudit; its parameters and body implement this operation.
 export default function SuperAdminAudit() {
+  // Declare [page, setPage] for use by the surrounding module or function.
   const [page, setPage] = useState(1);
+  // Declare [selected, setSelected] for use by the surrounding module or function.
   const [selected, setSelected] = useState(null);
+  // Declare [filters, setFilters] for use by the surrounding module or function.
   const [filters, setFilters] = useState(INITIAL_FILTERS);
 
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({
     queryKey: ["audit-center", page, filters],
     queryFn: () => getAuditLogs({ page, limit: PAGE_SIZE, ...filters }),
@@ -75,16 +102,26 @@ export default function SuperAdminAudit() {
     refetchOnWindowFocus: true,
   });
 
+  // Declare { data, isLoading, isFetching, error, refetch } for use by the surrounding module or function.
   const { data, isLoading, isFetching, error, refetch } = query;
+  // Declare logs for use by the surrounding module or function.
   const logs = Array.isArray(data?.logs) ? data.logs : [];
+  // Declare statistics for use by the surrounding module or function.
   const statistics = data?.statistics || {};
+  // Declare pagination for use by the surrounding module or function.
   const pagination = data?.pagination || {};
+  // Declare pages for use by the surrounding module or function.
   const pages = Math.max(1, numberValue(pagination.pages) || 1);
+  // Declare total for use by the surrounding module or function.
   const total = numberValue(pagination.total);
+  // Declare hasStatistics for use by the surrounding module or function.
   const hasStatistics = ["total", "success", "failed", "critical"].some((key) => statistics[key] !== undefined && statistics[key] !== null);
+  // Declare activeFilterCount for use by the surrounding module or function.
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  // Declare filteredView for use by the surrounding module or function.
   const filteredView = activeFilterCount > 0;
 
+  // Declare counts for use by the surrounding module or function.
   const counts = useMemo(() => ({
     total: numberValue(statistics.total),
     success: numberValue(statistics.success),
@@ -92,19 +129,29 @@ export default function SuperAdminAudit() {
     critical: numberValue(statistics.critical),
   }), [statistics]);
 
+  // Declare changeFilter for use by the surrounding module or function.
   const changeFilter = (key, value) => {
+    // Perform the side effect or state update expressed on the following line.
     setFilters((current) => ({ ...current, [key]: value }));
+    // Perform the side effect or state update expressed on the following line.
     setPage(1);
+    // Perform the side effect or state update expressed on the following line.
     setSelected(null);
   };
 
+  // Declare clearFilters for use by the surrounding module or function.
   const clearFilters = () => {
+    // Perform the side effect or state update expressed on the following line.
     setFilters(INITIAL_FILTERS);
+    // Perform the side effect or state update expressed on the following line.
     setPage(1);
+    // Perform the side effect or state update expressed on the following line.
     setSelected(null);
   };
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
         <div className="mx-auto max-w-[1600px] animate-pulse space-y-6">
@@ -119,7 +166,9 @@ export default function SuperAdminAudit() {
     );
   }
 
+  // Check the condition (error) and run the matching branch.
   if (error) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
         <div className="mx-auto max-w-1600px rounded-3xl border border-rose-200 bg-white p-8 shadow-sm">
@@ -139,6 +188,7 @@ export default function SuperAdminAudit() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1600px] space-y-6">
@@ -287,7 +337,9 @@ export default function SuperAdminAudit() {
   );
 }
 
+// Define SelectFilter; its parameters and body implement this operation.
 function SelectFilter({ value, onChange, label: placeholder, options }) {
+  // Return the expression shown below to the caller.
   return (
     <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10">
       <option value="">{placeholder}</option>
@@ -296,14 +348,18 @@ function SelectFilter({ value, onChange, label: placeholder, options }) {
   );
 }
 
+// Define MetricCard; its parameters and body implement this operation.
 function MetricCard({ icon: Icon, title, value, hint, tone }) {
+  // Declare tones for use by the surrounding module or function.
   const tones = {
     slate: { card: "border-slate-200 bg-slate-50 text-slate-950", icon: "bg-slate-950 text-white" },
     emerald: { card: "border-emerald-200 bg-emerald-50 text-emerald-950", icon: "bg-emerald-600 text-white" },
     rose: { card: "border-rose-200 bg-rose-50 text-rose-950", icon: "bg-rose-600 text-white" },
     amber: { card: "border-amber-200 bg-amber-50 text-amber-950", icon: "bg-amber-500 text-white" },
   };
+  // Declare style for use by the surrounding module or function.
   const style = tones[tone] || tones.slate;
+  // Return the expression shown below to the caller.
   return (
     <div className={`rounded-2xl border p-5 shadow-sm ${style.card}`}>
       <div className="flex items-start justify-between gap-3">
@@ -318,18 +374,25 @@ function MetricCard({ icon: Icon, title, value, hint, tone }) {
   );
 }
 
+// Define Badge; its parameters and body implement this operation.
 function Badge({ value, type }) {
+  // Declare normalized for use by the surrounding module or function.
   const normalized = String(value || "unknown").toLowerCase();
+  // Declare classes for use by the surrounding module or function.
   const classes = type === "status"
     ? normalized === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : normalized === "failed" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-slate-200 bg-slate-100 text-slate-600"
     : type === "severity"
       ? normalized === "critical" ? "border-rose-200 bg-rose-50 text-rose-700" : normalized === "high" ? "border-orange-200 bg-orange-50 text-orange-700" : normalized === "medium" ? "border-amber-200 bg-amber-50 text-amber-700" : normalized === "low" ? "border-blue-200 bg-blue-50 text-blue-700" : "border-slate-200 bg-slate-100 text-slate-600"
       : "border-slate-200 bg-slate-50 text-slate-700";
+  // Declare Icon for use by the surrounding module or function.
   const Icon = type === "status" ? (normalized === "success" ? CheckCircle2 : normalized === "failed" ? XCircle : AlertTriangle) : type === "severity" && normalized === "critical" ? ShieldAlert : ChevronRight;
+  // Return the expression shown below to the caller.
   return <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${classes}`}><Icon className="h-3.5 w-3.5" />{label(value || "Unknown")}</span>;
 }
 
+// Define InfoCard; its parameters and body implement this operation.
 function InfoCard({ icon: Icon, title, text }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start gap-3">
@@ -343,7 +406,9 @@ function InfoCard({ icon: Icon, title, text }) {
   );
 }
 
+// Define AuditDrawer; its parameters and body implement this operation.
 function AuditDrawer({ log, onClose }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-sm" onClick={onClose}>
       <aside className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
@@ -379,7 +444,9 @@ function AuditDrawer({ log, onClose }) {
   );
 }
 
+// Define Detail; its parameters and body implement this operation.
 function Detail({ label: title, value, mono = false }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
       <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{title}</p>

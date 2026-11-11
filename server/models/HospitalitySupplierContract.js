@@ -1,6 +1,13 @@
+/**
+ * Purpose: Hospitality Supplier Contract database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Declare { Schema } for use by the surrounding module or function.
 const { Schema } = mongoose;
+// Declare schema for use by the surrounding module or function.
 const schema = new Schema({
   tenantId:{type:Schema.Types.ObjectId,ref:"Organization",required:true,index:true},
   supplierName:{type:String,required:true,trim:true},
@@ -14,7 +21,9 @@ const schema = new Schema({
   status:{type:String,enum:["draft","active","inactive","expired","terminated"],default:"draft",index:true},notes:{type:String,trim:true,default:""},
   createdBy:{type:Schema.Types.ObjectId,ref:"User",default:null},updatedBy:{type:Schema.Types.ObjectId,ref:"User",default:null}
 },{timestamps:true});
+// Perform the side effect or state update expressed on the following line.
 schema.index({tenantId:1,supplierType:1,status:1,validTo:1});
+// Perform the side effect or state update expressed on the following line.
 schema.plugin(tenantPlugin);
 
 export default mongoose.models.HospitalitySupplierContract||mongoose.model("HospitalitySupplierContract",schema);

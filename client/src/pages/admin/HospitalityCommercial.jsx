@@ -1,84 +1,152 @@
+/**
+ * Purpose: Hospitality Commercial page-level UI component. Main declarations: money, countDisplay, amountDisplay, unwrap, dateOnly.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect, useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { AlertCircle, CheckCircle2, FileText, Handshake, Loader2, Plus, RefreshCw, WalletCards, XCircle } from "lucide-react";
+// Load ../../api/hotelApi so this module can use its exported dependencies.
 import { getAdminHotels, getHotelBookings } from "../../api/hotelApi";
+// Load ../../api/airportTransferApi so this module can use its exported dependencies.
 import { getTransferBookings } from "../../api/airportTransferApi";
+// Load ../../api/hospitalityOperationsApi so this module can use its exported dependencies.
 import {
   createRatePlan, getRatePlans, updateRatePlan,
   createSupplierContract, getSupplierContracts, updateSupplierContract,
   createHospitalityDeposit, getHospitalityDeposits, updateHospitalityDeposit
 } from "../../api/hospitalityOperationsApi";
 
+// Declare input for use by the surrounding module or function.
 const input="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
+// Declare money for use by the surrounding module or function.
 const money=(v,c="KES")=>`${c||"KES"} ${Number(v||0).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+// Declare countDisplay for use by the surrounding module or function.
 const countDisplay=v=>Number(v)>0?Number(v):"—";
+// Declare amountDisplay for use by the surrounding module or function.
 const amountDisplay=(v,c="KES")=>Number(v)>0?money(v,c):"—";
+// Declare unwrap for use by the surrounding module or function.
 const unwrap=v=>Array.isArray(v)?v:(v?.items||v?.data||v?.hotels||v?.bookings||[]);
+// Declare dateOnly for use by the surrounding module or function.
 const dateOnly=v=>v?new Date(v).toISOString().slice(0,10):"";
+// Declare today for use by the surrounding module or function.
 const today=new Date().toISOString().slice(0,10);
 
+// Define HospitalityCommercial; its parameters and body implement this operation.
 export default function HospitalityCommercial(){
+  // Declare qc for use by the surrounding module or function.
   const qc=useQueryClient();
+  // Declare [tab,setTab] for use by the surrounding module or function.
   const [tab,setTab]=useState("rates");
+  // Declare [notice,setNotice] for use by the surrounding module or function.
   const [notice,setNotice]=useState(null);
+  // Declare [rate,setRate] for use by the surrounding module or function.
   const [rate,setRate]=useState({hotel:"",roomType:"",name:"",code:"",nightlyRate:"",mealPlan:"room_only",validFrom:today,validTo:"",minNights:1,maxNights:"",refundable:true,cancellationPolicy:"",stopSell:false,status:"active"});
+  // Declare [supplier,setSupplier] for use by the surrounding module or function.
   const [supplier,setSupplier]=useState({supplierName:"",supplierType:"hotel",hotel:"",contractNumber:"",contactName:"",contactPhone:"",contactEmail:"",commissionPercent:0,depositPercent:0,validFrom:today,validTo:"",paymentTerms:"",cancellationTerms:"",status:"active",notes:""});
+  // Declare [deposit,setDeposit] for use by the surrounding module or function.
   const [deposit,setDeposit]=useState({hospitalityType:"hotel",hospitalityBooking:"",amount:"",dueDate:today,notes:"",paidAmount:0,status:"pending"});
 
+  // Declare hotelsQ for use by the surrounding module or function.
   const hotelsQ=useQuery({queryKey:["admin-hotels"],queryFn:getAdminHotels,staleTime:15000,retry:1});
+  // Declare hotelBookingsQ for use by the surrounding module or function.
   const hotelBookingsQ=useQuery({queryKey:["commercial-hotel-bookings"],queryFn:getHotelBookings,staleTime:15000,retry:1});
+  // Declare transferBookingsQ for use by the surrounding module or function.
   const transferBookingsQ=useQuery({queryKey:["commercial-transfer-bookings"],queryFn:getTransferBookings,staleTime:15000,retry:1});
+  // Declare ratesQ for use by the surrounding module or function.
   const ratesQ=useQuery({queryKey:["hospitality-rate-plans"],queryFn:getRatePlans,staleTime:15000,retry:1});
+  // Declare suppliersQ for use by the surrounding module or function.
   const suppliersQ=useQuery({queryKey:["hospitality-suppliers"],queryFn:getSupplierContracts,staleTime:15000,retry:1});
+  // Declare depositsQ for use by the surrounding module or function.
   const depositsQ=useQuery({queryKey:["hospitality-deposits"],queryFn:getHospitalityDeposits,staleTime:15000,retry:1});
 
+  // Declare hotels, hotelBookings, transferBookings for use by the surrounding module or function.
   const hotels=unwrap(hotelsQ.data), hotelBookings=unwrap(hotelBookingsQ.data), transferBookings=unwrap(transferBookingsQ.data);
+  // Declare rates, suppliers, deposits for use by the surrounding module or function.
   const rates=unwrap(ratesQ.data), suppliers=unwrap(suppliersQ.data), deposits=unwrap(depositsQ.data);
+  // Declare selectedHotel for use by the surrounding module or function.
   const selectedHotel=hotels.find(h=>String(h._id)===String(rate.hotel));
+  // Declare roomTypes for use by the surrounding module or function.
   const roomTypes=selectedHotel?.roomTypes||selectedHotel?.rooms||[];
+  // Declare bookingOptions for use by the surrounding module or function.
   const bookingOptions=deposit.hospitalityType==="hotel"?hotelBookings:transferBookings;
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(()=>{
+    // Check the condition (!hotels.length) and run the matching branch.
     if(!hotels.length)return;
+    // Perform the side effect or state update expressed on the following line.
     setRate(current=>{
+      // Declare hotelExists for use by the surrounding module or function.
       const hotelExists=hotels.some(h=>String(h._id)===String(current.hotel));
+      // Declare hotel for use by the surrounding module or function.
       const hotel=hotelExists?current.hotel:String(hotels[0]._id);
+      // Declare property for use by the surrounding module or function.
       const property=hotels.find(h=>String(h._id)===hotel);
+      // Declare rooms for use by the surrounding module or function.
       const rooms=property?.roomTypes||property?.rooms||[];
+      // Declare roomExists for use by the surrounding module or function.
       const roomExists=rooms.some(r=>String(r._id)===String(current.roomType));
+      // Check the condition (hotel!==current.hotel||(!roomExists&&rooms.length)) and run the matching branch.
       if(hotel!==current.hotel||(!roomExists&&rooms.length))return {...current,hotel,roomType:roomExists?current.roomType:String(rooms[0]._id)};
+      // Check the condition (!roomExists&&!rooms.length&&current.roomType) and run the matching branch.
       if(!roomExists&&!rooms.length&&current.roomType)return {...current,hotel,roomType:""};
+      // Return the value of current to the caller.
       return current;
     });
   },[hotels]);
 
+  // Declare refresh for use by the surrounding module or function.
   const refresh=()=>[hotelsQ,hotelBookingsQ,transferBookingsQ,ratesQ,suppliersQ,depositsQ].forEach(q=>q.refetch());
+  // Declare success for use by the surrounding module or function.
   const success=msg=>{setNotice({type:"success",msg});setTimeout(()=>setNotice(null),4500)};
+  // Declare failure for use by the surrounding module or function.
   const failure=err=>setNotice({type:"error",msg:err?.response?.data?.message||err?.message||"The operation could not be completed."});
+  // Declare invalidate for use by the surrounding module or function.
   const invalidate=keys=>keys.forEach(key=>qc.invalidateQueries({queryKey:[key]}));
 
+  // Declare saveRate for use by the surrounding module or function.
   const saveRate=useMutation({mutationFn:()=>createRatePlan({...rate,nightlyRate:Number(rate.nightlyRate),minNights:Number(rate.minNights||1),maxNights:rate.maxNights?Number(rate.maxNights):null}),onSuccess:()=>{setRate(current=>({...current,name:"",code:"",nightlyRate:""}));invalidate(["hospitality-rate-plans"]);success("Rate plan published successfully.")},onError:failure});
+  // Declare saveSupplier for use by the surrounding module or function.
   const saveSupplier=useMutation({mutationFn:()=>createSupplierContract({...supplier,commissionPercent:Number(supplier.commissionPercent||0),depositPercent:Number(supplier.depositPercent||0)}),onSuccess:()=>{setSupplier({...supplier,supplierName:"",contractNumber:"",contactName:"",contactPhone:"",contactEmail:"",notes:""});invalidate(["hospitality-suppliers"]);success("Supplier contract saved.")},onError:failure});
+  // Declare saveDeposit for use by the surrounding module or function.
   const saveDeposit=useMutation({mutationFn:()=>createHospitalityDeposit({...deposit,amount:Number(deposit.amount),paidAmount:Number(deposit.paidAmount||0)}),onSuccess:()=>{setDeposit({...deposit,hospitalityBooking:"",amount:"",paidAmount:0,notes:""});invalidate(["hospitality-deposits"]);success("Reservation deposit created.")},onError:failure});
+  // Declare toggleRate for use by the surrounding module or function.
   const toggleRate=useMutation({mutationFn:r=>updateRatePlan(r._id,{stopSell:!r.stopSell}),onSuccess:()=>{invalidate(["hospitality-rate-plans"]);success("Rate plan selling status updated.")},onError:failure});
+  // Declare toggleSupplier for use by the surrounding module or function.
   const toggleSupplier=useMutation({mutationFn:s=>updateSupplierContract(s._id,{status:s.status==="active"?"inactive":"active"}),onSuccess:()=>{invalidate(["hospitality-suppliers"]);success("Supplier contract status updated.")},onError:failure});
+  // Declare recordDeposit for use by the surrounding module or function.
   const recordDeposit=useMutation({mutationFn:({d,paidAmount})=>updateHospitalityDeposit(d._id,{paidAmount:Number(paidAmount)}),onSuccess:()=>{invalidate(["hospitality-deposits"]);success("Deposit payment updated.")},onError:failure});
 
+  // Declare rateValidation for use by the surrounding module or function.
   const rateValidation=()=>{
+    // Check the condition (!rate.hotel) and run the matching branch.
     if(!rate.hotel)return "Select a hotel.";
+    // Check the condition (!rate.roomType) and run the matching branch.
     if(!rate.roomType)return roomTypes.length?"Select a room type.":"The selected hotel has no room types. Create a room type first.";
+    // Check the condition (!rate.name.trim()) and run the matching branch.
     if(!rate.name.trim())return "Enter a plan name.";
+    // Check the condition (rate.nightlyRate===""||Number(rate.nightlyRate)<0||!Number.isFinite(Nu) and run the matching branch.
     if(rate.nightlyRate===""||Number(rate.nightlyRate)<0||!Number.isFinite(Number(rate.nightlyRate)))return "Enter a valid nightly selling rate.";
+    // Check the condition (!rate.validFrom) and run the matching branch.
     if(!rate.validFrom)return "Select a valid-from date.";
+    // Check the condition (rate.validTo&&new Date(rate.validTo)<new Date(rate.validFrom)) and run the matching branch.
     if(rate.validTo&&new Date(rate.validTo)<new Date(rate.validFrom))return "Valid-to cannot be before valid-from.";
+    // Check the condition (rate.maxNights&&Number(rate.maxNights)<Number(rate.minNights||1)) and run the matching branch.
     if(rate.maxNights&&Number(rate.maxNights)<Number(rate.minNights||1))return "Maximum nights cannot be below minimum nights.";
+    // Return a configured text value to the caller.
     return "";
   };
+  // Declare submitRate for use by the surrounding module or function.
   const submitRate=()=>{const message=rateValidation();if(message){setNotice({type:"error",msg:message});return;}saveRate.mutate();};
 
+  // Declare metrics for use by the surrounding module or function.
   const metrics=useMemo(()=>({rates:rates.length,suppliers:suppliers.length,outstanding:deposits.filter(d=>["pending","partial"].includes(d.status)).reduce((s,d)=>s+Math.max(0,Number(d.amount||0)-Number(d.paidAmount||0)),0),activeHotels:hotels.filter(h=>h.status==="active").length}),[rates,suppliers,deposits,hotels]);
+  // Declare recordDepositPayment for use by the surrounding module or function.
   const recordDepositPayment=(d)=>{const paid=prompt("Record total amount received for this deposit ("+money(d.amount,d.currency)+")",String(d.paidAmount||0));if(paid!==null&&Number(paid)>=0&&Number(paid)<=Number(d.amount))recordDeposit.mutate({d,paidAmount:paid});};
 
+  // Return the expression shown below to the caller.
   return <main className="min-h-screen bg-slate-50"><div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
     <header className="rounded-[30px] bg-slate-950 p-6 text-white shadow-xl sm:p-8"><div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-xs font-black uppercase tracking-[.2em] text-emerald-300">Hospitality commercial control</p><h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Rates, suppliers & deposits</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">Production control for hotel selling rates, supplier contracts and reservation deposits. Every record is tenant-scoped and linked to live hospitality inventory and bookings.</p></div><button onClick={refresh} className="rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-black hover:bg-white/15"><RefreshCw size={16} className="mr-2 inline"/>Refresh workspace</button></div><div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Metric label="Active hotels" value={countDisplay(metrics.activeHotels)}/><Metric label="Rate plans" value={countDisplay(metrics.rates)}/><Metric label="Supplier contracts" value={countDisplay(metrics.suppliers)}/><Metric label="Outstanding deposits" value={amountDisplay(metrics.outstanding)}/></div></header>
     {notice&&<div className={`mt-4 flex items-start gap-3 rounded-2xl border p-4 text-sm font-bold ${notice.type==="success"?"border-emerald-200 bg-emerald-50 text-emerald-800":"border-red-200 bg-red-50 text-red-800"}`}>{notice.type==="success"?<CheckCircle2 size={18}/>:<AlertCircle size={18}/>}<span>{notice.msg}</span><button className="ml-auto" onClick={()=>setNotice(null)}><XCircle size={17}/></button></div>}
@@ -91,8 +159,13 @@ export default function HospitalityCommercial(){
     {tab==="deposits"&&<section className="mt-5 grid gap-5 lg:grid-cols-[420px_1fr]"><Form title="Reservation deposit" hint="Select a real hotel or transfer booking; the deposit is linked to that reservation."><Field label="Reservation type"><select className={input} value={deposit.hospitalityType} onChange={e=>setDeposit({...deposit,hospitalityType:e.target.value,hospitalityBooking:""})}><option value="hotel">Hotel</option><option value="airport_transfer">Airport transfer</option></select></Field><Field label="Reservation"><select className={input} value={deposit.hospitalityBooking} onChange={e=>setDeposit({...deposit,hospitalityBooking:e.target.value})}><option value="">Select reservation</option>{bookingOptions.map(b=><option key={b._id} value={b._id}>{b.reference||b.bookingReference||b.confirmationNumber||b._id} · {b.guestName||b.passengerName||b.customerName||b.email||"Guest"} · {money(b.totalAmount||0,b.currency)}</option>)}</select></Field><Field label="Deposit amount"><input className={input} type="number" min="0" step="0.01" value={deposit.amount} onChange={e=>setDeposit({...deposit,amount:e.target.value})}/></Field><Field label="Due date"><input className={input} type="date" value={deposit.dueDate} onChange={e=>setDeposit({...deposit,dueDate:e.target.value})}/></Field><Field label="Already received"><input className={input} type="number" min="0" step="0.01" max={deposit.amount||undefined} value={deposit.paidAmount} onChange={e=>setDeposit({...deposit,paidAmount:e.target.value})}/></Field><Field label="Notes"><textarea className={input} rows="4" value={deposit.notes} onChange={e=>setDeposit({...deposit,notes:e.target.value})} placeholder="Supplier deposit, deadline, payment instructions..."/></Field><button disabled={saveDeposit.isPending||!deposit.hospitalityBooking||!deposit.amount||Number(deposit.amount)<=0} onClick={()=>saveDeposit.mutate()} className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white disabled:opacity-40">{saveDeposit.isPending?<Loader2 className="mr-2 inline animate-spin" size={16}/>:<Plus size={16} className="mr-2 inline"/>}Create reservation deposit</button></Form><List title="Outstanding and received deposits" loading={depositsQ.isLoading}>{deposits.map(d=>{const outstanding=Math.max(0,Number(d.amount||0)-Number(d.paidAmount||0));return <Row key={d._id} title={money(d.amount,d.currency)} meta={`${d.hospitalityType==="airport_transfer"?"Transfer":"Hotel"} · ${d.bookingReference||d.hospitalityBooking||"Reservation"} · Due ${dateOnly(d.dueDate)||"—"}`} value={outstanding?`${money(outstanding,d.currency)} due`:"Paid"} badge={d.status||"pending"} action={outstanding>0?<button onClick={()=>recordDepositPayment(d)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black">Record payment</button>:<CheckCircle2 size={18} className="text-emerald-600"/>}/>})}</List></section>}
   </div></main>;
 }
+// Declare Metric for use by the surrounding module or function.
 const Metric=({label,value})=><div className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</p><p className="mt-2 text-xl font-black">{value}</p></div>;
+// Declare Field for use by the surrounding module or function.
 const Field=({label,children})=><label className="block text-xs font-black uppercase tracking-wider text-slate-500">{label}<div className="mt-1.5">{children}</div></label>;
+// Declare Form for use by the surrounding module or function.
 const Form=({title,hint,children})=><div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div><h2 className="text-lg font-black text-slate-900">{title}</h2>{hint&&<p className="mt-1 text-xs leading-5 text-slate-500">{hint}</p>}</div>{children}</div>;
+// Declare List for use by the surrounding module or function.
 const List=({title,children,loading})=><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><h2 className="mb-4 text-lg font-black text-slate-900">{title}</h2>{loading?<div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 p-10 text-sm text-slate-500"><Loader2 className="animate-spin" size={18}/>Loading records...</div>:<div className="space-y-2">{children?.length?children:<div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">No records yet. Create the first one using the form.</div>}</div>}</div>;
+// Declare Row for use by the surrounding module or function.
 const Row=({title,meta,value,badge,action})=><div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 lg:flex-row lg:items-center lg:justify-between"><div className="min-w-0"><b className="text-sm text-slate-900">{title}</b><p className="mt-1 text-xs leading-5 text-slate-500">{meta}</p></div><div className="flex flex-wrap items-center gap-2 lg:justify-end"><span className="text-sm font-black">{value}</span><span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wide">{badge}</span>{action}</div></div>;

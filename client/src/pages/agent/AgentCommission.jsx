@@ -1,20 +1,37 @@
+/**
+ * Purpose: Agent Commission page-level UI component. Main declarations: money, statusOf, tone, AgentCommission.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo } from "react";
+// Load lucide-react so this module can use its exported dependencies.
 import { AlertTriangle, CheckCircle2, Clock3, RefreshCw, Wallet } from "lucide-react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load ../../api/agentApi so this module can use its exported dependencies.
 import { fetchAgentCommission } from "../../api/agentApi";
 
+// Declare money for use by the surrounding module or function.
 const money = (value) => { const n = Number(value); return Number.isFinite(n) ? `KES ${n.toLocaleString("en-KE")}` : "—"; };
+// Declare statusOf for use by the surrounding module or function.
 const statusOf = (value) => String(value || "unknown").toLowerCase();
+// Declare tone for use by the surrounding module or function.
 const tone = (status) => status === "approved" || status === "paid" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : status === "pending" ? "bg-amber-50 text-amber-700 ring-amber-200" : status === "rejected" || status === "cancelled" ? "bg-rose-50 text-rose-700 ring-rose-200" : "bg-slate-100 text-slate-600 ring-slate-200";
 
+// Define AgentCommission; its parameters and body implement this operation.
 export default function AgentCommission() {
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({ queryKey: ["agent-commission"], queryFn: fetchAgentCommission, staleTime: 30000, refetchOnMount: "always" });
+  // Declare rows for use by the surrounding module or function.
   const rows = Array.isArray(query.data?.data) ? query.data.data : Array.isArray(query.data) ? query.data : Array.isArray(query.data?.commissions) ? query.data.commissions : [];
+  // Declare summary for use by the surrounding module or function.
   const summary = useMemo(() => ({ total: rows.reduce((s, r) => s + (Number(r.amount) || 0), 0), pending: rows.filter(r => statusOf(r.status) === "pending").reduce((s,r)=>s+(Number(r.amount)||0),0), approved: rows.filter(r => ["approved","paid"].includes(statusOf(r.status))).reduce((s,r)=>s+(Number(r.amount)||0),0) }), [rows]);
 
+  // Check the condition (query.isLoading) and run the matching branch.
   if (query.isLoading) return <div className="min-h-full bg-slate-50 p-6"><div className="mx-auto max-w-7xl animate-pulse space-y-5"><div className="h-32 rounded-3xl bg-slate-200"/><div className="grid gap-4 sm:grid-cols-3"><div className="h-28 rounded-2xl bg-white"/><div className="h-28 rounded-2xl bg-white"/><div className="h-28 rounded-2xl bg-white"/></div><div className="h-80 rounded-2xl bg-white"/></div></div>;
+  // Check the condition (query.isError) and run the matching branch.
   if (query.isError) return <div className="min-h-full bg-slate-50 p-6"><div className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-white p-8"><AlertTriangle className="h-7 w-7 text-rose-600"/><h1 className="mt-4 text-2xl font-bold">Commission data unavailable</h1><p className="mt-2 text-sm text-slate-600">The commission API failed. No zero balance is inferred from this failure.</p><p className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{query.error?.response?.data?.message || query.error?.message || "Unable to load commissions."}</p><button type="button" onClick={()=>query.refetch()} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white"><RefreshCw className="h-4 w-4"/> Retry</button></div></div>;
 
+  // Return the expression shown below to the caller.
   return <section className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6"><header className="rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-6 text-white shadow-xl sm:p-8"><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-emerald-300">Finance</p><h1 className="mt-2 text-3xl font-black">My Commissions</h1><p className="mt-2 text-sm text-slate-300">Track commissions generated from your agent bookings and their current status.</p></div><button type="button" onClick={()=>query.refetch()} disabled={query.isFetching} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-bold hover:bg-white/15"><RefreshCw className={`h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`}/> Refresh</button></div></header>
     <div className="grid gap-4 sm:grid-cols-3"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><Wallet className="h-5 w-5 text-indigo-600"/><p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-500">Recorded commission</p><p className="mt-1 text-2xl font-black">{money(summary.total)}</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><Clock3 className="h-5 w-5 text-amber-600"/><p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-500">Pending</p><p className="mt-1 text-2xl font-black text-amber-700">{money(summary.pending)}</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><CheckCircle2 className="h-5 w-5 text-emerald-600"/><p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-500">Approved / paid</p><p className="mt-1 text-2xl font-black text-emerald-700">{money(summary.approved)}</p></div></div>
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 px-5 py-4"><p className="text-xs text-slate-500">{rows.length} commission record{rows.length === 1 ? "" : "s"} returned</p></div><div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Booking</th><th className="px-4 py-3">Amount</th><th className="px-4 py-3">Rate</th><th className="px-4 py-3">Status</th></tr></thead><tbody>{rows.length === 0 ? <tr><td colSpan="4" className="px-4 py-10 text-center text-slate-500">No commission records were returned.</td></tr> : rows.map((c)=><tr key={c._id || c.id} className="border-t border-slate-100 hover:bg-indigo-50/40"><td className="px-4 py-3 font-semibold text-slate-800">{c.booking?.bookingNumber || c.bookingNumber || c.booking?._id || "—"}</td><td className="px-4 py-3 font-bold text-indigo-700">{money(c.amount)}</td><td className="px-4 py-3">{c.rate === undefined || c.rate === null ? "—" : `${c.rate}%`}</td><td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ring-1 ${tone(statusOf(c.status))}`}>{statusOf(c.status).replace(/[_-]/g," ")}</span></td></tr>)}</tbody></table></div></section>

@@ -1,8 +1,16 @@
+/**
+ * Purpose: Gallery Section reusable UI component. Main declarations: GallerySection.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useQuery } from "@tanstack/react-query";
+// Load ../../api/galleryApi so this module can use its exported dependencies.
 import { getFeaturedGallery } from "../../api/galleryApi";
+// Load ../common/LazyImage so this module can use its exported dependencies.
 import LazyImage from "../common/LazyImage";
 
+// Define GallerySection; its parameters and body implement this operation.
 export default function GallerySection() {
+  // Declare { data: images = [], isLoading, isError, refetch, } for use by the surrounding module or function.
   const {
     data: images = [],
     isLoading,
@@ -15,7 +23,9 @@ export default function GallerySection() {
     staleTime: 60_000,
   });
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <section className="py-20 bg-white text-center text-slate-700" aria-live="polite">
         Loading gallery...
@@ -23,7 +33,9 @@ export default function GallerySection() {
     );
   }
 
+  // Check the condition (isError) and run the matching branch.
   if (isError) {
+    // Return the expression shown below to the caller.
     return (
       <section className="py-20 bg-white text-center text-slate-900" aria-live="polite">
         <div className="max-w-2xl mx-auto px-6">
@@ -43,10 +55,13 @@ export default function GallerySection() {
     );
   }
 
+  // Check the condition (!Array.isArray(images) || images.length === 0) and run the matching branch.
   if (!Array.isArray(images) || images.length === 0) {
+    // Return the expression shown below to the caller.
     return null;
   }
 
+  // Return the expression shown below to the caller.
   return (
     <section className="py-20 bg-white text-slate-900" aria-labelledby="safari-gallery-heading">
       <div className="max-w-7xl mx-auto px-6">

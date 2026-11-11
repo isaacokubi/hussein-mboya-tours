@@ -1,5 +1,11 @@
+/**
+ * Purpose: Admin System Health page-level UI component. Main declarations: formatLabel, formatUptime, formatMemory, normalizeService, StatusBadge.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   Activity,
   AlertCircle,
@@ -15,9 +21,12 @@ import {
   Wifi,
   XCircle,
 } from "lucide-react";
+// Load ../../api/admin/systemHealthApi so this module can use its exported dependencies.
 import { getSystemHealth } from "../../api/admin/systemHealthApi";
+// Load ../../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../../context/SettingsContext";
 
+// Declare STATUS_META for use by the surrounding module or function.
 const STATUS_META = {
   connected: { label: "Connected", tone: "emerald", icon: CheckCircle2 },
   online: { label: "Online", tone: "emerald", icon: CheckCircle2 },
@@ -32,6 +41,7 @@ const STATUS_META = {
   unknown: { label: "Unknown", tone: "slate", icon: AlertCircle },
 };
 
+// Declare toneClasses for use by the surrounding module or function.
 const toneClasses = {
   emerald: { badge: "border-emerald-200 bg-emerald-50 text-emerald-700", icon: "bg-emerald-100 text-emerald-700", dot: "bg-emerald-500" },
   amber: { badge: "border-amber-200 bg-amber-50 text-amber-700", icon: "bg-amber-100 text-amber-700", dot: "bg-amber-500" },
@@ -39,6 +49,7 @@ const toneClasses = {
   slate: { badge: "border-slate-200 bg-slate-50 text-slate-700", icon: "bg-slate-100 text-slate-700", dot: "bg-slate-400" },
 };
 
+// Declare SERVICE_CONFIG for use by the surrounding module or function.
 const SERVICE_CONFIG = [
   { key: "server", label: "Application server", description: "API runtime and request processing", icon: Server },
   { key: "database", label: "Database", description: "Primary application data store", icon: Database },
@@ -46,59 +57,96 @@ const SERVICE_CONFIG = [
   { key: "mpesa", label: "M-Pesa", description: "Payment gateway connectivity", icon: Wifi },
 ];
 
+// Declare HEALTHY_STATUSES for use by the surrounding module or function.
 const HEALTHY_STATUSES = new Set(["connected", "online", "healthy", "ok", "operational"]);
 
+// Declare formatLabel for use by the surrounding module or function.
 const formatLabel = (value) => String(value || "").replace(/([A-Z])/g, " $1").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
 
+// Declare formatUptime for use by the surrounding module or function.
 const formatUptime = (value) => {
+  // Check the condition (typeof value === "string") and run the matching branch.
   if (typeof value === "string") {
+    // Declare match for use by the surrounding module or function.
     const match = value.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:seconds?|secs?|s)\b/i);
+    // Check the condition (match) and run the matching branch.
     if (match) value = Number(match[1]);
     else if (/^\d+(?:\.\d+)?$/.test(value.trim())) value = Number(value);
     else return value.trim() || "Not reported";
   }
+  // Declare seconds for use by the surrounding module or function.
   const seconds = Number(value);
+  // Check the condition (!Number.isFinite(seconds) || seconds < 0) and run the matching branch.
   if (!Number.isFinite(seconds) || seconds < 0) return "Not reported";
+  // Declare days for use by the surrounding module or function.
   const days = Math.floor(seconds / 86400);
+  // Declare hours for use by the surrounding module or function.
   const hours = Math.floor((seconds % 86400) / 3600);
+  // Declare minutes for use by the surrounding module or function.
   const minutes = Math.floor((seconds % 3600) / 60);
+  // Declare secs for use by the surrounding module or function.
   const secs = Math.floor(seconds % 60);
+  // Declare parts for use by the surrounding module or function.
   const parts = [];
+  // Check the condition (days) and run the matching branch.
   if (days) parts.push(`${days}d`);
+  // Check the condition (hours || days) and run the matching branch.
   if (hours || days) parts.push(`${hours}h`);
+  // Check the condition (minutes || hours || days) and run the matching branch.
   if (minutes || hours || days) parts.push(`${minutes}m`);
+  // Check the condition (!parts.length || secs) and run the matching branch.
   if (!parts.length || secs) parts.push(`${secs}s`);
+  // Return the result of parts.join() to the caller.
   return parts.join(" ");
 };
 
+// Declare formatMemory for use by the surrounding module or function.
 const formatMemory = (value) => {
+  // Check the condition (value == null || value === "") and run the matching branch.
   if (value == null || value === "") return "Not reported";
+  // Check the condition (typeof value === "string") and run the matching branch.
   if (typeof value === "string") return value;
+  // Check the condition (typeof value === "object") and run the matching branch.
   if (typeof value === "object") {
+    // Declare rss for use by the surrounding module or function.
     const rss = value.rss ?? value.residentSetSize;
+    // Declare heap for use by the surrounding module or function.
     const heap = value.heapUsed ?? value.used;
+    // Declare parts for use by the surrounding module or function.
     const parts = [rss != null ? `RSS ${rss}` : null, heap != null ? `Heap ${heap}` : null].filter(Boolean);
+    // Return the expression shown below to the caller.
     return parts.length ? parts.join(" · ") : "Not reported";
   }
+  // Return the result of String() to the caller.
   return String(value);
 };
 
+// Declare normalizeService for use by the surrounding module or function.
 const normalizeService = (key, value) => {
+  // Check the condition (typeof value === "string") and run the matching branch.
   if (typeof value === "string") return { status: value.toLowerCase(), message: "", environment: "" };
+  // Check the condition (value && typeof value === "object") and run the matching branch.
   if (value && typeof value === "object") {
+    // Return the object assembled below to the caller.
     return {
       status: String(value.status || value.state || "unknown").toLowerCase(),
       message: value.message || value.details || "",
       environment: value.environment || "",
     };
   }
+  // Return the object assembled below to the caller.
   return { status: "unknown", message: "", environment: "" };
 };
 
+// Define StatusBadge; its parameters and body implement this operation.
 function StatusBadge({ status }) {
+  // Declare meta for use by the surrounding module or function.
   const meta = STATUS_META[status] || { label: formatLabel(status) || "Unknown", tone: "slate", icon: AlertCircle };
+  // Declare tone for use by the surrounding module or function.
   const tone = toneClasses[meta.tone];
+  // Declare Icon for use by the surrounding module or function.
   const Icon = meta.icon;
+  // Return the expression shown below to the caller.
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${tone.badge}`}>
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -107,11 +155,17 @@ function StatusBadge({ status }) {
   );
 }
 
+// Define AdminSystemHealth; its parameters and body implement this operation.
 export default function AdminSystemHealth() {
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
+  // Declare primary for use by the surrounding module or function.
   const primary = settings.primaryColor || "#047857";
+  // Declare secondary for use by the surrounding module or function.
   const secondary = settings.secondaryColor || "#064e3b";
+  // Declare accent for use by the surrounding module or function.
   const accent = settings.accentColor || "#10b981";
+  // Declare { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } for use by the surrounding module or function.
   const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ["admin-system-health"],
     queryFn: getSystemHealth,
@@ -120,8 +174,11 @@ export default function AdminSystemHealth() {
     retry: 1,
   });
 
+  // Declare system for use by the surrounding module or function.
   const system = data?.system || data?.data?.system || data?.data || data || {};
+  // Declare serviceSource for use by the surrounding module or function.
   const serviceSource = system.services || data?.services || {};
+  // Declare services for use by the surrounding module or function.
   const services = useMemo(
     () => SERVICE_CONFIG.map((service) => ({
       ...service,
@@ -129,25 +186,36 @@ export default function AdminSystemHealth() {
     })),
     [serviceSource, system],
   );
+  // Declare healthyServices for use by the surrounding module or function.
   const healthyServices = services.filter((service) => HEALTHY_STATUSES.has(service.status)).length;
+  // Declare memory for use by the surrounding module or function.
   const memory = system.memory ?? system.memoryUsage;
+  // Declare nodeVersion for use by the surrounding module or function.
   const nodeVersion = system.nodeVersion ?? system.node_version ?? system.node ?? system["node Version"];
+  // Declare uptime for use by the surrounding module or function.
   const uptime = system.uptime ?? system.uptimeSeconds ?? system.uptime_seconds;
+  // Declare overallStatus for use by the surrounding module or function.
   const overallStatus = healthyServices === services.length ? "Operational" : healthyServices > 0 ? "Partial" : "Unavailable";
 
+  // Declare runtimeRows for use by the surrounding module or function.
   const runtimeRows = [
     ["Uptime", formatUptime(uptime)],
     ["Node.js version", nodeVersion || "Not reported"],
     ["Memory", formatMemory(memory)],
   ];
 
+  // Declare brandStyle for use by the surrounding module or function.
   const brandStyle = { "--admin-primary": primary, "--admin-secondary": secondary, "--admin-accent": accent };
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return <div className="min-h-screen bg-slate-50 p-5 md:p-8" style={brandStyle}><div className="mx-auto max-w-7xl animate-pulse space-y-6"><div className="h-36 rounded-3xl bg-slate-200" /><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{[1, 2, 3, 4].map((item) => <div key={item} className="h-36 rounded-2xl bg-white shadow-sm" />)}</div></div></div>;
   }
 
+  // Check the condition (isError) and run the matching branch.
   if (isError) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-screen bg-slate-50 p-5 md:p-8" style={brandStyle}>
         <div className="mx-auto max-w-3xl rounded-3xl border border-red-200 bg-white p-6 shadow-sm md:p-8">
@@ -161,6 +229,7 @@ export default function AdminSystemHealth() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 p-5 text-slate-950 md:p-8" style={brandStyle}>
       <div className="mx-auto max-w-7xl space-y-6">

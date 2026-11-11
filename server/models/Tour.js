@@ -1,13 +1,25 @@
+/**
+ * Purpose: Tour database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load slugify so this module can use its exported dependencies.
 import slugify from "slugify";
 
+// Declare itinerarySchema for use by the surrounding module or function.
 const itinerarySchema = new mongoose.Schema({ tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true }, day: { type: Number, required: true, min: 1 }, title: { type: String, required: true, trim: true }, description: { type: String, required: true, trim: true }, meals: [String], accommodation: { type: String, default: "" }, activities: [String] }, { _id: false });
+// Declare availabilitySchema for use by the surrounding module or function.
 const availabilitySchema = new mongoose.Schema({ date: { type: Date, required: true }, totalSlots: { type: Number, default: 20, min: 0 }, bookedSlots: { type: Number, default: 0, min: 0 } }, { _id: false });
+// Declare seoSchema for use by the surrounding module or function.
 const seoSchema = new mongoose.Schema({ title: String, description: String, keywords: [String] }, { _id: false });
+// Declare imageSchema for use by the surrounding module or function.
 const imageSchema = new mongoose.Schema({ url: String, publicId: String }, { _id: false });
+// Declare pricingRuleSchema for use by the surrounding module or function.
 const pricingRuleSchema = new mongoose.Schema({ name: String, minTravelers: Number, maxTravelers: Number, discount: { type: Number, default: 0 } }, { _id: false });
 
+// Declare tourSchema for use by the surrounding module or function.
 const tourSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
   title: { type: String, required: true, trim: true, maxlength: 150 },
@@ -32,44 +44,77 @@ const tourSchema = new mongoose.Schema({
   assignedGuide: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null }, assignedDriver: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null }, assignedVehicle: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", default: null }, assignmentStatus: { type: String, enum: ["pending", "assigned", "completed", "cancelled"], default: "pending" }, status: { type: String, enum: ["draft", "scheduled", "upcoming", "ongoing", "fully-booked", "completed", "cancelled"], default: "draft" }, published: { type: Boolean, default: false }, featured: { type: Boolean, default: false }, available: { type: Boolean, default: true }, isDeleted: { type: Boolean, default: false }, deletedAt: { type: Date, default: null }, deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }, averageRating: { type: Number, default: 0, min: 0, max: 5 }, totalReviews: { type: Number, default: 0 }, totalBookings: { type: Number, default: 0 }, wishlistCount: { type: Number, default: 0 }, popularity: { type: Number, default: 0 }, createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }, seo: seoSchema
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
+// Perform the side effect or state update expressed on the following line.
 tourSchema.pre("validate", async function (next) { if (this.title && (!this.slug || this.isModified("title"))) { const baseSlug = slugify(this.title, { lower: true, strict: true, trim: true }); let slug = baseSlug; let counter = 1; while (await mongoose.models.Tour.findOne({ slug, _id: { $ne: this._id } })) { counter += 1; slug = `${baseSlug}-${counter}`; } this.slug = slug; } next(); });
+// Perform the side effect or state update expressed on the following line.
 tourSchema.pre("validate", function (next) {
+  // Declare rawDuration for use by the surrounding module or function.
   let rawDuration;
+  // Check the condition (this.isModified("durationDays") && this.durationDays != null) and run the matching branch.
   if (this.isModified("durationDays") && this.durationDays != null) rawDuration = this.durationDays;
   else if (this.isModified("durationDetails.days") && this.durationDetails?.days != null) rawDuration = this.durationDetails.days;
   else if (this.isModified("duration") && this.duration) rawDuration = this.duration;
   else rawDuration = this.durationDays ?? this.durationDetails?.days ?? this.duration ?? 1;
+  // Declare match for use by the surrounding module or function.
   const match = String(rawDuration).match(/\d+(?:\.\d+)?/);
+  // Declare parsedDuration for use by the surrounding module or function.
   const parsedDuration = Number(match?.[0]);
+  // Check the condition (!Number.isFinite(parsedDuration) || parsedDuration < 1 || parsedDurati) and run the matching branch.
   if (!Number.isFinite(parsedDuration) || parsedDuration < 1 || parsedDuration > 365) return next(new Error("Tour duration must be a whole number of days between 1 and 365."));
+  // Perform the side effect or state update expressed on the following line.
   this.durationDays = Math.floor(parsedDuration);
+  // Perform the side effect or state update expressed on the following line.
   this.durationDetails.days = this.durationDays;
+  // Perform the side effect or state update expressed on the following line.
   this.duration = String(this.durationDays);
+  // Declare start for use by the surrounding module or function.
   const start = this.startDate || this.date;
+  // Declare days for use by the surrounding module or function.
   const days = this.durationDays;
+  // Check the condition (start) and run the matching branch.
   if (start) {
+    // Declare startDate for use by the surrounding module or function.
     const startDate = new Date(start);
+    // Check the condition (!Number.isNaN(startDate.getTime())) and run the matching branch.
     if (!Number.isNaN(startDate.getTime())) {
+      // Perform the side effect or state update expressed on the following line.
       this.startDate = startDate;
+      // Declare calculatedEnd for use by the surrounding module or function.
       const calculatedEnd = new Date(startDate);
+      // Perform the side effect or state update expressed on the following line.
       calculatedEnd.setDate(calculatedEnd.getDate() + days - 1);
+      // Declare existingEnd for use by the surrounding module or function.
       const existingEnd = this.endDate ? new Date(this.endDate) : null;
+      // Check the condition (!existingEnd || Number.isNaN(existingEnd.getTime()) || (days > 1 && ex) and run the matching branch.
       if (!existingEnd || Number.isNaN(existingEnd.getTime()) || (days > 1 && existingEnd.getTime() <= startDate.getTime())) this.endDate = calculatedEnd;
     }
   }
+  // Perform the side effect or state update expressed on the following line.
   next();
 });
+// Perform the side effect or state update expressed on the following line.
 tourSchema.virtual("images").get(function () { const result = []; if (this.featuredImage?.url) result.push(this.featuredImage); if (Array.isArray(this.gallery)) result.push(...this.gallery); return result; });
+// Perform the side effect or state update expressed on the following line.
 tourSchema.virtual("image").get(function () { return this.featuredImage?.url || this.gallery?.[0]?.url || ""; });
+// Perform the side effect or state update expressed on the following line.
 tourSchema.virtual("finalPrice").get(function () { if (this.discountPrice !== null && this.discountPrice !== undefined) return this.discountPrice; if (this.discount > 0) return this.price - (this.price * this.discount) / 100; return this.price; });
+// Perform the side effect or state update expressed on the following line.
 tourSchema.virtual("remainingSlots").get(function () { return Math.max(0, this.availabilitySettings.totalSlots - this.availabilitySettings.bookedSlots); });
+// Perform the side effect or state update expressed on the following line.
 tourSchema.virtual("isFullyBooked").get(function () { return this.remainingSlots <= 0; });
+// Perform the side effect or state update expressed on the following line.
 tourSchema.methods.bookSlot = function (count = 1) { if (this.availabilitySettings.bookedSlots + count > this.availabilitySettings.totalSlots) throw new Error("Tour is fully booked."); this.availabilitySettings.bookedSlots += count; if (this.availabilitySettings.bookedSlots >= this.availabilitySettings.totalSlots) { this.status = "fully-booked"; this.available = false; } return this.save(); };
+// Perform the side effect or state update expressed on the following line.
 tourSchema.methods.releaseSlot = function (count = 1) { this.availabilitySettings.bookedSlots = Math.max(0, this.availabilitySettings.bookedSlots - count); if (this.availabilitySettings.bookedSlots < this.availabilitySettings.totalSlots) { if (this.status === "fully-booked") this.status = "upcoming"; this.available = true; } return this.save(); };
+// Perform the side effect or state update expressed on the following line.
 tourSchema.statics.getFeatured = function () { return this.find({ featured: true, available: true, isDeleted: false, published: true }); };
+// Perform the side effect or state update expressed on the following line.
 tourSchema.statics.getActiveTours = function () { return this.find({ available: true, isDeleted: false, published: true, status: { $in: ["scheduled", "upcoming", "ongoing"] } }); };
 
+// Perform the side effect or state update expressed on the following line.
 tourSchema.index({ destination: 1, status: 1 }); tourSchema.index({ featured: 1, available: 1 }); tourSchema.index({ published: 1 }); tourSchema.index({ createdBy: 1 }); tourSchema.index({ category: 1 }); tourSchema.index({ country: 1 }); tourSchema.index({ price: 1 }); tourSchema.index({ averageRating: -1 }); tourSchema.index({ totalBookings: -1 }); tourSchema.index({ popularity: -1 }); tourSchema.index({ assignedGuide: 1 }); tourSchema.index({ assignedDriver: 1 }); tourSchema.index({ assignedVehicle: 1 }); tourSchema.index({ assignmentStatus: 1 }); tourSchema.index({ isDeleted: 1 }); tourSchema.index({ available: 1 }); tourSchema.index({ status: 1, date: 1 }); tourSchema.index({ title: "text", description: "text", location: "text", country: "text", category: "text", tags: "text" });
+// Perform the side effect or state update expressed on the following line.
 tourSchema.plugin(tenantPlugin);
+// Declare Tour for use by the surrounding module or function.
 const Tour = mongoose.models.Tour || mongoose.model("Tour", tourSchema);
 export default Tour;

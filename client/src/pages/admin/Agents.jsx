@@ -1,47 +1,81 @@
+/**
+ * Purpose: Agents page-level UI component. Main declarations: statusLabel, statusClass, money, text, Metric.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { Users, CheckCircle2, Clock3, PauseCircle, MapPin, Search, RefreshCw, UserCheck, Building2, Mail, Phone } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/adminAgentApi so this module can use its exported dependencies.
 import { getAgents, approveAgent, updateAgentStatus } from "../../api/adminAgentApi";
 
+// Declare STATUS_OPTIONS for use by the surrounding module or function.
 const STATUS_OPTIONS = ["active", "inactive", "suspended"];
+// Declare statusLabel for use by the surrounding module or function.
 const statusLabel = (status) => ({ active: "Active", inactive: "Inactive", suspended: "Suspended" }[status] || "Unknown");
+// Declare statusClass for use by the surrounding module or function.
 const statusClass = (status) => ({
   active: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   inactive: "bg-slate-100 text-slate-700 ring-slate-200",
   suspended: "bg-rose-50 text-rose-700 ring-rose-200",
 }[status] || "bg-slate-100 text-slate-700 ring-slate-200");
+// Declare money for use by the surrounding module or function.
 const money = (value) => `KES ${Number(value || 0).toLocaleString("en-KE", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+// Declare text for use by the surrounding module or function.
 const text = (value, fallback = "—") => String(value ?? "").trim() || fallback;
 
+// Define Metric; its parameters and body implement this operation.
 function Metric({ icon: Icon, label, value, tone }) {
+  // Return the expression shown below to the caller.
   return <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-center justify-between gap-3"><div className={`flex h-11 w-11 items-center justify-center rounded-xl ${tone}`}><Icon className="h-5 w-5" /></div><span className="text-3xl font-extrabold tracking-tight text-slate-900">{value}</span></div><p className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p></div>;
 }
 
+// Define Agents; its parameters and body implement this operation.
 export default function Agents() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [filter, setFilter] for use by the surrounding module or function.
   const [filter, setFilter] = useState("all");
+  // Declare { data = [], isLoading, isFetching, isError, refetch } for use by the surrounding module or function.
   const { data = [], isLoading, isFetching, isError, refetch } = useQuery({ queryKey: ["agents"], queryFn: getAgents, staleTime: 15_000 });
+  // Declare approve for use by the surrounding module or function.
   const approve = useMutation({ mutationFn: approveAgent, onSuccess: () => { qc.invalidateQueries({ queryKey: ["agents"] }); toast.success("Agent approved successfully."); }, onError: (error) => toast.error(error?.response?.data?.message || "Unable to approve this agent.") });
+  // Declare status for use by the surrounding module or function.
   const status = useMutation({ mutationFn: ({ id, value }) => updateAgentStatus(id, value), onSuccess: () => { qc.invalidateQueries({ queryKey: ["agents"] }); toast.success("Agent status updated."); }, onError: (error) => toast.error(error?.response?.data?.message || "Unable to update agent status.") });
 
+  // Declare rows for use by the surrounding module or function.
   const rows = useMemo(() => {
+    // Declare term for use by the surrounding module or function.
     const term = search.trim().toLowerCase();
+    // Return the result of data.filter() to the caller.
     return data.filter((agent) => {
+      // Declare state for use by the surrounding module or function.
       const state = !agent.isApproved ? "pending" : agent.status || "inactive";
+      // Declare haystack for use by the surrounding module or function.
       const haystack = [agent.user?.name, agent.user?.email, agent.email, agent.companyName, agent.location, agent.phone].filter(Boolean).join(" ").toLowerCase();
+      // Return the expression shown below to the caller.
       return (!term || haystack.includes(term)) && (filter === "all" || state === filter);
     });
   }, [data, search, filter]);
 
+  // Declare active for use by the surrounding module or function.
   const active = data.filter((agent) => agent.isApproved === true && agent.status === "active").length;
+  // Declare pending for use by the surrounding module or function.
   const pending = data.filter((agent) => agent.isApproved !== true).length;
+  // Declare suspended for use by the surrounding module or function.
   const suspended = data.filter((agent) => agent.isApproved === true && agent.status === "suspended").length;
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <div className="min-h-[60vh] bg-gradient-to-br from-emerald-50 via-slate-50 to-amber-50 p-4 sm:p-6"><div className="mx-auto max-w-7xl animate-pulse rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">Loading agent management…</div></div>;
+  // Check the condition (isError) and run the matching branch.
   if (isError) return <div className="min-h-[60vh] bg-gradient-to-br from-emerald-50 via-slate-50 to-amber-50 p-4 sm:p-6"><div className="mx-auto max-w-7xl rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-800"><h1 className="font-bold">Unable to load agents</h1><p className="mt-1 text-sm">Please refresh and try again.</p><button onClick={() => refetch()} className="mt-4 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800">Retry</button></div></div>;
 
+  // Return the expression shown below to the caller.
   return <div className="min-h-full bg-gradient-to-br from-emerald-50 via-slate-50 to-amber-50 p-4 sm:p-6"><div className="mx-auto max-w-7xl space-y-6">
     <section className="overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-green-600 p-5 text-white shadow-lg sm:p-7"><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center"><div><div className="mb-2 flex items-center gap-2 text-emerald-100"><Building2 className="h-4 w-4" /><span className="text-xs font-bold uppercase tracking-[0.2em]">Partner network</span></div><h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Agent Management</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-emerald-50">Approve travel partners, monitor real booking performance and manage agent access without mixing approval state with operational status.</p></div><button type="button" onClick={() => refetch()} disabled={isFetching} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-bold ring-1 ring-white/30 hover:bg-white/25 disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />{isFetching ? "Refreshing…" : "Refresh"}</button></div></section>
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Metric icon={Users} label="Total agents" value={data.length} tone="bg-emerald-100 text-emerald-700" /><Metric icon={CheckCircle2} label="Active & approved" value={active} tone="bg-green-100 text-green-700" /><Metric icon={Clock3} label="Awaiting approval" value={pending} tone="bg-amber-100 text-amber-700" /><Metric icon={PauseCircle} label="Suspended" value={suspended} tone="bg-rose-100 text-rose-700" /></section>

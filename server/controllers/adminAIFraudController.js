@@ -1,18 +1,28 @@
+/**
+ * Purpose: admin AIFraud Controller HTTP controller. Main declarations: getAIFraudMonitoring.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+// Load ../models/Payment.js so this module can use its exported dependencies.
 import Payment from "../models/Payment.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
 
 
+// Declare getAIFraudMonitoring for use by the surrounding module or function.
 export const getAIFraudMonitoring = async(
 req,
 res,
 next
 )=>{
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
 
+// Run this operation with a dedicated error-handling path for failures.
 try{
 
 
+// Declare [ failedPayments, pendingPayments, largePayments, duplicatePayments ] for use by the surrounding module or function.
 const [
 
 failedPayments,
@@ -84,12 +94,15 @@ $gt:1
 
 
 
+// Declare alerts for use by the surrounding module or function.
 const alerts=[];
 
 
 
+// Check the condition (failedPayments > 0) and run the matching branch.
 if(failedPayments > 0){
 
+// Perform the side effect or state update expressed on the following line.
 alerts.push({
 
 level:"medium",
@@ -105,8 +118,10 @@ message:
 
 
 
+// Check the condition (pendingPayments > 5) and run the matching branch.
 if(pendingPayments > 5){
 
+// Perform the side effect or state update expressed on the following line.
 alerts.push({
 
 level:"medium",
@@ -122,8 +137,10 @@ message:
 
 
 
+// Check the condition (largePayments > 0) and run the matching branch.
 if(largePayments > 0){
 
+// Perform the side effect or state update expressed on the following line.
 alerts.push({
 
 level:"high",
@@ -139,8 +156,10 @@ message:
 
 
 
+// Check the condition (duplicatePayments.length > 0) and run the matching branch.
 if(duplicatePayments.length > 0){
 
+// Perform the side effect or state update expressed on the following line.
 alerts.push({
 
 level:"high",
@@ -156,8 +175,10 @@ message:
 
 
 
+// Check the condition (alerts.length===0) and run the matching branch.
 if(alerts.length===0){
 
+// Perform the side effect or state update expressed on the following line.
 alerts.push({
 
 level:"low",
@@ -173,6 +194,7 @@ message:
 
 
 
+// Perform the side effect or state update expressed on the following line.
 res.json({
 
 success:true,
@@ -201,6 +223,7 @@ alerts
 
 }catch(error){
 
+// Perform the side effect or state update expressed on the following line.
 next(error);
 
 }

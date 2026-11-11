@@ -1,18 +1,26 @@
+/**
+ * Purpose: Booking Overview reusable UI component. Main declarations: BookingOverview, getStatus.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 export default function BookingOverview({
     statusData = []
 }) {
 
 
+    // Declare getStatus for use by the surrounding module or function.
     const getStatus = (item) => {
 
+        // Declare status for use by the surrounding module or function.
         const status =
             item?._id?.status;
 
 
+        // Declare paymentStatus for use by the surrounding module or function.
         const paymentStatus =
             item?._id?.paymentStatus;
 
 
+        // Declare payment for use by the surrounding module or function.
         const payment =
             typeof paymentStatus === "object"
 
@@ -29,6 +37,7 @@ export default function BookingOverview({
             paymentStatus || "pending";
 
 
+        // Return the object assembled below to the caller.
         return {
             status:
                 status || "Unknown",
@@ -41,6 +50,7 @@ export default function BookingOverview({
 
 
 
+    // Return the expression shown below to the caller.
     return (
 
         <section

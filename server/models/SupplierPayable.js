@@ -1,6 +1,12 @@
+/**
+ * Purpose: Supplier Payable database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare supplierPayableSchema for use by the surrounding module or function.
 const supplierPayableSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   payableNumber: { type: String, trim: true },
@@ -20,13 +26,21 @@ const supplierPayableSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
+// Perform the side effect or state update expressed on the following line.
 supplierPayableSchema.pre("validate", function(next) {
+  // Check the condition (this.amountPaid > this.amount) and run the matching branch.
   if (this.amountPaid > this.amount) return next(new Error("Supplier payable payment cannot exceed the payable amount."));
+  // Perform the side effect or state update expressed on the following line.
   this.balance = Math.max(0, Math.round((this.amount - this.amountPaid) * 100) / 100);
+  // Check the condition (this.status !== "cancelled") and run the matching branch.
   if (this.status !== "cancelled") this.status = this.balance === 0 ? "paid" : this.amountPaid > 0 ? "partially_paid" : (this.dueDate && new Date(this.dueDate) < new Date() ? "overdue" : "open");
+  // Perform the side effect or state update expressed on the following line.
   next();
 });
+// Perform the side effect or state update expressed on the following line.
 supplierPayableSchema.pre("save", function(next) { if (!this.payableNumber) this.payableNumber = `PAY-${Date.now()}-${Math.floor(Math.random() * 10000)}`; next(); });
+// Perform the side effect or state update expressed on the following line.
 supplierPayableSchema.index({ tenantId: 1, payableNumber: 1 }, { unique: true });
+// Perform the side effect or state update expressed on the following line.
 supplierPayableSchema.plugin(tenantPlugin);
 export default mongoose.models.SupplierPayable || mongoose.model("SupplierPayable", supplierPayableSchema);

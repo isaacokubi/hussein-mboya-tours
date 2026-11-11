@@ -1,10 +1,20 @@
+/**
+ * Purpose: booking Admin Controller HTTP controller. Main declarations: isValidId, getAllBookings, getBookingById, updateBookingStatus, deleteBooking.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../services/emailService.js so this module can use its exported dependencies.
 import { sendBookingStatusEmail, sendEmailBestEffort } from "../services/emailService.js";
+// Load ../models/Notification.js so this module can use its exported dependencies.
 import Notification from "../models/Notification.js";
+// Load ../models/Payment.js so this module can use its exported dependencies.
 import Payment from "../models/Payment.js";
 
+// Load ../constants/bookingConstants.js so this module can use its exported dependencies.
 import {
   BOOKING_STATUSES,
   BOOKING_PAYMENT_STATUSES,
@@ -20,6 +30,7 @@ import {
 |--------------------------------------------------------------------------
 */
 
+// Declare isValidId for use by the surrounding module or function.
 const isValidId = (id) =>
   mongoose.Types.ObjectId.isValid(id);
 
@@ -36,9 +47,13 @@ const isValidId = (id) =>
 |--------------------------------------------------------------------------
 */
 
+// Declare getAllBookings for use by the surrounding module or function.
 export const getAllBookings = async (req, res, next) => {
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare { page = 1, limit = 20, search, status, paymentStatus, } for use by the surrounding module or function.
     const {
       page = 1,
       limit = 20,
@@ -47,19 +62,23 @@ export const getAllBookings = async (req, res, next) => {
       paymentStatus,
     } = req.query;
 
+    // Declare currentPage for use by the surrounding module or function.
     const currentPage = Math.max(Number(page), 1);
 
+    // Declare pageSize for use by the surrounding module or function.
     const pageSize = Math.min(
       Math.max(Number(limit), 1),
       100
     );
 
+    // Declare skip for use by the surrounding module or function.
     const skip =
       (currentPage - 1) * pageSize;
 
     // Every admin booking query must be tenant scoped. The previous KPI change
     // accidentally built an unscoped filter, which could also produce incorrect
     // cross-tenant metrics in a multi-tenant installation.
+    // Declare filter for use by the surrounding module or function.
     const filter = mergeTenantFilter(req, {});
 
     /*
@@ -68,12 +87,15 @@ export const getAllBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (search) and run the matching branch.
     if (search) {
+      // Declare regex for use by the surrounding module or function.
       const regex = {
         $regex: String(search).trim(),
         $options: "i",
       };
 
+      // Perform the side effect or state update expressed on the following line.
       filter.$or = [
         { bookingNumber: regex },
         { "customerSnapshot.name": regex },
@@ -91,22 +113,26 @@ export const getAllBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (status && BOOKING_STATUSES.includes( status )) and run the matching branch.
     if (
       status &&
       BOOKING_STATUSES.includes(
         status
       )
     ) {
+      // Perform the side effect or state update expressed on the following line.
       filter.status =
         status;
     }
 
+    // Check the condition (paymentStatus && BOOKING_PAYMENT_STATUSES.includes( paymentStatus )) and run the matching branch.
     if (
       paymentStatus &&
       BOOKING_PAYMENT_STATUSES.includes(
         paymentStatus
       )
     ) {
+      // Perform the side effect or state update expressed on the following line.
       filter.paymentStatus =
         paymentStatus;
     }
@@ -117,6 +143,7 @@ export const getAllBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Declare [bookings, total, metricBookings] for use by the surrounding module or function.
     const [bookings, total, metricBookings] =
       await Promise.all([
 
@@ -177,17 +204,21 @@ export const getAllBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Declare pendingPayments for use by the surrounding module or function.
     const pendingPayments = metricBookings.filter((booking) =>
       ["pending", "partial"].includes(
         String(booking.paymentStatus || "").toLowerCase()
       )
     ).length;
+    // Declare paidBookingCount for use by the surrounding module or function.
     const paidBookingCount = metricBookings.filter(
       (booking) => String(booking.paymentStatus || "").toLowerCase() === "paid"
     ).length;
+    // Declare cancelled for use by the surrounding module or function.
     const cancelled = metricBookings.filter(
       (booking) => booking.status === "cancelled"
     ).length;
+    // Perform the side effect or state update expressed on the following line.
     res.status(200).json({
 
       success: true,
@@ -224,6 +255,7 @@ export const getAllBookings = async (req, res, next) => {
 
   } catch (error) {
 
+    // Perform the side effect or state update expressed on the following line.
     next(error);
 
   }
@@ -235,6 +267,7 @@ export const getAllBookings = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare getBookings for use by the surrounding module or function.
 export const getBookings =
   getAllBookings;
 
@@ -244,22 +277,27 @@ export const getBookings =
 |--------------------------------------------------------------------------
 */
 
+// Declare getBookingById for use by the surrounding module or function.
 export const getBookingById = async (
   req,
   res,
   next
 ) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
 
+    // Check the condition (!isValidId(req.params.id)) and run the matching branch.
     if (
       !isValidId(req.params.id)
     ) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid booking ID.",
       });
     }
 
+    // Declare booking for use by the surrounding module or function.
     const booking =
       await Booking.findOne(
         mergeTenantFilter(req, { _id: req.params.id })
@@ -290,7 +328,9 @@ export const getBookingById = async (
 
         .lean();
 
+    // Check the condition (!booking) and run the matching branch.
     if (!booking) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
 
         success: false,
@@ -301,6 +341,7 @@ export const getBookingById = async (
       });
     }
 
+    // Perform the side effect or state update expressed on the following line.
     res.status(200).json({
 
       success: true,
@@ -311,6 +352,7 @@ export const getBookingById = async (
 
   } catch (error) {
 
+    // Perform the side effect or state update expressed on the following line.
     next(error);
 
   }
@@ -322,6 +364,7 @@ export const getBookingById = async (
 |--------------------------------------------------------------------------
 */
 
+// Declare getBooking for use by the surrounding module or function.
 export const getBooking =
   getBookingById;/*
 |--------------------------------------------------------------------------
@@ -329,12 +372,15 @@ export const getBooking =
 |--------------------------------------------------------------------------
 */
 
+// Declare updateBookingStatus for use by the surrounding module or function.
 export const updateBookingStatus = async (
   req,
   res,
   next
 ) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare { status } for use by the surrounding module or function.
     const { status } = req.body;
 
     /*
@@ -343,7 +389,9 @@ export const updateBookingStatus = async (
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (!isValidId(req.params.id)) and run the matching branch.
     if (!isValidId(req.params.id)) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid booking ID.",
@@ -356,7 +404,9 @@ export const updateBookingStatus = async (
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (!isValidBookingStatus(status)) and run the matching branch.
     if (!isValidBookingStatus(status)) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid booking status.",
@@ -370,6 +420,7 @@ export const updateBookingStatus = async (
     |--------------------------------------------------------------------------
     */
 
+    // Declare existingBooking for use by the surrounding module or function.
     const existingBooking =
       await Booking.findOne(
 mergeTenantFilter(req,{
@@ -377,7 +428,9 @@ _id:req.params.id
 })
 );
 
+    // Check the condition (!existingBooking) and run the matching branch.
     if (!existingBooking) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Booking not found.",
@@ -390,7 +443,9 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (existingBooking.status === status) and run the matching branch.
     if (existingBooking.status === status) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: `Booking is already ${status}.`,
@@ -403,12 +458,14 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (!canTransitionBookingStatus( existingBooking.status, status )) and run the matching branch.
     if (
       !canTransitionBookingStatus(
         existingBooking.status,
         status
       )
     ) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message:
@@ -428,10 +485,12 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (status === "completed" && existingBooking.paymentStatus !== "paid") and run the matching branch.
     if (
       status === "completed" &&
       existingBooking.paymentStatus !== "paid"
     ) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message:
@@ -447,6 +506,7 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
+    // Declare booking for use by the surrounding module or function.
     const booking =
       await
 Booking.findOneAndUpdate(
@@ -483,13 +543,16 @@ _id:req.params.id
           "name registrationNumber"
         );
 
+    // Check the condition (!booking) and run the matching branch.
     if (!booking) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Booking not found.",
       });
     }
 
+    // Perform the side effect or state update expressed on the following line.
     await sendEmailBestEffort(() => sendBookingStatusEmail(booking, status, req.body?.reason || ""), "Booking status");
 
     /*
@@ -498,6 +561,7 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({
       success: true,
       message:
@@ -506,6 +570,7 @@ _id:req.params.id
     });
 
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     next(error);
   }
 };
@@ -516,11 +581,13 @@ _id:req.params.id
 |--------------------------------------------------------------------------
 */
 
+// Declare deleteBooking for use by the surrounding module or function.
 export const deleteBooking = async (
   req,
   res,
   next
 ) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
 
     /*
@@ -529,7 +596,9 @@ export const deleteBooking = async (
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (!isValidId(req.params.id)) and run the matching branch.
     if (!isValidId(req.params.id)) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
 
         success: false,
@@ -545,6 +614,7 @@ export const deleteBooking = async (
     |--------------------------------------------------------------------------
     */
 
+    // Declare booking for use by the surrounding module or function.
     const booking =
       await
 Booking.findOneAndDelete(
@@ -554,8 +624,10 @@ _id:req.params.id
 )
 ;
 
+    // Check the condition (!booking) and run the matching branch.
     if (!booking) {
 
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
 
         success: false,
@@ -573,6 +645,7 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
+    // Perform the side effect or state update expressed on the following line.
     res.status(200).json({
 
       success: true,
@@ -584,6 +657,7 @@ _id:req.params.id
 
   } catch (error) {
 
+    // Perform the side effect or state update expressed on the following line.
     next(error);
 
   }
@@ -593,12 +667,15 @@ _id:req.params.id
 |--------------------------------------------------------------------------
 */
 
+// Declare assignResources for use by the surrounding module or function.
 export const assignResources = async (
   req,
   res,
   next
 ) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare { guide, driver, vehicle, agent, } for use by the surrounding module or function.
     const {
       guide,
       driver,
@@ -612,7 +689,9 @@ export const assignResources = async (
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (!isValidId(req.params.id)) and run the matching branch.
     if (!isValidId(req.params.id)) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid booking ID.",
@@ -625,28 +704,36 @@ export const assignResources = async (
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (guide && !isValidId(guide)) and run the matching branch.
     if (guide && !isValidId(guide)) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid guide ID.",
       });
     }
 
+    // Check the condition (driver && !isValidId(driver)) and run the matching branch.
     if (driver && !isValidId(driver)) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid driver ID.",
       });
     }
 
+    // Check the condition (vehicle && !isValidId(vehicle)) and run the matching branch.
     if (vehicle && !isValidId(vehicle)) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid vehicle ID.",
       });
     }
 
+    // Check the condition (agent && !isValidId(agent)) and run the matching branch.
     if (agent && !isValidId(agent)) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid agent ID.",
@@ -659,6 +746,7 @@ export const assignResources = async (
     |--------------------------------------------------------------------------
     */
 
+    // Declare existingBooking for use by the surrounding module or function.
     const existingBooking =
       await Booking.findOne(
 mergeTenantFilter(req,{
@@ -666,7 +754,9 @@ _id:req.params.id
 })
 );
 
+    // Check the condition (!existingBooking) and run the matching branch.
     if (!existingBooking) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Booking not found.",
@@ -682,7 +772,9 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (existingBooking.paymentStatus !== "paid") and run the matching branch.
     if (existingBooking.paymentStatus !== "paid") {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Only paid bookings can be assigned.",
@@ -708,6 +800,7 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (existingBooking.status !== "assigned" && !canTransitionBookingStatus( ) and run the matching branch.
     if (
       existingBooking.status !== "assigned" &&
       !canTransitionBookingStatus(
@@ -715,6 +808,7 @@ _id:req.params.id
         "assigned"
       )
     ) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message:
@@ -731,6 +825,7 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
+    // Declare booking for use by the surrounding module or function.
     const booking =
       await
 Booking.findOneAndUpdate(
@@ -771,7 +866,9 @@ _id:req.params.id
           "name registrationNumber"
         );
 
+    // Check the condition (!booking) and run the matching branch.
     if (!booking) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Booking not found.",
@@ -784,6 +881,7 @@ _id:req.params.id
     |--------------------------------------------------------------------------
     */
 
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({
       success: true,
       message:
@@ -792,6 +890,7 @@ _id:req.params.id
     });
 
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     next(error);
   }
 };
@@ -802,10 +901,12 @@ _id:req.params.id
 |--------------------------------------------------------------------------
 */
 
+// Declare updatePaymentStatus for use by the surrounding module or function.
 export const updatePaymentStatus = async (
   req,
   res
 ) => {
+  // Return the result of res.status(410).json() to the caller.
   return res.status(410).json({
     success: false,
     code: "BOOKING_PAYMENT_STATUS_READ_ONLY",
@@ -819,14 +920,17 @@ export const updatePaymentStatus = async (
 |--------------------------------------------------------------------------
 */
 
+// Declare getBookingTimeline for use by the surrounding module or function.
 export const getBookingTimeline = async(
 req,
 res,
 next
 )=>{
 
+// Run this operation with a dedicated error-handling path for failures.
 try{
 
+// Declare booking for use by the surrounding module or function.
 const booking =
 await Booking.findOne(
 mergeTenantFilter(req,{
@@ -844,8 +948,10 @@ _id:req.params.id
 .lean();
 
 
+// Check the condition (!booking) and run the matching branch.
 if(!booking){
 
+// Return the result of res.status(404).json() to the caller.
 return res.status(404).json({
 
 success:false,
@@ -857,6 +963,7 @@ message:"Booking not found"
 }
 
 
+// Declare paymentRecord for use by the surrounding module or function.
 const paymentRecord = await Payment.findOne(
 mergeTenantFilter(req,{
 booking: booking._id,
@@ -867,12 +974,14 @@ status: { $in: ["completed", "refunded"] }
 .select("status amount paidAt updatedAt createdAt transactionReference transactionId mpesaReceiptNumber")
 .lean();
 
+// Declare paymentDate for use by the surrounding module or function.
 const paymentDate =
 paymentRecord?.paidAt ||
 (paymentRecord?.status === "completed" ? paymentRecord?.updatedAt : null) ||
 (paymentRecord?.status === "completed" ? paymentRecord?.createdAt : null) ||
 null;
 
+// Declare timeline for use by the surrounding module or function.
 const timeline=[
 
 {
@@ -902,6 +1011,7 @@ date:booking.updatedAt
 ];
 
 
+// Perform the side effect or state update expressed on the following line.
 res.json({
 
 success:true,
@@ -913,6 +1023,7 @@ timeline
 
 }catch(error){
 
+// Perform the side effect or state update expressed on the following line.
 next(error);
 
 }
@@ -927,11 +1038,14 @@ next(error);
 |--------------------------------------------------------------------------
 */
 
+// Declare downloadBookingInvoice for use by the surrounding module or function.
 export const downloadBookingInvoice =
 async(req,res,next)=>{
 
+// Run this operation with a dedicated error-handling path for failures.
 try{
 
+// Declare booking for use by the surrounding module or function.
 const booking =
 await Booking.findOne(
 mergeTenantFilter(req,{
@@ -948,8 +1062,10 @@ _id:req.params.id
 );
 
 
+// Check the condition (!booking) and run the matching branch.
 if(!booking){
 
+// Return the result of res.status(404).json() to the caller.
 return res.status(404).json({
 
 success:false,
@@ -961,12 +1077,14 @@ message:"Booking not found"
 }
 
 
+// Perform the side effect or state update expressed on the following line.
 res.setHeader(
 "Content-Type",
 "text/plain"
 );
 
 
+// Perform the side effect or state update expressed on the following line.
 res.send(
 `
 GLOBAL TOURS
@@ -1000,6 +1118,7 @@ ${new Date().toISOString()}
 
 }catch(error){
 
+// Perform the side effect or state update expressed on the following line.
 next(error);
 
 }
@@ -1008,22 +1127,33 @@ next(error);
 
 
 
+// Declare sendBookingNotification for use by the surrounding module or function.
 export const sendBookingNotification = async (req, res, next) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Perform the side effect or state update expressed on the following line.
     requireTenantId();
+    // Check the condition (!isValidId(req.params.id)) and run the matching branch.
     if (!isValidId(req.params.id)) return res.status(400).json({ success:false, message:"Invalid booking ID." });
+    // Declare message for use by the surrounding module or function.
     const message = String(req.body?.message || "").trim();
+    // Check the condition (!message) and run the matching branch.
     if (!message) return res.status(400).json({ success:false, message:"Notification message is required." });
 
+    // Declare booking for use by the surrounding module or function.
     const booking = await Booking.findOne(mergeTenantFilter(req, { _id: req.params.id }))
       .populate("customer", "name email phone user")
       .populate("user", "name email phone")
       .lean();
+    // Check the condition (!booking) and run the matching branch.
     if (!booking) return res.status(404).json({ success:false, message:"Booking not found." });
 
+    // Declare recipient for use by the surrounding module or function.
     const recipient = booking.user?._id || booking.user || booking.customer?.user;
+    // Check the condition (!recipient) and run the matching branch.
     if (!recipient) return res.status(400).json({ success:false, message:"This booking does not have a customer user account for in-app notifications." });
 
+    // Declare notification for use by the surrounding module or function.
     const notification = await Notification.create({
       recipient,
       user: recipient,
@@ -1039,6 +1169,7 @@ export const sendBookingNotification = async (req, res, next) => {
       isSent: true,
       isArchived: false,
     });
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({ success:true, message:"Booking notification sent successfully.", notification, channel:"in_app" });
   } catch (error) { next(error); }
 };

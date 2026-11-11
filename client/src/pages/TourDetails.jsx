@@ -1,8 +1,17 @@
+/**
+ * Purpose: Tour Details page-level UI component. Main declarations: asList, displayText, getLocalDateInputValue, formatDuration, formatDate.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { getTourImage, getTourImages } from "../utils/tourImage";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load react-router-dom so this module can use its exported dependencies.
 import { useParams, useNavigate } from "react-router-dom";
+// Load ../api/tourApi so this module can use its exported dependencies.
 import { getTourBySlug } from "../api/tourApi";
+// Load ../api/reviewApi so this module can use its exported dependencies.
 import { getTourReviews } from "../api/reviewApi";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   ArrowRight,
   CalendarDays,
@@ -15,49 +24,83 @@ import {
   Utensils,
   X,
 } from "lucide-react";
+// Load ../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../context/SettingsContext";
+// Load react so this module can use its exported dependencies.
 import { useState } from "react";
 
+// Declare asList for use by the surrounding module or function.
 const asList = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
+// Declare displayText for use by the surrounding module or function.
 const displayText = (value) => (typeof value === "string" ? value.trim() : "");
+// Declare getLocalDateInputValue for use by the surrounding module or function.
 const getLocalDateInputValue = () => {
+  // Declare date for use by the surrounding module or function.
   const date = new Date();
+  // Perform the side effect or state update expressed on the following line.
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  // Return the result of date.toISOString().slice() to the caller.
   return date.toISOString().slice(0, 10);
 };
+// Declare formatDuration for use by the surrounding module or function.
 const formatDuration = (tour) => {
+  // Declare value for use by the surrounding module or function.
   const value = tour?.durationDetails?.days || tour?.durationDays || tour?.duration;
+  // Check the condition (value === undefined || value === null || value === "") and run the matching branch.
   if (value === undefined || value === null || value === "") return "Confirm duration";
+  // Declare text for use by the surrounding module or function.
   const text = String(value).trim();
+  // Check the condition (/^\d+(?:\.\d+)?$/.test(text)) and run the matching branch.
   if (/^\d+(?:\.\d+)?$/.test(text)) {
+    // Declare days for use by the surrounding module or function.
     const days = Number(text);
+    // Return the expression shown below to the caller.
     return `${days} day${days === 1 ? "" : "s"}`;
   }
+  // Return the value of text to the caller.
   return text;
 };
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Return the expression shown below to the caller.
   return Number.isNaN(date.getTime())
     ? ""
     : date.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
 };
+// Declare calculateReturnDate for use by the surrounding module or function.
 const calculateReturnDate = (tour) => {
+  // Declare startValue for use by the surrounding module or function.
   const startValue = tour?.startDate || tour?.date;
+  // Declare duration for use by the surrounding module or function.
   const duration = Number(tour?.durationDetails?.days || tour?.durationDays || tour?.duration || 0);
+  // Check the condition (!startValue || !Number.isInteger(duration) || duration < 1 || duration) and run the matching branch.
   if (!startValue || !Number.isInteger(duration) || duration < 1 || duration > 365) return null;
   // Use the calendar date, not a UTC midnight parse, to avoid timezone date shifts.
+  // Declare startKey for use by the surrounding module or function.
   const startKey = String(startValue).slice(0, 10);
+  // Declare start for use by the surrounding module or function.
   const start = new Date(`${startKey}T12:00:00`);
+  // Check the condition (Number.isNaN(start.getTime())) and run the matching branch.
   if (Number.isNaN(start.getTime())) return null;
+  // Perform the side effect or state update expressed on the following line.
   start.setDate(start.getDate() + duration - 1);
+  // Return the value of start to the caller.
   return start;
 };
 
+// Define DetailList; its parameters and body implement this operation.
 function DetailList({ title, items, included = true }) {
+  // Declare values for use by the surrounding module or function.
   const values = asList(items).map((item) => typeof item === "string" ? item.trim() : "").filter(Boolean);
+  // Check the condition (!values.length) and run the matching branch.
   if (!values.length) return null;
+  // Declare Icon for use by the surrounding module or function.
   const Icon = included ? Check : X;
+  // Return the expression shown below to the caller.
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
       <h3 className="text-lg font-bold text-slate-900">{title}</h3>
@@ -73,18 +116,26 @@ function DetailList({ title, items, included = true }) {
   );
 }
 
+// Define ItineraryDay; its parameters and body implement this operation.
 function ItineraryDay({ day, index }) {
+  // Declare dayNumber for use by the surrounding module or function.
   const dayNumber = Number(day?.day ?? day?.dayNumber) > 0 ? Number(day?.day ?? day?.dayNumber) : index + 1;
+  // Declare activities for use by the surrounding module or function.
   const activities = asList(day?.activities)
     .map((item) => typeof item === "string" ? item.trim() : displayText(item?.title || item?.name || item?.description))
     .filter(Boolean);
+  // Declare meals for use by the surrounding module or function.
   const meals = asList(day?.meals)
     .map((item) => typeof item === "string" ? item.trim() : displayText(item?.name || item?.title))
     .filter(Boolean);
+  // Declare title for use by the surrounding module or function.
   const title = displayText(day?.title || day?.name) || `Day ${dayNumber}`;
+  // Declare description for use by the surrounding module or function.
   const description = displayText(day?.description || day?.summary || day?.overview);
+  // Declare accommodation for use by the surrounding module or function.
   const accommodation = displayText(day?.accommodation || day?.lodging);
 
+  // Return the expression shown below to the caller.
   return (
     <article className="relative grid gap-4 sm:grid-cols-[76px_minmax(0,1fr)] sm:gap-6">
       <div className="flex items-start sm:justify-center">
@@ -138,16 +189,24 @@ function ItineraryDay({ day, index }) {
   );
 }
 
+// Define TourDetails; its parameters and body implement this operation.
 export default function TourDetails() {
+  // Declare { slug } for use by the surrounding module or function.
   const { slug } = useParams();
+  // Declare { supportPhone, settings } for use by the surrounding module or function.
   const { supportPhone, settings } = useSettings();
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
+  // Declare [whatsAppFormOpen, setWhatsAppFormOpen] for use by the surrounding module or function.
   const [whatsAppFormOpen, setWhatsAppFormOpen] = useState(false);
+  // Declare [whatsAppForm, setWhatsAppForm] for use by the surrounding module or function.
   const [whatsAppForm, setWhatsAppForm] = useState({
     fullName: "", phone: "", email: "", travelDate: "", adults: "2", children: "0", pickupLocation: "", notes: "",
   });
+  // Declare [whatsAppFormError, setWhatsAppFormError] for use by the surrounding module or function.
   const [whatsAppFormError, setWhatsAppFormError] = useState("");
 
+  // Declare { data, isLoading, error } for use by the surrounding module or function.
   const { data, isLoading, error } = useQuery({
     queryKey: ["tour", slug],
     queryFn: ({ signal }) => getTourBySlug(slug, { signal }),
@@ -155,7 +214,9 @@ export default function TourDetails() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Declare tour for use by the surrounding module or function.
   const tour = data?.data || data;
+  // Declare { data: reviewsData, isLoading: reviewsLoading, isError: reviewsError, refetch: refetchReviews, } for use by the surrounding module or function.
   const {
     data: reviewsData,
     isLoading: reviewsLoading,
@@ -169,13 +230,16 @@ export default function TourDetails() {
     retry: 1,
   });
 
+  // Declare reviews for use by the surrounding module or function.
   const reviews = Array.isArray(reviewsData?.reviews)
     ? reviewsData.reviews
     : Array.isArray(reviewsData)
       ? reviewsData
       : [];
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <div className="flex min-h-[60vh] items-center justify-center bg-slate-50 px-4">
         <p className="text-sm font-semibold text-slate-600" role="status">Loading tour details…</p>
@@ -183,7 +247,9 @@ export default function TourDetails() {
     );
   }
 
+  // Check the condition (error || !tour) and run the matching branch.
   if (error || !tour) {
+    // Return the expression shown below to the caller.
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center bg-slate-50 px-4 text-center">
         <h1 className="text-2xl font-bold text-slate-900">We couldn’t find this tour</h1>
@@ -193,33 +259,50 @@ export default function TourDetails() {
     );
   }
 
+  // Declare image for use by the surrounding module or function.
   const image = getTourImage(tour);
+  // Declare galleryImages for use by the surrounding module or function.
   const galleryImages = getTourImages(tour);
+  // Declare hasUploadedGallery for use by the surrounding module or function.
   const hasUploadedGallery = [tour.featuredImage, ...(Array.isArray(tour.gallery) ? tour.gallery : []), ...(Array.isArray(tour.images) ? tour.images : [])].filter(Boolean).length > 1;
+  // Declare itinerarySource for use by the surrounding module or function.
   const itinerarySource = Array.isArray(tour.itinerary)
     ? tour.itinerary
     : asList(tour.itinerary?.days || tour.itineraryDays);
+  // Declare itinerary for use by the surrounding module or function.
   const itinerary = itinerarySource
     .filter((day) => day && typeof day === "object")
     .slice()
     .sort((a, b) => (Number(a.day ?? a.dayNumber) || 0) - (Number(b.day ?? b.dayNumber) || 0));
+  // Declare highlights for use by the surrounding module or function.
   const highlights = asList(tour.highlights);
+  // Declare destination for use by the surrounding module or function.
   const destination = typeof tour.destination === "object"
     ? tour.destination?.name || tour.destination?.title
     : tour.destination;
+  // Declare price for use by the surrounding module or function.
   const price = Number(tour.finalPrice ?? tour.discountPrice ?? (Number(tour.discount) > 0
     ? Number(tour.price || 0) * (1 - Number(tour.discount) / 100)
     : tour.price));
+  // Declare currency for use by the surrounding module or function.
   const currency = tour.currency || "KES";
+  // Declare departureDate for use by the surrounding module or function.
   const departureDate = formatDate(tour.startDate || tour.date);
+  // Declare returnDate for use by the surrounding module or function.
   const returnDate = formatDate(tour.endDate || calculateReturnDate(tour));
 
+  // Declare handleBooking for use by the surrounding module or function.
   const handleBooking = () => navigate(`/checkout/tour/${tour._id}`);
 
+  // Declare handleWhatsAppBooking for use by the surrounding module or function.
   const handleWhatsAppBooking = (event) => {
+    // Perform the side effect or state update expressed on the following line.
     event?.preventDefault?.();
+    // Perform the side effect or state update expressed on the following line.
     setWhatsAppFormError("");
+    // Declare rawNumber for use by the surrounding module or function.
     const rawNumber = String(supportPhone || "").replace(/\D/g, "");
+    // Declare whatsappNumber for use by the surrounding module or function.
     const whatsappNumber = rawNumber.startsWith("0")
       ? `254${rawNumber.slice(1)}`
       : rawNumber.startsWith("254")
@@ -227,21 +310,35 @@ export default function TourDetails() {
         : rawNumber.startsWith("7") || rawNumber.startsWith("1")
           ? `254${rawNumber}`
           : rawNumber;
+    // Check the condition (!whatsappNumber || whatsappNumber.length < 10) and run the matching branch.
     if (!whatsappNumber || whatsappNumber.length < 10) {
+      // Perform the side effect or state update expressed on the following line.
       setWhatsAppFormError("The tour operator’s WhatsApp contact is not configured correctly. Please use the Contact page.");
+      // Return the result to the caller.
       return;
     }
+    // Check the condition (!whatsAppForm.fullName.trim()) and run the matching branch.
     if (!whatsAppForm.fullName.trim()) return setWhatsAppFormError("Please enter the lead traveller’s full name.");
+    // Check the condition (!whatsAppForm.phone.trim()) and run the matching branch.
     if (!whatsAppForm.phone.trim()) return setWhatsAppFormError("Please enter a contact phone number.");
+    // Check the condition (!whatsAppForm.travelDate) and run the matching branch.
     if (!whatsAppForm.travelDate) return setWhatsAppFormError("Please choose your preferred travel date.");
+    // Declare travelDate for use by the surrounding module or function.
     const travelDate = new Date(`${whatsAppForm.travelDate}T12:00:00`);
+    // Declare today for use by the surrounding module or function.
     const today = new Date();
+    // Perform the side effect or state update expressed on the following line.
     today.setHours(0, 0, 0, 0);
+    // Check the condition (Number.isNaN(travelDate.getTime()) || travelDate < today) and run the matching branch.
     if (Number.isNaN(travelDate.getTime()) || travelDate < today) {
+      // Return the result of setWhatsAppFormError() to the caller.
       return setWhatsAppFormError("Please choose today or a future travel date.");
     }
+    // Declare adults for use by the surrounding module or function.
     const adults = Math.max(1, Math.min(50, Number(whatsAppForm.adults) || 1));
+    // Declare children for use by the surrounding module or function.
     const children = Math.max(0, Math.min(50, Number(whatsAppForm.children) || 0));
+    // Declare lines for use by the surrounding module or function.
     const lines = [
       `Hello ${settings?.companyName || "Kenya Tours"}, I would like to arrange a booking.`,
       "",
@@ -259,9 +356,11 @@ export default function TourDetails() {
       "",
       "Please confirm availability, final pricing for this group, inclusions, itinerary, and secure payment/confirmation steps. I understand this is a request, not a confirmed reservation.",
     ].filter(Boolean);
+    // Perform the side effect or state update expressed on the following line.
     window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank", "noopener,noreferrer");
   };
 
+  // Return the expression shown below to the caller.
   return (
     <main className="min-h-screen bg-slate-50 pb-16">
       <section className="bg-white">

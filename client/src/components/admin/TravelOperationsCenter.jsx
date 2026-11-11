@@ -1,45 +1,83 @@
+/**
+ * Purpose: Travel Operations Center reusable UI component. Main declarations: ActionForm, RecordList, useActionMutation, TravelOperationsCenter, refresh.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { CalendarClock, RefreshCw, Trash2, Zap } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/travelOperationsApi so this module can use its exported dependencies.
 import { createOperationalAsset, createTravelOperation, createTravelRule, deleteOperationalAsset, deleteTravelOperation, deleteTravelRule, getOperationalAssets, getTravelOperations, getTravelRules, updateOperationalAsset, updateTravelOperation, updateTravelRule } from "../../api/travelOperationsApi";
 
+// Declare types for use by the surrounding module or function.
 const types = ["transfer", "vehicle", "driver", "guide", "room", "park_fee", "voucher", "traveller_document", "incident"];
+// Declare statuses for use by the surrounding module or function.
 const statuses = ["active", "available", "inactive", "pending", "completed", "cancelled", "expired"];
+// Declare ruleTypes for use by the surrounding module or function.
 const ruleTypes = ["dynamic_price", "park_fee", "loyalty", "referral"];
+// Declare input for use by the surrounding module or function.
 const input = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm";
 
+// Define ActionForm; its parameters and body implement this operation.
 function ActionForm({ title, icon: Icon, children, onSubmit, label }) {
+  // Return the expression shown below to the caller.
   return <form onSubmit={onSubmit} className="rounded-xl border p-4"><h3 className="flex items-center gap-2 font-bold"><Icon size={17} />{title}</h3><div className="mt-3 space-y-2">{children}</div><button type="submit" className="mt-3 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">{label}</button></form>;
 }
 
+// Define RecordList; its parameters and body implement this operation.
 function RecordList({ title, rows, rules, onStatus, onDelete }) {
+  // Return the expression shown below to the caller.
   return <div className="rounded-xl border p-4"><h3 className="font-bold">{title} ({rows.length})</h3><div className="mt-3 max-h-72 space-y-2 overflow-y-auto">{rows.map((row) => <div key={row._id} className="rounded-lg bg-slate-50 p-3"><div className="flex justify-between"><div><b>{row.name || "Record"}</b><div className="text-xs text-slate-500">{row.type}{row.code ? ` · ${row.code}` : ""}</div></div><button type="button" aria-label={`Delete ${row.name || "record"}`} onClick={() => onDelete(row._id)} className="text-red-600"><Trash2 size={15} /></button></div><select className="mt-2 rounded border px-2 py-1 text-xs" value={rules ? String(Boolean(row.active)) : (row.status || "active")} onChange={(event) => onStatus(row._id, rules ? event.target.value === "true" : event.target.value)}>{(rules ? [true, false] : statuses).map((value) => <option key={String(value)} value={String(value)}>{rules ? (value ? "Active" : "Disabled") : value}</option>)}</select></div>)}{!rows.length && <p className="py-5 text-center text-sm text-slate-500">No records yet.</p>}</div></div>;
 }
 
+// Define useActionMutation; its parameters and body implement this operation.
 function useActionMutation(fn, message, refresh) {
+  // Return the result of useMutation() to the caller.
   return useMutation({ mutationFn: fn, onSuccess: () => { refresh(); toast.success(message); }, onError: (error) => toast.error(error?.response?.data?.message || "Operation failed") });
 }
 
+// Define TravelOperationsCenter; its parameters and body implement this operation.
 export default function TravelOperationsCenter() {
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [operation, setOperation] for use by the surrounding module or function.
   const [operation, setOperation] = useState({ type: "transfer", name: "", code: "", status: "pending", startAt: "", endAt: "", notes: "" });
+  // Declare [asset, setAsset] for use by the surrounding module or function.
   const [asset, setAsset] = useState({ type: "vehicle", name: "", code: "", status: "available", startAt: "", endAt: "", notes: "" });
+  // Declare [rule, setRule] for use by the surrounding module or function.
   const [rule, setRule] = useState({ type: "dynamic_price", name: "", priority: 0, active: true, config: "{}" });
+  // Declare operations for use by the surrounding module or function.
   const operations = useQuery({ queryKey: ["travel-operations"], queryFn: getTravelOperations, refetchInterval: 30000 });
+  // Declare assets for use by the surrounding module or function.
   const assets = useQuery({ queryKey: ["operational-assets"], queryFn: getOperationalAssets, refetchInterval: 30000 });
+  // Declare rules for use by the surrounding module or function.
   const rules = useQuery({ queryKey: ["travel-rules"], queryFn: getTravelRules, refetchInterval: 60000 });
+  // Declare refresh for use by the surrounding module or function.
   const refresh = () => ["travel-operations", "operational-assets", "travel-rules"].forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
+  // Declare addOperation for use by the surrounding module or function.
   const addOperation = useActionMutation(createTravelOperation, "Operation created", refresh);
+  // Declare addAsset for use by the surrounding module or function.
   const addAsset = useActionMutation(createOperationalAsset, "Operational record created", refresh);
+  // Declare addRule for use by the surrounding module or function.
   const addRule = useActionMutation((payload) => createTravelRule({ ...payload, config: JSON.parse(payload.config || "{}") }), "Commercial rule created", refresh);
+  // Declare editOperation for use by the surrounding module or function.
   const editOperation = useActionMutation(({ id, payload }) => updateTravelOperation(id, payload), "Operation updated", refresh);
+  // Declare editAsset for use by the surrounding module or function.
   const editAsset = useActionMutation(({ id, payload }) => updateOperationalAsset(id, payload), "Record updated", refresh);
+  // Declare editRule for use by the surrounding module or function.
   const editRule = useActionMutation(({ id, payload }) => updateTravelRule(id, payload), "Rule updated", refresh);
+  // Declare deleteOperation for use by the surrounding module or function.
   const deleteOperation = useActionMutation(deleteTravelOperation, "Operation deleted", refresh);
+  // Declare deleteAsset for use by the surrounding module or function.
   const deleteAsset = useActionMutation(deleteOperationalAsset, "Record deleted", refresh);
+  // Declare deleteRule for use by the surrounding module or function.
   const deleteRule = useActionMutation(deleteTravelRule, "Rule deleted", refresh);
+  // Declare submitRule for use by the surrounding module or function.
   const submitRule = (event) => { event.preventDefault(); try { addRule.mutate(rule); } catch { toast.error("Commercial rule configuration must be valid JSON"); } };
 
+  // Return the expression shown below to the caller.
   return <section className="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><div className="flex justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Travel execution</p><h2 className="text-2xl font-bold">Scheduling, operational assets & commercial rules</h2><p className="text-sm text-slate-500">Manage transfers, vehicles, guides, rooms, park fees, vouchers, traveller documents, incidents and commercial rules.</p></div><button type="button" aria-label="Refresh travel operations" onClick={refresh} className="rounded-lg border p-2"><RefreshCw size={16} /></button></div><div className="mt-6 grid gap-5 xl:grid-cols-3"><ActionForm title="Schedule operation" icon={CalendarClock} label="Create operation" onSubmit={(event) => { event.preventDefault(); addOperation.mutate(operation); }}><select className={input} value={operation.type} onChange={(event) => setOperation({ ...operation, type: event.target.value })}>{types.map((type) => <option key={type}>{type}</option>)}</select><input required className={input} placeholder="Operation name" value={operation.name} onChange={(event) => setOperation({ ...operation, name: event.target.value })} /><input className={input} placeholder="Code" value={operation.code} onChange={(event) => setOperation({ ...operation, code: event.target.value })} /><select className={input} value={operation.status} onChange={(event) => setOperation({ ...operation, status: event.target.value })}>{statuses.map((status) => <option key={status}>{status}</option>)}</select><input className={input} type="datetime-local" value={operation.startAt} onChange={(event) => setOperation({ ...operation, startAt: event.target.value })} /><input className={input} type="datetime-local" value={operation.endAt} onChange={(event) => setOperation({ ...operation, endAt: event.target.value })} /><textarea className={input} placeholder="Notes" value={operation.notes} onChange={(event) => setOperation({ ...operation, notes: event.target.value })} /></ActionForm><ActionForm title="Operational record" icon={CalendarClock} label="Create record" onSubmit={(event) => { event.preventDefault(); addAsset.mutate(asset); }}><select className={input} value={asset.type} onChange={(event) => setAsset({ ...asset, type: event.target.value })}>{types.map((type) => <option key={type}>{type}</option>)}</select><input required className={input} placeholder="Record name" value={asset.name} onChange={(event) => setAsset({ ...asset, name: event.target.value })} /><input className={input} placeholder="Unique code" value={asset.code} onChange={(event) => setAsset({ ...asset, code: event.target.value })} /><select className={input} value={asset.status} onChange={(event) => setAsset({ ...asset, status: event.target.value })}>{statuses.map((status) => <option key={status}>{status}</option>)}</select><input className={input} type="datetime-local" value={asset.startAt} onChange={(event) => setAsset({ ...asset, startAt: event.target.value })} /><input className={input} type="datetime-local" value={asset.endAt} onChange={(event) => setAsset({ ...asset, endAt: event.target.value })} /><textarea className={input} placeholder="Notes" value={asset.notes} onChange={(event) => setAsset({ ...asset, notes: event.target.value })} /></ActionForm><ActionForm title="Commercial rule" icon={Zap} label="Create rule" onSubmit={submitRule}><select className={input} value={rule.type} onChange={(event) => setRule({ ...rule, type: event.target.value })}>{ruleTypes.map((type) => <option key={type}>{type}</option>)}</select><input required className={input} placeholder="Rule name" value={rule.name} onChange={(event) => setRule({ ...rule, name: event.target.value })} /><input className={input} type="number" value={rule.priority} onChange={(event) => setRule({ ...rule, priority: Number(event.target.value) })} /><label className="flex gap-2 text-sm"><input type="checkbox" checked={rule.active} onChange={(event) => setRule({ ...rule, active: event.target.checked })} />Active</label><textarea required className={`${input} min-h-24 font-mono`} value={rule.config} onChange={(event) => setRule({ ...rule, config: event.target.value })} /></ActionForm></div><div className="mt-6 grid gap-5 lg:grid-cols-3"><RecordList title="Scheduled operations" rows={operations.data || []} onStatus={(id, status) => editOperation.mutate({ id, payload: { status } })} onDelete={(id) => deleteOperation.mutate(id)} /><RecordList title="Operational records" rows={assets.data || []} onStatus={(id, status) => editAsset.mutate({ id, payload: { status } })} onDelete={(id) => deleteAsset.mutate(id)} /><RecordList title="Commercial rules" rows={rules.data || []} rules onStatus={(id, active) => editRule.mutate({ id, payload: { active } })} onDelete={(id) => deleteRule.mutate(id)} /></div></section>;
 }

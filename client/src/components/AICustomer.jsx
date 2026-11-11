@@ -1,36 +1,51 @@
+/**
+ * Purpose: AICustomer reusable UI component. Main declarations: AICustomer, generateReply.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
 
+// Load ../api/adminAIApi so this module can use its exported dependencies.
 import {
   generateCustomerReply
 } from "../api/adminAIApi";
 
 
+// Define AICustomer; its parameters and body implement this operation.
 export default function AICustomer(){
 
+  // Declare [customerMessage,setCustomerMessage] for use by the surrounding module or function.
   const [customerMessage,setCustomerMessage] = useState("");
 
+  // Declare [reply,setReply] for use by the surrounding module or function.
   const [reply,setReply] = useState("");
 
+  // Declare [loading,setLoading] for use by the surrounding module or function.
   const [loading,setLoading] = useState(false);
 
 
 
+  // Declare generateReply for use by the surrounding module or function.
   const generateReply = async()=>{
 
+    // Check the condition (!customerMessage.trim()) and run the matching branch.
     if(!customerMessage.trim()) return;
 
 
+    // Run this operation with a dedicated error-handling path for failures.
     try{
 
+      // Perform the side effect or state update expressed on the following line.
       setLoading(true);
 
 
+      // Declare response for use by the surrounding module or function.
       const response =
         await generateCustomerReply({
           customerMessage
         });
 
 
+      // Perform the side effect or state update expressed on the following line.
       setReply(
         response?.data?.reply ||
         "No response generated."
@@ -39,12 +54,14 @@ export default function AICustomer(){
 
     }catch(error){
 
+      // Perform the side effect or state update expressed on the following line.
       console.error(
         "AI customer reply error:",
         error
       );
 
 
+      // Perform the side effect or state update expressed on the following line.
       setReply(
         "Unable to generate customer response."
       );
@@ -52,6 +69,7 @@ export default function AICustomer(){
 
     }finally{
 
+      // Perform the side effect or state update expressed on the following line.
       setLoading(false);
 
     }
@@ -60,6 +78,7 @@ export default function AICustomer(){
 
 
 
+  // Return the expression shown below to the caller.
   return (
 
     <div className="bg-white rounded-xl shadow p-6">

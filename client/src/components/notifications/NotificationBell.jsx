@@ -1,15 +1,25 @@
+/**
+ * Purpose: Notification Bell reusable UI component. Main declarations: NotificationBell.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Bell } from "lucide-react";
+// Load ../../context/NotificationContext so this module can use its exported dependencies.
 import { useNotifications } from "../../context/NotificationContext";
 
+// Define NotificationBell; its parameters and body implement this operation.
 export default function NotificationBell() {
+  // Declare { notifications = [] } for use by the surrounding module or function.
   const { notifications = [] } = useNotifications();
 
+  // Declare unreadCount for use by the surrounding module or function.
   const unreadCount = notifications.filter(
     (notification) => !notification.read
   ).length;
 
+  // Declare badgeCount for use by the surrounding module or function.
   const badgeCount = unreadCount > 99 ? "99+" : unreadCount;
 
+  // Return the expression shown below to the caller.
   return (
     <button
       type="button"

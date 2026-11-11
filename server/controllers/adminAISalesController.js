@@ -1,20 +1,32 @@
+/**
+ * Purpose: admin AISales Controller HTTP controller. Main declarations: getAISalesAssistant.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+// Load ../tenancy/tenantQuery.js so this module can use its exported dependencies.
 import { tenantFilter } from "../tenancy/tenantQuery.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../models/Tour.js so this module can use its exported dependencies.
 import Tour from "../models/Tour.js";
+// Load ../models/User.js so this module can use its exported dependencies.
 import User from "../models/User.js";
 
 
+// Declare getAISalesAssistant for use by the surrounding module or function.
 export const getAISalesAssistant = async(
 req,
 res,
 next
 )=>{
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
 
+// Run this operation with a dedicated error-handling path for failures.
 try{
 
 
+// Declare [ totalBookings, completedBookings, customers, tours ] for use by the surrounding module or function.
 const [
 
 totalBookings,
@@ -53,6 +65,7 @@ Tour.find(tenantFilter(req))
 
 
 
+// Declare conversionRate for use by the surrounding module or function.
 const conversionRate =
 totalBookings > 0
 ?
@@ -66,12 +79,15 @@ Number(
 
 
 
+// Declare recommendations for use by the surrounding module or function.
 const recommendations=[];
 
 
 
+// Check the condition (conversionRate < 30) and run the matching branch.
 if(conversionRate < 30){
 
+// Perform the side effect or state update expressed on the following line.
 recommendations.push(
 "Improve follow-up speed for customer enquiries."
 );
@@ -79,8 +95,10 @@ recommendations.push(
 }
 
 
+// Check the condition (customers > 0) and run the matching branch.
 if(customers > 0){
 
+// Perform the side effect or state update expressed on the following line.
 recommendations.push(
 "Create loyalty offers for existing customers."
 );
@@ -88,12 +106,14 @@ recommendations.push(
 }
 
 
+// Perform the side effect or state update expressed on the following line.
 recommendations.push(
 "Promote high-value safari packages to increase revenue."
 );
 
 
 
+// Declare salesScripts for use by the surrounding module or function.
 const salesScripts=[
 
 {
@@ -123,6 +143,7 @@ message:
 
 
 
+// Perform the side effect or state update expressed on the following line.
 res.json({
 
 success:true,
@@ -159,6 +180,7 @@ salesScripts
 
 }catch(error){
 
+// Perform the side effect or state update expressed on the following line.
 next(error);
 
 }

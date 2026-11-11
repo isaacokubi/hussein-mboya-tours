@@ -1,28 +1,41 @@
+/**
+ * Purpose: AICustomer Support reusable UI component. Main declarations: AICustomerSupport, generate.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
 
+// Load ../../api/adminAIApi so this module can use its exported dependencies.
 import {
   generateCustomerReply
 } from "../../api/adminAIApi";
 
 
+// Define AICustomerSupport; its parameters and body implement this operation.
 export default function AICustomerSupport(){
 
 
+// Declare [message,setMessage] for use by the surrounding module or function.
 const [message,setMessage]=useState("");
 
+// Declare [reply,setReply] for use by the surrounding module or function.
 const [reply,setReply]=useState("");
 
+// Declare [loading,setLoading] for use by the surrounding module or function.
 const [loading,setLoading]=useState(false);
 
 
 
+// Declare generate for use by the surrounding module or function.
 const generate = async()=>{
 
+// Run this operation with a dedicated error-handling path for failures.
 try{
 
+// Perform the side effect or state update expressed on the following line.
 setLoading(true);
 
 
+// Declare response for use by the surrounding module or function.
 const response =
 await generateCustomerReply({
 
@@ -31,6 +44,7 @@ customerMessage:message
 });
 
 
+// Perform the side effect or state update expressed on the following line.
 setReply(
 response?.data?.reply || ""
 );
@@ -38,8 +52,10 @@ response?.data?.reply || ""
 
 }catch(error){
 
+// Perform the side effect or state update expressed on the following line.
 console.error(error);
 
+// Perform the side effect or state update expressed on the following line.
 setReply(
 "Unable to generate response."
 );
@@ -47,6 +63,7 @@ setReply(
 }
 finally{
 
+// Perform the side effect or state update expressed on the following line.
 setLoading(false);
 
 }
@@ -55,6 +72,7 @@ setLoading(false);
 
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="bg-white rounded-xl shadow p-6">

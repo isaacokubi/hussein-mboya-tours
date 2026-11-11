@@ -1,26 +1,48 @@
+/**
+ * Purpose: Home Search reusable UI component. Main declarations: HomeSearch, submit.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Search, MapPin, Sparkles, UsersRound, CalendarDays } from "lucide-react";
+// Load react so this module can use its exported dependencies.
 import { useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { useNavigate } from "react-router-dom";
 
+// Declare EXPERIENCE_TO_CATEGORY for use by the surrounding module or function.
 const EXPERIENCE_TO_CATEGORY = { Safari: "Safari", Beach: "Beach", Mountain: "Mountain", Culture: "Culture", Family: "Family", Honeymoon: "Honeymoon", Luxury: "Luxury", Corporate: "Corporate", Photography: "Photography" };
 
+// Define HomeSearch; its parameters and body implement this operation.
 export default function HomeSearch() {
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
+  // Declare [query, setQuery] for use by the surrounding module or function.
   const [query, setQuery] = useState("");
+  // Declare [experience, setExperience] for use by the surrounding module or function.
   const [experience, setExperience] = useState("");
+  // Declare [duration, setDuration] for use by the surrounding module or function.
   const [duration, setDuration] = useState("");
+  // Declare [travellers, setTravellers] for use by the surrounding module or function.
   const [travellers, setTravellers] = useState("");
 
+  // Declare submit for use by the surrounding module or function.
   const submit = (event) => {
+    // Perform the side effect or state update expressed on the following line.
     event.preventDefault();
+    // Declare params for use by the surrounding module or function.
     const params = new URLSearchParams();
+    // Check the condition (query.trim()) and run the matching branch.
     if (query.trim()) params.set("search", query.trim());
+    // Check the condition (experience) and run the matching branch.
     if (experience) params.set("category", EXPERIENCE_TO_CATEGORY[experience] || experience);
+    // Check the condition (duration) and run the matching branch.
     if (duration) params.set("duration", duration);
+    // Check the condition (travellers) and run the matching branch.
     if (travellers) params.set("travellers", travellers);
+    // Perform the side effect or state update expressed on the following line.
     navigate(params.toString() ? `/tours?${params.toString()}` : "/tours");
   };
 
+  // Return the expression shown below to the caller.
   return (
     <section className="relative z-20 -mt-16 px-4 sm:-mt-20" aria-label="Trip finder">
       <form onSubmit={submit} className="mx-auto max-w-6xl rounded-[1.75rem] border border-white/20 bg-slate-950/90 p-3 shadow-2xl backdrop-blur-xl">

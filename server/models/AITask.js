@@ -1,8 +1,15 @@
+/**
+ * Purpose: AITask database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
+// Declare aiTaskSchema for use by the surrounding module or function.
 const aiTaskSchema = new mongoose.Schema(
 
 {
@@ -80,6 +87,7 @@ timestamps:true
 
 export default aiTaskSchema.plugin(tenantPlugin);
 
+// Perform the side effect or state update expressed on the following line.
 mongoose.model(
 "AITask",
 aiTaskSchema

@@ -1,6 +1,13 @@
+/**
+ * Purpose: Accommodation Inventory database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Declare { Schema } for use by the surrounding module or function.
 const { Schema } = mongoose;
+// Declare AccommodationInventorySchema for use by the surrounding module or function.
 const AccommodationInventorySchema = new Schema({
   tenantId:{type:Schema.Types.ObjectId,ref:"Organization",required:true,index:true},
   propertyName:{type:String,required:true,trim:true,maxlength:180},
@@ -15,7 +22,9 @@ const AccommodationInventorySchema = new Schema({
   createdBy:{type:Schema.Types.ObjectId,ref:"User"},
   updatedBy:{type:Schema.Types.ObjectId,ref:"User"},
 },{timestamps:true});
+// Perform the side effect or state update expressed on the following line.
 AccommodationInventorySchema.index({tenantId:1,propertyName:1,roomType:1},{unique:true});
+// Perform the side effect or state update expressed on the following line.
 AccommodationInventorySchema.plugin(tenantPlugin);
 
 export default mongoose.models.AccommodationInventory || mongoose.model("AccommodationInventory",AccommodationInventorySchema);

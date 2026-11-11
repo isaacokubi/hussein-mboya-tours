@@ -1,33 +1,64 @@
+/**
+ * Purpose: Accounting Ledger page-level UI component. Main declarations: money, unwrap, blankLine, AccountingLedger, refresh.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { CheckCircle2, ChevronDown, FilePlus2, Plus, RefreshCw, Scale, ShieldCheck, XCircle } from "lucide-react";
+// Load ../../api/accountingApi so this module can use its exported dependencies.
 import { createAccount, createJournalEntry, getAccounts, getJournalEntries, getLedgerSummary, postJournalEntry, voidJournalEntry } from "../../api/accountingApi";
 
+// Declare money for use by the surrounding module or function.
 const money = (n) => `KSh ${Number(n || 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// Declare unwrap for use by the surrounding module or function.
 const unwrap = (v) => v?.data?.data ?? v?.data ?? v ?? {};
+// Declare blankLine for use by the surrounding module or function.
 const blankLine = () => ({ account: "", description: "", debit: "", credit: "" });
 
+// Define AccountingLedger; its parameters and body implement this operation.
 export default function AccountingLedger() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [description, setDescription] for use by the surrounding module or function.
   const [description, setDescription] = useState(""); const [reference, setReference] = useState(""); const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10)); const [lines, setLines] = useState([blankLine(), blankLine()]);
+  // Declare [showAccountForm, setShowAccountForm] for use by the surrounding module or function.
   const [showAccountForm, setShowAccountForm] = useState(false); const [account, setAccount] = useState({ code: "", name: "", type: "asset", subtype: "", description: "" });
+  // Declare accountsQ for use by the surrounding module or function.
   const accountsQ = useQuery({ queryKey: ["accounting-accounts"], queryFn: getAccounts, staleTime: 30000, retry: 2 });
+  // Declare journalQ for use by the surrounding module or function.
   const journalQ = useQuery({ queryKey: ["accounting-journal"], queryFn: () => getJournalEntries({ limit: 200 }), staleTime: 30000, retry: 2 });
+  // Declare summaryQ for use by the surrounding module or function.
   const summaryQ = useQuery({ queryKey: ["accounting-summary"], queryFn: getLedgerSummary, staleTime: 30000, retry: 2 });
+  // Declare refresh for use by the surrounding module or function.
   const refresh = () => { accountsQ.refetch(); journalQ.refetch(); summaryQ.refetch(); };
+  // Declare createM for use by the surrounding module or function.
   const createM = useMutation({ mutationFn: createJournalEntry, onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-journal"] }); qc.invalidateQueries({ queryKey: ["accounting-summary"] }); setDescription(""); setReference(""); setLines([blankLine(), blankLine()]); } });
+  // Declare accountM for use by the surrounding module or function.
   const accountM = useMutation({ mutationFn: createAccount, onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-accounts"] }); setAccount({ code: "", name: "", type: "asset", subtype: "", description: "" }); setShowAccountForm(false); } });
+  // Declare postM for use by the surrounding module or function.
   const postM = useMutation({ mutationFn: postJournalEntry, onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-journal"] }); qc.invalidateQueries({ queryKey: ["accounting-summary"] }); } });
+  // Declare voidM for use by the surrounding module or function.
   const voidM = useMutation({ mutationFn: voidJournalEntry, onSuccess: () => qc.invalidateQueries({ queryKey: ["accounting-journal"] }) });
+  // Declare accounts for use by the surrounding module or function.
   const accounts = Array.isArray(accountsQ.data) ? accountsQ.data : unwrap(accountsQ.data).items || [];
+  // Declare rows for use by the surrounding module or function.
   const rows = unwrap(summaryQ.data).accounts || []; const journal = Array.isArray(journalQ.data) ? journalQ.data : unwrap(journalQ.data).items || [];
+  // Declare totals for use by the surrounding module or function.
   const totals = useMemo(() => lines.reduce((a, l) => ({ debit: a.debit + Number(l.debit || 0), credit: a.credit + Number(l.credit || 0) }), { debit: 0, credit: 0 }), [lines]);
+  // Declare balanced for use by the surrounding module or function.
   const balanced = lines.length >= 2 && totals.debit > 0 && Math.abs(totals.debit - totals.credit) < 0.01 && lines.every((l) => l.account && !(Number(l.debit || 0) > 0 && Number(l.credit || 0)));
+  // Declare ps for use by the surrounding module or function.
   const ps = unwrap(summaryQ.data).profitLoss || {}; const bs = unwrap(summaryQ.data).balanceSheet || {}; const ledgerBalanced = Math.abs(Number(unwrap(summaryQ.data).totals?.debit || 0) - Number(unwrap(summaryQ.data).totals?.credit || 0)) < 0.01;
+  // Declare updateLine for use by the surrounding module or function.
   const updateLine = (index, field, value) => setLines((prev) => prev.map((line, i) => i === index ? { ...line, [field]: value } : line));
+  // Declare submit for use by the surrounding module or function.
   const submit = (e) => { e.preventDefault(); if (!balanced || !description.trim()) return; createM.mutate({ entryDate, description: description.trim(), reference: reference.trim(), lines: lines.map((l) => ({ account: l.account, description: l.description.trim() || description.trim(), debit: Number(l.debit || 0), credit: Number(l.credit || 0) })) }); };
+  // Declare submitAccount for use by the surrounding module or function.
   const submitAccount = (e) => { e.preventDefault(); if (!account.code.trim() || !account.name.trim()) return; accountM.mutate(account); };
 
+  // Return the expression shown below to the caller.
   return <div className="space-y-6">
     <div className="rounded-2xl bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 p-6 text-white shadow-lg"><div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-300">Core accounting</p><h2 className="mt-1 text-2xl font-black">General Ledger</h2><p className="mt-1 text-sm text-slate-300">Tenant-scoped double-entry accounting, trial balance, journal controls and chart of accounts.</p></div><button onClick={refresh} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold hover:bg-indigo-500"><RefreshCw size={16} className={summaryQ.isFetching ? "animate-spin" : ""}/> Refresh</button></div></div>
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Stat label="Posted debits" value={money(unwrap(summaryQ.data).totals?.debit)} /><Stat label="Posted credits" value={money(unwrap(summaryQ.data).totals?.credit)} /><Stat label="Net profit" value={money(ps.netProfit)} tone={Number(ps.netProfit) >= 0 ? "positive" : "negative"} /><Stat label="Ledger status" value={ledgerBalanced ? "Balanced" : "Review required"} icon={ledgerBalanced ? CheckCircle2 : Scale} tone={ledgerBalanced ? "positive" : "negative"}/></div>
@@ -47,5 +78,7 @@ export default function AccountingLedger() {
   </div>;
 }
 
+// Define Stat; its parameters and body implement this operation.
 function Stat({ label, value, icon: Icon, tone }) { return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">{label}</p><div className={`mt-2 flex items-center gap-2 text-xl font-black ${tone === "positive" ? "text-emerald-700" : tone === "negative" ? "text-rose-600" : "text-slate-950"}`}>{Icon && <Icon size={18}/>} {value}</div></div>; }
+// Define Summary; its parameters and body implement this operation.
 function Summary({ label, value }) { return <div className="rounded-2xl bg-slate-50 p-5"><p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 text-xl font-black text-slate-950">{value}</p></div>; }

@@ -1,32 +1,60 @@
+/**
+ * Purpose: Admin Analytics page-level UI component. Main declarations: idLabel, displayStatus, tourTitle, AdminAnalytics, Metric.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useQuery } from "@tanstack/react-query";
+// Load recharts so this module can use its exported dependencies.
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+// Load lucide-react so this module can use its exported dependencies.
 import { Users, CalendarCheck, Car, Trophy, WalletCards, RefreshCw } from "lucide-react";
+// Load ../../api/analyticsApi so this module can use its exported dependencies.
 import { getAnalytics } from "../../api/analyticsApi";
 
+// Declare idLabel for use by the surrounding module or function.
 const idLabel = (value) => value ? String(value).slice(-8).toUpperCase() : "—";
+// Declare displayStatus for use by the surrounding module or function.
 const displayStatus = (value, fallback = "Not recorded") => {
+  // Declare normalized for use by the surrounding module or function.
   const normalized = String(value ?? "").trim().toLowerCase();
+  // Check the condition (!normalized || normalized === "unknown" || normalized === "null" || no) and run the matching branch.
   if (!normalized || normalized === "unknown" || normalized === "null" || normalized === "undefined") return fallback;
+  // Return the result of normalized.replace() to the caller.
   return normalized.replace(/[_-]+/g, " ");
 };
+// Declare tourTitle for use by the surrounding module or function.
 const tourTitle = (item) => item?.tour?.title || item?.title || (item?._id ? `Tour ID: ${idLabel(item._id)}` : "Tour not linked");
 
+// Define AdminAnalytics; its parameters and body implement this operation.
 export default function AdminAnalytics() {
+  // Declare { data, isLoading, isError, refetch, isFetching } for use by the surrounding module or function.
   const { data, isLoading, isError, refetch, isFetching } = useQuery({ queryKey: ["analytics"], queryFn: () => getAnalytics(), staleTime: 30_000, retry: 2, refetchOnWindowFocus: false });
+  // Declare payload for use by the surrounding module or function.
   const payload = data?.data || data || {};
+  // Declare revenue for use by the surrounding module or function.
   const revenue = payload.revenue || {};
+  // Declare bookingsSeries for use by the surrounding module or function.
   const bookingsSeries = Array.isArray(payload.bookings) ? payload.bookings : [];
+  // Declare bookingStatus for use by the surrounding module or function.
   const bookingStatus = (Array.isArray(payload.bookingStatus) ? payload.bookingStatus : []).map((item) => ({ ...item, _id: displayStatus(item?._id) }));
+  // Declare monthlyRevenue for use by the surrounding module or function.
   const monthlyRevenue = Array.isArray(payload.monthlyRevenue) ? payload.monthlyRevenue : [];
+  // Declare vehicleStats for use by the surrounding module or function.
   const vehicleStats = (Array.isArray(payload.vehicleStats) ? payload.vehicleStats : []).map((item) => ({ ...item, _id: displayStatus(item?._id) }));
+  // Declare popularTours for use by the surrounding module or function.
   const popularTours = Array.isArray(payload.popularTours) ? payload.popularTours : [];
+  // Declare profitability for use by the surrounding module or function.
   const profitability = payload.profitability || {};
+  // Declare customerCount for use by the surrounding module or function.
   const customerCount = Number(payload.customers || 0);
+  // Declare bookingCount for use by the surrounding module or function.
   const bookingCount = bookingsSeries.reduce((sum, item) => sum + Number(item.bookings || 0), 0);
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <div className="min-h-screen bg-slate-100 p-8 text-slate-600">Loading analytics...</div>;
+  // Check the condition (isError && !data) and run the matching branch.
   if (isError && !data) return <div className="min-h-screen bg-slate-100 p-8"><div className="mx-auto max-w-2xl rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm"><p className="font-semibold text-red-700">Failed to load analytics.</p><button type="button" onClick={refetch} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-800"><RefreshCw size={16} />Retry</button></div></div>;
 
+  // Declare cards for use by the surrounding module or function.
   const cards = [
     ["Confirmed payment revenue", `KES ${Number(revenue.totalRevenue || 0).toLocaleString()}`, WalletCards],
     ["Customers", customerCount, Users],
@@ -34,6 +62,7 @@ export default function AdminAnalytics() {
     ["Fleet", vehicleStats.reduce((n, i) => n + Number(i.count || 0), 0), Car],
   ];
 
+  // Return the expression shown below to the caller.
   return <div className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl">
     <div className="mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 p-6 shadow-lg sm:p-7">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm font-semibold uppercase tracking-wider text-sky-300">Business intelligence</p><h1 className="mt-1 text-3xl font-bold text-white">Analytics & Performance</h1><p className="mt-1 max-w-4xl text-slate-300">Revenue and paid-tour performance are based only on confirmed payments. Contribution margin is an operational indicator after recorded agent commissions; supplier and vehicle costs can be added later for full net-profit accounting.</p></div><button type="button" onClick={() => refetch()} disabled={isFetching} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"><RefreshCw className={isFetching ? "animate-spin" : ""} size={16} />Refresh</button></div>
@@ -53,6 +82,9 @@ export default function AdminAnalytics() {
     <div className="mt-6 grid gap-6 lg:grid-cols-2"><StatusSummary title="Booking status details" items={bookingStatus} /><StatusSummary title="Fleet status details" items={vehicleStats} /></div>
   </div></div>;
 }
+// Define Metric; its parameters and body implement this operation.
 function Metric({ label, value }) { return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-2xl font-bold text-slate-950">{value}</p></div>; }
+// Define ChartCard; its parameters and body implement this operation.
 function ChartCard({ title, children }) { return <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="mb-4 text-lg font-bold text-slate-950">{title}</h2>{children}</div>; }
+// Define StatusSummary; its parameters and body implement this operation.
 function StatusSummary({ title, items }) { return <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-lg font-bold text-slate-950">{title}</h2>{items.length ? <div className="mt-4 space-y-2">{items.map((item, index) => <div key={`${item._id}-${index}`} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3"><span className="font-medium capitalize text-slate-700">{displayStatus(item._id)}</span><span className="font-bold text-indigo-700">{Number(item.count || 0).toLocaleString()}</span></div>)} </div> : <p className="mt-4 text-sm text-slate-500">No status data recorded.</p>}</div>; }

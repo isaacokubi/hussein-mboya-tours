@@ -1,9 +1,18 @@
+/**
+ * Purpose: analytics Service business-logic service. Main declarations: getRevenueAnalytics, getBookingAnalytics, getPopularTours.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { tenantFilter } from "../tenancy/tenantQuery.js";
+// Load ../tenancy/context.js so this module can use its exported dependencies.
 import { requireTenantId } from "../tenancy/context.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../models/Payment.js so this module can use its exported dependencies.
 import Payment from "../models/Payment.js";
+// Load ./bookingRevenueService.js so this module can use its exported dependencies.
 import { getBookingRevenueMetrics } from "./bookingRevenueService.js";
 
+// Declare amountAfterRefund for use by the surrounding module or function.
 const amountAfterRefund = {
   $subtract: [
     { $ifNull: ["$amount", 0] },
@@ -11,6 +20,7 @@ const amountAfterRefund = {
   ],
 };
 
+// Declare nonNegativeAmount for use by the surrounding module or function.
 const nonNegativeAmount = {
   $cond: [
     { $gt: [amountAfterRefund, 0] },
@@ -19,8 +29,11 @@ const nonNegativeAmount = {
   ],
 };
 
+// Declare getRevenueAnalytics for use by the surrounding module or function.
 export const getRevenueAnalytics = async (req) => {
+  // Declare metrics for use by the surrounding module or function.
   const metrics = await getBookingRevenueMetrics(req);
+  // Return the object assembled below to the caller.
   return {
     totalRevenue: metrics.revenue,
     totalPayments: metrics.paidBookings,
@@ -29,8 +42,11 @@ export const getRevenueAnalytics = async (req) => {
   };
 };
 
+// Declare getBookingAnalytics for use by the surrounding module or function.
 export const getBookingAnalytics = async (req) => {
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
+  // Return the result of Booking.aggregate() to the caller.
   return Booking.aggregate([
     { $match: { ...tenantFilter(req), isDeleted: { $ne: true } } },
     { $group: { _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }, bookings: { $sum: 1 } } },
@@ -38,8 +54,11 @@ export const getBookingAnalytics = async (req) => {
   ]);
 };
 
+// Declare getPopularTours for use by the surrounding module or function.
 export const getPopularTours = async (req) => {
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
+  // Return the result of Payment.aggregate() to the caller.
   return Payment.aggregate([
     { $match: { ...tenantFilter(req), status: "completed", booking: { $ne: null } } },
     { $group: { _id: "$booking", paidAmount: { $sum: nonNegativeAmount } } },

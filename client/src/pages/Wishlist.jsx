@@ -1,22 +1,34 @@
+/**
+ * Purpose: Wishlist page-level UI component. Main declarations: Wishlist.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { getTourImage } from "../utils/tourImage";
 // client/src/pages/Wishlist.jsx
 
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link, Navigate } from "react-router-dom";
 
+// Load lucide-react so this module can use its exported dependencies.
 import { Heart, MapPin } from "lucide-react";
 
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
 
+// Load ../context/AuthContext so this module can use its exported dependencies.
 import { useAuth } from "../context/AuthContext";
 
+// Load ../api/wishlistApi so this module can use its exported dependencies.
 import { getWishlist } from "../api/wishlistApi";
 
 
+// Define Wishlist; its parameters and body implement this operation.
 export default function Wishlist(
 ) {
+  // Declare { token } for use by the surrounding module or function.
   const { token } = useAuth();
 
 
+  // Declare { data, isLoading, error, } for use by the surrounding module or function.
   const {
     data,
     isLoading,
@@ -29,13 +41,17 @@ export default function Wishlist(
 
 
 
+  // Check the condition (!token) and run the matching branch.
   if (!token) {
+    // Return the expression shown below to the caller.
     return <Navigate to="/login" replace />;
   }
 
 
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <section
         className="
@@ -113,7 +129,9 @@ export default function Wishlist(
 
 
 
+  // Check the condition (error) and run the matching branch.
   if (error) {
+    // Return the expression shown below to the caller.
     return (
       <div
         className="
@@ -140,6 +158,7 @@ export default function Wishlist(
 
 
 
+  // Declare wishlist for use by the surrounding module or function.
   const wishlist = Array.isArray(data)
     ? data
     : data?.wishlist || [];
@@ -147,7 +166,9 @@ export default function Wishlist(
 
 
 
+  // Check the condition (wishlist.length === 0) and run the matching branch.
   if (wishlist.length === 0) {
+    // Return the expression shown below to the caller.
     return (
       <section
         className="
@@ -219,6 +240,7 @@ export default function Wishlist(
 
 
 
+  // Return the expression shown below to the caller.
   return (
     <section
       className="

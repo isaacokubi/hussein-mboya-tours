@@ -1,29 +1,57 @@
+/**
+ * Purpose: finance Lifecycle Service business-logic service. Main declarations: money, account, ensure, normalizeSourceId, postFinanceEntry.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import crypto from "crypto";
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../models/JournalEntry.js so this module can use its exported dependencies.
 import JournalEntry from "../models/JournalEntry.js";
+// Load ../models/ChartOfAccount.js so this module can use its exported dependencies.
 import ChartOfAccount from "../models/ChartOfAccount.js";
+// Load ../models/AccountingPeriod.js so this module can use its exported dependencies.
 import AccountingPeriod from "../models/AccountingPeriod.js";
 
+// Declare money for use by the surrounding module or function.
 const money = (n) => Math.round(Number(n || 0) * 100) / 100;
+// Declare account for use by the surrounding module or function.
 const account = async (tenantId, code) => ChartOfAccount.findOne({ tenantId, code, active: true }).lean();
+// Declare ensure for use by the surrounding module or function.
 const ensure = async (tenantId) => {
+  // Declare defaults for use by the surrounding module or function.
   const defaults = [["1000","Cash on Hand","asset","cash"],["1010","Bank Account","asset","bank"],["1020","M-Pesa","asset","mobile_money"],["1030","Card / Gateway Clearing","asset","payment_clearing"],["1100","Accounts Receivable","asset","receivable"],["1110","Corporate Receivables","asset","corporate_receivable"],["1200","Inventory","asset","inventory"],["1300","Prepayments","asset","prepayment"],["1400","Property, Plant & Equipment","asset","fixed_asset"],["1490","Accumulated Depreciation","asset","accumulated_depreciation"],["2000","Accounts Payable","liability","payable"],["2100","VAT / Tax Payable","liability","tax"],["2110","Output VAT","liability","vat_output"],["2120","Input VAT","asset","vat_input"],["2130","Withholding Tax Payable","liability","withholding_tax"],["2140","Payroll Liabilities","liability","payroll"],["2150","Customer Deposits","liability","customer_deposit"],["3000","Owner Equity","equity","capital"],["3010","Retained Earnings","equity","retained_earnings"],["3020","Current Year Earnings","equity","current_year_earnings"],["4000","Tour Revenue","revenue","sales"],["4010","Hotel Revenue","revenue","sales"],["4020","Airport Transfer Revenue","revenue","sales"],["4030","Excursion Revenue","revenue","sales"],["4100","Other Revenue","revenue","other_revenue"],["5000","Tour Direct Costs","expense","cost_of_sales"],["5010","Hotel Direct Costs","expense","cost_of_sales"],["5020","Transport Direct Costs","expense","cost_of_sales"],["5100","Commissions","expense","commission"],["5200","General Operating Expenses","expense","operating"],["5260","Bank & Payment Charges","expense","payment_charges"],["5270","Depreciation Expense","expense","depreciation"],["5280","Professional Fees","expense","operating"],["6100","Interest Expense","expense","finance_cost"],["7000","Foreign Exchange Gain","revenue","fx_gain"],["7010","Foreign Exchange Loss","expense","fx_loss"]];
+  // Repeat the enclosed work for each required iteration.
   for(const [code,name,type,subtype] of defaults) await ChartOfAccount.updateOne({tenantId,code},{$setOnInsert:{tenantId,code,name,type,subtype,currency:"KES",active:true,system:true}},{upsert:true});
 };
+// Declare normalizeSourceId for use by the surrounding module or function.
 const normalizeSourceId = (sourceId) => { if (sourceId instanceof mongoose.Types.ObjectId) return sourceId; if (mongoose.Types.ObjectId.isValid(sourceId)) return new mongoose.Types.ObjectId(sourceId); return new mongoose.Types.ObjectId(crypto.createHash("sha256").update(String(sourceId)).digest("hex").slice(0,24)); };
 
+// Define postFinanceEntry; its parameters and body implement this operation.
 export async function postFinanceEntry({tenantId,sourceType,sourceId,description,reference="",date=new Date(),lines}) {
+  // Check the condition (!tenantId||sourceId==null||!sourceType||!description) and run the matching branch.
   if(!tenantId||sourceId==null||!sourceType||!description)return null;
+  // Check the condition (!Array.isArray(lines)||lines.length<2) and run the matching branch.
   if(!Array.isArray(lines)||lines.length<2)throw new Error("Finance journal entry requires at least two lines.");
+  // Declare normalizedSourceId for use by the surrounding module or function.
   const normalizedSourceId = normalizeSourceId(sourceId);
+  // Declare existing for use by the surrounding module or function.
   const existing=await JournalEntry.findOne({tenantId,sourceType,sourceId:normalizedSourceId}).lean();if(existing)return existing;
+  // Declare entryDate for use by the surrounding module or function.
   const entryDate=new Date(date);if(Number.isNaN(entryDate.getTime()))throw new Error("Finance journal date is invalid.");
+  // Declare period for use by the surrounding module or function.
   const period=entryDate.toISOString().slice(0,7);const closed=await AccountingPeriod.findOne({tenantId,period,status:"closed"}).lean();if(closed)throw new Error(`Accounting period ${period} is closed; post a correcting entry in an open period.`);
+  // Perform the side effect or state update expressed on the following line.
   await ensure(tenantId);const resolved=[];
+  // Repeat the enclosed work for each required iteration.
   for(const line of lines){const acc=await account(tenantId,line.code);if(!acc)throw new Error(`Account ${line.code} is unavailable.`);const debit=money(line.debit),credit=money(line.credit);if(debit<0||credit<0||(debit>0&&credit>0))throw new Error(`Invalid debit/credit values for account ${line.code}.`);resolved.push({account:acc._id,description:line.description||description,debit,credit});}
+  // Declare debit, credit for use by the surrounding module or function.
   const debit=money(resolved.reduce((s,l)=>s+l.debit,0)),credit=money(resolved.reduce((s,l)=>s+l.credit,0));if(debit<=0||Math.abs(debit-credit)>0.01)throw new Error("Finance journal entry is not balanced.");
+  // Run this operation with a dedicated error-handling path for failures.
   try{return await JournalEntry.create({tenantId,sourceType,sourceId:normalizedSourceId,entryDate,description,reference,status:"posted",lines:resolved,postedAt:new Date()});}catch(error){if(error?.code===11000)return JournalEntry.findOne({tenantId,sourceType,sourceId:normalizedSourceId}).lean();throw error;}
 }
+// Declare postSupplierPayable for use by the surrounding module or function.
 export const postSupplierPayable=(payable)=>postFinanceEntry({tenantId:payable.tenantId,sourceType:"supplier_payable",sourceId:payable._id,description:`Supplier payable ${payable.payableNumber||payable._id}`,reference:payable.paymentReference||payable.payableNumber||"",date:payable.createdAt||new Date(),lines:[{code:"5000",debit:payable.amount,credit:0,description:"Supplier cost accrued"},{code:"2000",debit:0,credit:payable.amount,description:"Accounts payable"}]});
+// Declare postSupplierPayment for use by the surrounding module or function.
 export const postSupplierPayment=({payable,amount,paymentReference,paymentMethod="BANK_TRANSFER"})=>{const key=`${payable._id}:${money(amount)}:${String(paymentReference||"").trim()}`,sourceId=crypto.createHash("sha256").update(key).digest("hex").slice(0,24);const method=String(paymentMethod||"BANK_TRANSFER").toUpperCase();const code=method==="MPESA"?"1020":method==="CARD"?"1030":method==="CASH"?"1000":"1010";return postFinanceEntry({tenantId:payable.tenantId,sourceType:"supplier_payable_payment",sourceId,description:`Supplier payable settlement ${paymentReference||payable.payableNumber||payable._id}`,reference:paymentReference||"",lines:[{code:"2000",debit:amount,credit:0,description:"Accounts payable settlement"},{code,debit:0,credit:amount,description:"Supplier settlement"}]});};
+// Declare postCreditDebitNote for use by the surrounding module or function.
 export const postCreditDebitNote=(note)=>{const credit=note.type==="credit";const lines=credit?[{code:"4000",debit:note.amount,credit:0,description:"Revenue reversal"},...(Number(note.taxAmount)>0?[{code:"2110",debit:note.taxAmount,credit:0,description:"Output VAT reversal"}]:[]),{code:"1100",debit:0,credit:note.totalAmount,description:"Accounts receivable credit"}]:[{code:"1100",debit:note.totalAmount,credit:0,description:"Accounts receivable debit"},{code:"4000",debit:0,credit:note.amount,description:"Debit note revenue"},...(Number(note.taxAmount)>0?[{code:"2110",debit:0,credit:note.taxAmount,description:"Output VAT"}]:[])];return postFinanceEntry({tenantId:note.tenantId,sourceType:"credit_debit_note",sourceId:note._id,description:`${credit?"Credit":"Debit"} note ${note.noteNumber}`,reference:note.noteNumber,date:note.issuedAt||new Date(),lines});};

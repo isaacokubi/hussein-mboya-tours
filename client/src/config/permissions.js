@@ -1,3 +1,7 @@
+/**
+ * Purpose: permissions configuration module. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/config/permissions.js
 //
 // Canonical application RBAC permission names.
@@ -5,6 +9,7 @@
 // server/controllers/adminRoleController.js and consumed by
 // server/middleware/permissionMiddleware.js.
 
+// Declare PERMISSION_GROUPS for use by the surrounding module or function.
 export const PERMISSION_GROUPS = {
   Dashboard: [
     "admin.dashboard",
@@ -84,4 +89,5 @@ export const PERMISSION_GROUPS = {
   ],
 };
 
+// Declare ALL_PERMISSIONS for use by the surrounding module or function.
 export const ALL_PERMISSIONS = Object.values(PERMISSION_GROUPS).flat();

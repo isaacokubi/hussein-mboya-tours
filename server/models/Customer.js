@@ -1,7 +1,14 @@
+/**
+ * Purpose: Customer database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/Customer.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -10,6 +17,7 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare emergencyContactSchema for use by the surrounding module or function.
 const emergencyContactSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
@@ -42,6 +50,7 @@ const emergencyContactSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Declare customerSchema for use by the surrounding module or function.
 const customerSchema = new mongoose.Schema(
   {
     /*
@@ -376,10 +385,13 @@ const customerSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.virtual("fullName").get(function () {
+  // Return the expression shown below to the caller.
   return `${this.firstName} ${this.lastName}`;
 });
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.virtual("bookingCount", {
   ref: "Booking",
   localField: "_id",
@@ -393,6 +405,7 @@ customerSchema.virtual("bookingCount", {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.index({
   firstName: "text",
   lastName: "text",
@@ -400,35 +413,43 @@ customerSchema.index({
   phone: "text",
 });
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.index({
   agent: 1,
   status: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.index({
   customerType: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.index({
   email: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.index({
   phone: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.index({
   createdAt: -1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.index({
   totalSpent: -1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.index({
   loyaltyPoints: -1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.index({
   isDeleted: 1,
 });
@@ -439,14 +460,19 @@ customerSchema.index({
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.pre("save", function (next) {
+  // Check the condition (this.totalBookings > 0) and run the matching branch.
   if (this.totalBookings > 0) {
+    // Perform the side effect or state update expressed on the following line.
     this.averageBookingValue =
       this.totalSpent / this.totalBookings;
   } else {
+    // Perform the side effect or state update expressed on the following line.
     this.averageBookingValue = 0;
   }
 
+  // Perform the side effect or state update expressed on the following line.
   next();
 });
 
@@ -456,15 +482,23 @@ customerSchema.pre("save", function (next) {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.methods.addLoyaltyPoints = function (points) {
+  // Perform the side effect or state update expressed on the following line.
   this.loyaltyPoints += points;
+  // Return the result of this.save() to the caller.
   return this.save();
 };
 
+// Perform the side effect or state update expressed on the following line.
 customerSchema.methods.softDelete = function () {
+  // Perform the side effect or state update expressed on the following line.
   this.isDeleted = true;
+  // Perform the side effect or state update expressed on the following line.
   this.deletedAt = new Date();
+  // Perform the side effect or state update expressed on the following line.
   this.status = "inactive";
+  // Return the result of this.save() to the caller.
   return this.save();
 };
 
@@ -474,7 +508,9 @@ customerSchema.methods.softDelete = function () {
 |--------------------------------------------------------------------------
 */
 
+// Declare tenantCustomerSchema for use by the surrounding module or function.
 const tenantCustomerSchema = customerSchema.plugin(tenantPlugin);
+// Declare Customer for use by the surrounding module or function.
 const Customer = mongoose.models.Customer || mongoose.model("Customer", tenantCustomerSchema);
 
 

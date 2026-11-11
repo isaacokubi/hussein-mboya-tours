@@ -1,8 +1,13 @@
+/**
+ * Purpose: Agent Header reusable UI component. Main declarations: AgentHeader, handleLogout.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import {
     useNavigate
 } from "react-router-dom";
 
 
+// Load ../../context/AuthContext so this module can use its exported dependencies.
 import {
     useAuth
 } from "../../context/AuthContext";
@@ -10,14 +15,17 @@ import {
 
 
 
+// Define AgentHeader; its parameters and body implement this operation.
 export default function AgentHeader(){
 
 
 
+// Declare navigate for use by the surrounding module or function.
 const navigate = useNavigate();
 
 
 
+// Declare { user, logout } for use by the surrounding module or function.
 const { user, logout } = useAuth();
 
 
@@ -27,6 +35,7 @@ const { user, logout } = useAuth();
 
 
 
+// Declare handleLogout for use by the surrounding module or function.
 const handleLogout = async () => { await logout(); navigate("/agent/login"); };
 
 
@@ -34,6 +43,7 @@ const handleLogout = async () => { await logout(); navigate("/agent/login"); };
 
 
 
+// Return the expression shown below to the caller.
 return (
 
 <header

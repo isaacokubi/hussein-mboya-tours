@@ -1,7 +1,14 @@
+/**
+ * Purpose: Hotel database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Declare { Schema } for use by the surrounding module or function.
 const { Schema } = mongoose;
 
+// Declare HotelSchema for use by the surrounding module or function.
 const HotelSchema = new Schema({
   tenantId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   name: { type: String, required: true, trim: true, maxlength: 180 },
@@ -29,11 +36,16 @@ const HotelSchema = new Schema({
   updatedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
+// Perform the side effect or state update expressed on the following line.
 HotelSchema.index({ tenantId: 1, slug: 1 }, { unique: true });
+// Perform the side effect or state update expressed on the following line.
 HotelSchema.index({ tenantId: 1, status: 1, featured: -1 });
+// Perform the side effect or state update expressed on the following line.
 HotelSchema.index({ tenantId: 1, city: 1, county: 1 });
+// Perform the side effect or state update expressed on the following line.
 HotelSchema.index({ tenantId: 1, name: "text", description: "text", location: "text" });
 
+// Perform the side effect or state update expressed on the following line.
 HotelSchema.plugin(tenantPlugin);
 
 export default mongoose.models.Hotel || mongoose.model("Hotel", HotelSchema);

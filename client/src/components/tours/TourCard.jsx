@@ -1,60 +1,104 @@
+/**
+ * Purpose: Tour Card reusable UI component. Main declarations: TourCard, handleWishlist, handleImageError.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useSettings } from "../../context/SettingsContext";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load react so this module can use its exported dependencies.
 import { useState } from "react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/wishlistApi so this module can use its exported dependencies.
 import { addWishlist } from "../../api/wishlistApi";
+// Load ../../utils/tourImage so this module can use its exported dependencies.
 import { getTourImage, TOUR_FALLBACK_IMAGES } from "../../utils/tourImage";
 
+// Declare NO_IMAGE for use by the surrounding module or function.
 const NO_IMAGE = "/gallery/beach.jpg";
 
+// Define TourCard; its parameters and body implement this operation.
 export default function TourCard({ tour }) {
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
+  // Declare currency for use by the surrounding module or function.
   const currency = settings.currency || tour.currency || "KES";
+  // Declare currencySymbolMap for use by the surrounding module or function.
   const currencySymbolMap = { KES: "KSh", USD: "$", EUR: "€", GBP: "£" };
+  // Declare currencySymbol for use by the surrounding module or function.
   const currencySymbol = currencySymbolMap[currency] || settings.currencySymbol || tour.currencySymbol || currency;
+  // Declare [adding, setAdding] for use by the surrounding module or function.
   const [adding, setAdding] = useState(false);
+  // Declare [imageSrc, setImageSrc] for use by the surrounding module or function.
   const [imageSrc, setImageSrc] = useState(() => getTourImage(tour) || TOUR_FALLBACK_IMAGES[0] || NO_IMAGE);
+  // Declare [failedImageUrls, setFailedImageUrls] for use by the surrounding module or function.
   const [failedImageUrls, setFailedImageUrls] = useState(() => new Set());
 
+  // Declare price for use by the surrounding module or function.
   const price = Number(tour.price || 0);
+  // Declare discountedPrice for use by the surrounding module or function.
   const discountedPrice = tour.discount ? price - (price * Number(tour.discount)) / 100 : price;
+  // Declare tourTitle for use by the surrounding module or function.
   const tourTitle = tour.title || tour.name || "Amazing Safari Experience";
+  // Declare destination for use by the surrounding module or function.
   const destination = tour.destination && typeof tour.destination === "object" ? tour.destination : null;
+  // Declare destinationName for use by the surrounding module or function.
   const destinationName = destination?.name || tour.country || "Destination";
+  // Declare destinationSlug for use by the surrounding module or function.
   const destinationSlug = destination?.slug || destination?._id;
+  // Declare rating for use by the surrounding module or function.
   const rating = typeof tour.rating === "object" ? tour.rating?.average : (tour.rating ?? tour.averageRating ?? 0);
 
+  // Declare handleWishlist for use by the surrounding module or function.
   const handleWishlist = async () => {
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       setAdding(true);
+      // Perform the side effect or state update expressed on the following line.
       await addWishlist(tour._id);
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Added to wishlist ❤️");
     } catch (error) {
+      // Perform the side effect or state update expressed on the following line.
       console.error(error);
+      // Perform the side effect or state update expressed on the following line.
       toast.error(error.response?.data?.message || "Failed to add wishlist");
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       setAdding(false);
     }
   };
 
+  // Declare handleImageError for use by the surrounding module or function.
   const handleImageError = () => {
+    // Declare failed for use by the surrounding module or function.
     const failed = new Set(failedImageUrls);
+    // Perform the side effect or state update expressed on the following line.
     failed.add(imageSrc);
 
+    // Declare nextImage for use by the surrounding module or function.
     const nextImage = TOUR_FALLBACK_IMAGES.find(
       (url) => url && !failed.has(url)
     );
 
+    // Check the condition (nextImage) and run the matching branch.
     if (nextImage) {
+      // Perform the side effect or state update expressed on the following line.
       failed.add(nextImage);
+      // Perform the side effect or state update expressed on the following line.
       setFailedImageUrls(failed);
+      // Perform the side effect or state update expressed on the following line.
       setImageSrc(nextImage);
+      // Return the result to the caller.
       return;
     }
 
+    // Perform the side effect or state update expressed on the following line.
     setImageSrc(NO_IMAGE);
   };
 
+  // Return the expression shown below to the caller.
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition">
       <div className="relative">

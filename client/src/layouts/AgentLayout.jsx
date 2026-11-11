@@ -1,14 +1,27 @@
+/**
+ * Purpose: Agent Layout client application module. Main declarations: AgentLayout.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect, useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Outlet, useLocation } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import { Menu, X } from "lucide-react";
+// Load ../components/agent/AgentSidebar so this module can use its exported dependencies.
 import AgentSidebar from "../components/agent/AgentSidebar";
+// Load ../components/common/DashboardLogoutButton so this module can use its exported dependencies.
 import DashboardLogoutButton from "../components/common/DashboardLogoutButton";
 
+// Define AgentLayout; its parameters and body implement this operation.
 export default function AgentLayout() {
+  // Declare [mobileOpen, setMobileOpen] for use by the surrounding module or function.
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Declare location for use by the surrounding module or function.
   const location = useLocation();
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
+  // Return the expression shown below to the caller.
   return (
     <div className="dashboard-responsive agent-portal min-h-screen">
       <aside className="fixed inset-y-0 left-0 hidden lg:block"><AgentSidebar /></aside>

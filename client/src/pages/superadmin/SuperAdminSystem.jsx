@@ -1,12 +1,24 @@
+/**
+ * Purpose: Super Admin System page-level UI component. Main declarations: normalizeSystemHealth, StatusBadge, formatUptime, formatTime, MetricCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { Activity, AlertTriangle, CheckCircle2, Clock3, Cpu, Database, HardDrive, RefreshCw, Server, ShieldCheck, XCircle } from "lucide-react";
+// Load ../../api/superAdminApi so this module can use its exported dependencies.
 import { getSystemHealth } from "../../api/superAdminApi";
 
+// Define normalizeSystemHealth; its parameters and body implement this operation.
 function normalizeSystemHealth(payload) {
+  // Declare source for use by the surrounding module or function.
   const source = payload?.system || payload?.data?.system || payload?.data || payload || {};
+  // Declare rawMemory for use by the surrounding module or function.
   const rawMemory = source.memory || {};
+  // Declare database for use by the surrounding module or function.
   const database = typeof source.database === "object" ? source.database : { status: source.database };
+  // Return the object assembled below to the caller.
   return {
     ...source,
     status: source.status || "unknown",
@@ -27,6 +39,7 @@ function normalizeSystemHealth(payload) {
   };
 }
 
+// Declare statusMeta for use by the surrounding module or function.
 const statusMeta = {
   healthy: { label: "Healthy", icon: CheckCircle2, classes: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   warning: { label: "Warning", icon: AlertTriangle, classes: "bg-amber-50 text-amber-700 border-amber-200" },
@@ -35,58 +48,92 @@ const statusMeta = {
   unknown: { label: "Unknown", icon: AlertTriangle, classes: "bg-slate-100 text-slate-600 border-slate-200" },
 };
 
+// Define StatusBadge; its parameters and body implement this operation.
 function StatusBadge({ value }) {
+  // Declare meta for use by the surrounding module or function.
   const meta = statusMeta[String(value || "unknown").toLowerCase()] || statusMeta.unknown;
+  // Declare Icon for use by the surrounding module or function.
   const Icon = meta.icon;
+  // Return the expression shown below to the caller.
   return <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${meta.classes}`}><Icon className="h-3.5 w-3.5" />{meta.label}</span>;
 }
 
+// Define formatUptime; its parameters and body implement this operation.
 function formatUptime(seconds) {
+  // Check the condition (!Number.isFinite(seconds) || seconds < 0) and run the matching branch.
   if (!Number.isFinite(seconds) || seconds < 0) return "—";
+  // Declare total for use by the surrounding module or function.
   const total = Math.floor(seconds);
+  // Declare days for use by the surrounding module or function.
   const days = Math.floor(total / 86400);
+  // Declare hours for use by the surrounding module or function.
   const hours = Math.floor((total % 86400) / 3600);
+  // Declare minutes for use by the surrounding module or function.
   const minutes = Math.floor((total % 3600) / 60);
+  // Check the condition (days) and run the matching branch.
   if (days) return `${days}d ${hours}h ${minutes}m`;
+  // Check the condition (hours) and run the matching branch.
   if (hours) return `${hours}h ${minutes}m`;
+  // Return the expression shown below to the caller.
   return `${minutes}m ${total % 60}s`;
 }
 
+// Define formatTime; its parameters and body implement this operation.
 function formatTime(value) {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "—";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Check the condition (Number.isNaN(date.getTime())) and run the matching branch.
   if (Number.isNaN(date.getTime())) return "—";
+  // Return the result of new Intl.DateTimeFormat("en-KE", { timeZone: "Africa/Nairobi", dateStyle: "medium", timeStyle: "medium" }).format() to the caller.
   return new Intl.DateTimeFormat("en-KE", { timeZone: "Africa/Nairobi", dateStyle: "medium", timeStyle: "medium" }).format(date);
 }
 
+// Define MetricCard; its parameters and body implement this operation.
 function MetricCard({ icon: Icon, label, value, detail, tone = "slate" }) {
+  // Declare tones for use by the surrounding module or function.
   const tones = {
     emerald: "border-emerald-200 bg-emerald-50/70 text-emerald-700",
     blue: "border-blue-200 bg-blue-50/70 text-blue-700",
     amber: "border-amber-200 bg-amber-50/70 text-amber-700",
     slate: "border-slate-200 bg-slate-50 text-slate-700",
   };
+  // Return the expression shown below to the caller.
   return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p><p className="mt-2 text-2xl font-black tracking-tight text-slate-950">{value}</p>{detail && <p className="mt-1 text-xs text-slate-500">{detail}</p>}</div><div className={`rounded-xl border p-3 ${tones[tone]}`}><Icon className="h-5 w-5" /></div></div></div>;
 }
 
+// Define DetailRow; its parameters and body implement this operation.
 function DetailRow({ label, value }) {
+  // Return the expression shown below to the caller.
   return <div className="flex items-center justify-between gap-4 border-b border-slate-100 py-3 last:border-0"><span className="text-sm text-slate-500">{label}</span><strong className="max-w-[65%] break-words text-right text-sm font-semibold text-slate-900">{value ?? "—"}</strong></div>;
 }
 
+// Define SuperAdminSystem; its parameters and body implement this operation.
 export default function SuperAdminSystem() {
+  // Declare { data, isLoading, isError, error, refetch, isFetching } for use by the surrounding module or function.
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["system-health"], queryFn: getSystemHealth, refetchInterval: 10000 });
 
+  // Declare system for use by the surrounding module or function.
   const system = useMemo(() => normalizeSystemHealth(data), [data]);
+  // Declare databaseHealthy for use by the surrounding module or function.
   const databaseHealthy = String(system.database?.status || "").toLowerCase() === "connected" || system.database?.connected === true;
+  // Declare overallHealthy for use by the surrounding module or function.
   const overallHealthy = String(system.status).toLowerCase() === "healthy";
+  // Declare heapPercent for use by the surrounding module or function.
   const heapPercent = Number(system.memory.heapPercent);
+  // Declare memoryKnown for use by the surrounding module or function.
   const memoryKnown = Number.isFinite(heapPercent);
+  // Declare healthScore for use by the surrounding module or function.
   const healthScore = overallHealthy ? (databaseHealthy && (!memoryKnown || heapPercent < 90) ? 100 : 90) : databaseHealthy ? 70 : 25;
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <div className="min-h-full bg-slate-50 p-6 lg:p-8"><div className="mx-auto max-w-[1600px] animate-pulse space-y-6"><div className="h-32 rounded-3xl bg-slate-200" /><div className="grid gap-4 md:grid-cols-3"><div className="h-28 rounded-2xl bg-slate-200" /><div className="h-28 rounded-2xl bg-slate-200" /><div className="h-28 rounded-2xl bg-slate-200" /></div><div className="h-72 rounded-2xl bg-slate-200" /></div></div>;
 
+  // Check the condition (isError) and run the matching branch.
   if (isError) return <div className="min-h-full bg-slate-50 p-6 lg:p-8"><div className="mx-auto max-w-[1600px] rounded-3xl border border-rose-200 bg-white p-8 shadow-sm"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600"><XCircle className="h-6 w-6" /></div><h1 className="mt-5 text-2xl font-black text-slate-950">System health is unavailable</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">The health service could not be reached. No service is assumed healthy when the health endpoint fails.</p><p className="mt-2 text-xs text-rose-600">{error?.message || "Unknown error"}</p><button onClick={() => refetch()} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800"><RefreshCw className="h-4 w-4" />Retry</button></div></div>;
 
+  // Return the expression shown below to the caller.
   return <div className="min-h-full bg-slate-50 p-6 lg:p-8">
     <div className="mx-auto max-w-[1600px] space-y-6">
       <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6 text-white shadow-xl lg:p-8">

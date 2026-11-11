@@ -1,26 +1,50 @@
+/**
+ * Purpose: Operations Action Center reusable UI component. Main declarations: money, OperationsActionCenter, refresh, run, FormCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { Building2, CircleDollarSign, FilePlus2, Handshake, Receipt, Send } from "lucide-react";
+// Load ../../api/operationsModuleApi so this module can use its exported dependencies.
 import { createCorporateAccount, createPurchaseOrder, createSupplier, createSupplierPayable, createTourCost, paySupplierPayable, reconcileCorporateAccount, transitionPurchaseOrder } from "../../api/operationsModuleApi";
 
+// Declare input for use by the surrounding module or function.
 const input = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
+// Declare btn for use by the surrounding module or function.
 const btn = "rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-50";
+// Declare money for use by the surrounding module or function.
 const money = (v) => Number(v || 0);
 
+// Define OperationsActionCenter; its parameters and body implement this operation.
 export default function OperationsActionCenter({ suppliers = [], purchaseOrders = [], payables = [], corporate = [] }) {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare refresh for use by the surrounding module or function.
   const refresh = () => ["operations-suppliers", "operations-purchase-orders", "operations-tour-costs", "operations-payables", "operations-corporate", "operations-overview"].forEach((key) => qc.invalidateQueries({ queryKey: [key] }));
+  // Declare [notice, setNotice] for use by the surrounding module or function.
   const [notice, setNotice] = useState("");
+  // Declare run for use by the surrounding module or function.
   const run = (fn) => ({ mutationFn: fn, onSuccess: () => { setNotice("Saved successfully."); refresh(); }, onError: (e) => setNotice(e?.response?.data?.message || e?.message || "Unable to save record.") });
+  // Declare supplierMutation for use by the surrounding module or function.
   const supplierMutation = useMutation(run(createSupplier));
+  // Declare corporateMutation for use by the surrounding module or function.
   const corporateMutation = useMutation(run(createCorporateAccount));
+  // Declare poMutation for use by the surrounding module or function.
   const poMutation = useMutation(run(createPurchaseOrder));
+  // Declare costMutation for use by the surrounding module or function.
   const costMutation = useMutation(run(createTourCost));
+  // Declare payableMutation for use by the surrounding module or function.
   const payableMutation = useMutation(run(createSupplierPayable));
+  // Declare payMutation for use by the surrounding module or function.
   const payMutation = useMutation({ mutationFn: ({ id, amount, paymentReference }) => paySupplierPayable(id, amount, paymentReference), onSuccess: () => { setNotice("Supplier payment recorded."); refresh(); }, onError: (e) => setNotice(e?.response?.data?.message || e?.message || "Unable to record payment.") });
+  // Declare poStatusMutation for use by the surrounding module or function.
   const poStatusMutation = useMutation({ mutationFn: ({ id, status }) => transitionPurchaseOrder(id, status), onSuccess: () => { setNotice("Purchase order status updated."); refresh(); }, onError: (e) => setNotice(e?.response?.data?.message || e?.message || "Unable to update purchase order.") });
+  // Declare reconcileMutation for use by the surrounding module or function.
   const reconcileMutation = useMutation({ mutationFn: reconcileCorporateAccount, onSuccess: () => { setNotice("Corporate account reconciled."); refresh(); }, onError: (e) => setNotice(e?.response?.data?.message || e?.message || "Unable to reconcile account.") });
 
+  // Return the expression shown below to the caller.
   return <section className="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
     <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Operations workspace</p><h2 className="text-xl font-bold">Create, update & settle operational records</h2><p className="mt-1 text-sm text-slate-500">The dashboard is not read-only: supplier, procurement, costing, payable and corporate workflows are available here.</p></div>{notice && <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">{notice}</div>}</div>
     <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -33,10 +57,17 @@ export default function OperationsActionCenter({ suppliers = [], purchaseOrders 
     </div>
   </section>;
 }
+// Define FormCard; its parameters and body implement this operation.
 function FormCard({icon:Icon,title,children}){return <div className="rounded-2xl border border-slate-200 p-5"><div className="mb-4 flex items-center gap-2"><Icon size={18} className="text-emerald-700"/><h3 className="font-bold">{title}</h3></div>{children}</div>}
+// Define Form; its parameters and body implement this operation.
 function Form({children,onSubmit,busy,submit}){return <form onSubmit={onSubmit} className="space-y-3">{children}<button className={btn} disabled={busy}>{busy?"Saving…":submit}</button></form>}
+// Define Field; its parameters and body implement this operation.
 function Field({name,label,type="text",required,min,step,defaultValue}){return <label className="block text-xs font-semibold text-slate-600">{label}<input className={input} name={name} type={type} required={required} min={min} step={step} defaultValue={defaultValue}/></label>}
+// Define Select; its parameters and body implement this operation.
 function Select({name,label,options,labels={},required}){return <label className="block text-xs font-semibold text-slate-600">{label}<select className={input} name={name} required={required} defaultValue={options[0]}>{options.map(v=><option key={v} value={v}>{labels[v]||v.replaceAll("_"," ")}</option>)}</select></label>}
+// Define PayableAction; its parameters and body implement this operation.
 function PayableAction({payables,onPay,busy}){const [id,setId]=useState(""); const [amount,setAmount]=useState(""); const [ref,setRef]=useState(""); return <div className="rounded-xl bg-slate-50 p-4"><p className="mb-2 text-sm font-bold">Record supplier payment</p><select className={input} value={id} onChange={e=>{setId(e.target.value);const p=payables.find(x=>x._id===e.target.value);setAmount(p?.balance||"")}}><option value="">Select payable</option>{payables.filter(p=>Number(p.balance||0)>0).map(p=><option key={p._id} value={p._id}>{p.payableNumber||p._id.slice(-8)} · {p.supplier?.legalName||"Supplier"} · KES {money(p.balance).toLocaleString()}</option>)}</select><div className="mt-2 grid grid-cols-2 gap-2"><input className={input} type="number" min="0.01" step="0.01" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="Amount"/><input className={input} value={ref} onChange={e=>setRef(e.target.value)} placeholder="Payment reference"/></div><button type="button" className={`mt-2 ${btn}`} disabled={!id||!amount||busy} onClick={()=>onPay({id,amount:Number(amount),paymentReference:ref})}>Record payment</button></div>}
+// Define StatusAction; its parameters and body implement this operation.
 function StatusAction({rows,onChange,busy}){const [id,setId]=useState(""); const [status,setStatus]=useState("submitted"); return <div className="rounded-xl bg-slate-50 p-4"><p className="mb-2 text-sm font-bold">Update purchase order status</p><select className={input} value={id} onChange={e=>setId(e.target.value)}><option value="">Select purchase order</option>{rows.map(x=><option key={x._id} value={x._id}>{x.poNumber||x._id.slice(-8)} · {x.supplier?.legalName||"Supplier"}</option>)}</select><div className="mt-2 flex gap-2"><select className={input} value={status} onChange={e=>setStatus(e.target.value)}>{["draft","submitted","approved","partially_received","received","cancelled"].map(x=><option key={x}>{x}</option>)}</select><button type="button" className={btn} disabled={!id||busy} onClick={()=>onChange({id,status})}>Update</button></div></div>}
+// Define CorporateAction; its parameters and body implement this operation.
 function CorporateAction({rows,onReconcile,busy}){const [id,setId]=useState(""); return <div className="rounded-xl bg-slate-50 p-4"><p className="mb-2 text-sm font-bold">Reconcile corporate account</p><select className={input} value={id} onChange={e=>setId(e.target.value)}><option value="">Select corporate account</option>{rows.map(x=><option key={x._id} value={x._id}>{x.companyName} · KES {money(x.currentBalance).toLocaleString()}</option>)}</select><button type="button" className={`mt-2 ${btn}`} disabled={!id||busy} onClick={()=>onReconcile(id)}>Reconcile balance</button></div>}

@@ -1,5 +1,10 @@
+/**
+ * Purpose: security Monitor request middleware. Main declarations: securityMonitor.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/middleware/securityMonitor.js
 
+// Load ../models/SecurityLog.js so this module can use its exported dependencies.
 import SecurityLog from "../models/SecurityLog.js";
 
 /*
@@ -11,7 +16,9 @@ import SecurityLog from "../models/SecurityLog.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare securityMonitor for use by the surrounding module or function.
 const securityMonitor = async (req, res, next) => {
+    // Run this operation with a dedicated error-handling path for failures.
     try {
         /*
         |--------------------------------------------------------------------------
@@ -19,6 +26,7 @@ const securityMonitor = async (req, res, next) => {
         |--------------------------------------------------------------------------
         */
 
+        // Declare requestData for use by the surrounding module or function.
         const requestData = JSON.stringify({
             body: req.body,
             params: req.params,
@@ -31,6 +39,7 @@ const securityMonitor = async (req, res, next) => {
         |--------------------------------------------------------------------------
         */
 
+        // Declare suspiciousPatterns for use by the surrounding module or function.
         const suspiciousPatterns = [
             /<script/i,
             /<\/script>/i,
@@ -54,6 +63,7 @@ const securityMonitor = async (req, res, next) => {
             /;.*(rm|cat|wget|curl|chmod|sudo)/i,
         ];
 
+        // Declare detectedPattern for use by the surrounding module or function.
         const detectedPattern = suspiciousPatterns.find((regex) =>
             regex.test(requestData)
         );
@@ -64,7 +74,9 @@ const securityMonitor = async (req, res, next) => {
         |--------------------------------------------------------------------------
         */
 
+        // Check the condition (detectedPattern) and run the matching branch.
         if (detectedPattern) {
+            // Perform the side effect or state update expressed on the following line.
             await SecurityLog.create({
                 action: "suspicious_request",
 
@@ -85,10 +97,13 @@ const securityMonitor = async (req, res, next) => {
             });
         }
 
+        // Perform the side effect or state update expressed on the following line.
         next();
     } catch (error) {
+        // Perform the side effect or state update expressed on the following line.
         console.error("Security Monitor Error:", error.message);
 
+        // Perform the side effect or state update expressed on the following line.
         next();
     }
 };

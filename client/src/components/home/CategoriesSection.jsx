@@ -1,9 +1,18 @@
+/**
+ * Purpose: Categories Section reusable UI component. Main declarations: CategoriesSection.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect, useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load react-icons/fa6 so this module can use its exported dependencies.
 import { FaBinoculars, FaUmbrellaBeach, FaMountain, FaPeopleGroup, FaMap, FaWater, FaLandmark } from "react-icons/fa6";
+// Load lucide-react so this module can use its exported dependencies.
 import { ArrowRight } from "lucide-react";
+// Load ../../api/categoryApi so this module can use its exported dependencies.
 import { getCategories } from "../../api/categoryApi";
 
+// Declare DEFAULT_EXPERIENCES for use by the surrounding module or function.
 const DEFAULT_EXPERIENCES = [
   { _id: "default-safari", name: "Safari Adventures", slug: "safari", icon: "Binoculars", description: "Wildlife safaris, game drives and unforgettable national park experiences." },
   { _id: "default-beach", name: "Beach Holidays", slug: "beach", icon: "Beach", description: "Relax on Kenya's coast with beautiful beaches, islands and ocean escapes." },
@@ -11,22 +20,32 @@ const DEFAULT_EXPERIENCES = [
   { _id: "default-culture", name: "Cultural Experiences", slug: "culture", icon: "Landmark", description: "Discover Kenyan heritage, communities, traditions and authentic local culture." },
 ];
 
+// Declare iconMap for use by the surrounding module or function.
 const iconMap = { Binoculars: FaBinoculars, Beach: FaUmbrellaBeach, Mountain: FaMountain, People: FaPeopleGroup, Map: FaMap, Waves: FaWater, Landmark: FaLandmark };
 
+// Define CategoriesSection; its parameters and body implement this operation.
 export default function CategoriesSection() {
+  // Declare [categories, setCategories] for use by the surrounding module or function.
   const [categories, setCategories] = useState(DEFAULT_EXPERIENCES);
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Declare mounted for use by the surrounding module or function.
     let mounted = true;
+    // Perform the side effect or state update expressed on the following line.
     getCategories()
       .then((data) => {
+        // Declare remote for use by the surrounding module or function.
         const remote = Array.isArray(data) ? data : Array.isArray(data?.categories) ? data.categories : [];
+        // Check the condition (mounted && remote.length) and run the matching branch.
         if (mounted && remote.length) setCategories(remote);
       })
       .catch((error) => console.warn("Travel experiences unavailable; using homepage defaults.", error));
+    // Return the expression shown below to the caller.
     return () => { mounted = false; };
   }, []);
 
+  // Return the expression shown below to the caller.
   return (
     <section
       className="hmt-traveller-experiences !m-0 !w-full !rounded-none !border-0 !bg-[#12372a] px-5 py-14 text-white shadow-none sm:px-8 md:py-20"

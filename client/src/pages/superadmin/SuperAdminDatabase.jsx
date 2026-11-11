@@ -1,21 +1,36 @@
+/**
+ * Purpose: Super Admin Database page-level UI component. Main declarations: formatDate, valueOrDash, StatusCard, IdentityRow, SuperAdminDatabase.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   AlertTriangle, Archive, CheckCircle2, Database, Download, HardDrive,
   Loader2, RefreshCw, Server, ShieldCheck, Trash2, XCircle, Zap,
 } from "lucide-react";
+// Load ../../api/axios so this module can use its exported dependencies.
 import axios from "../../api/axios";
+// Load ../../api/superAdminApi so this module can use its exported dependencies.
 import { getDatabaseStatus } from "../../api/superAdminApi";
 
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "—";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Return the expression shown below to the caller.
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString();
 };
 
+// Declare valueOrDash for use by the surrounding module or function.
 const valueOrDash = (value) => value === null || value === undefined || value === "" ? "—" : String(value);
 
+// Define StatusCard; its parameters and body implement this operation.
 function StatusCard({ icon: Icon, label, value, tone, detail, compact }) {
+  // Declare tones for use by the surrounding module or function.
   const tones = {
     emerald: "border-emerald-200 bg-emerald-50 text-emerald-700",
     rose: "border-rose-200 bg-rose-50 text-rose-700",
@@ -24,6 +39,7 @@ function StatusCard({ icon: Icon, label, value, tone, detail, compact }) {
     violet: "border-violet-200 bg-violet-50 text-violet-700",
     amber: "border-amber-200 bg-amber-50 text-amber-700",
   };
+  // Return the expression shown below to the caller.
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
@@ -35,15 +51,22 @@ function StatusCard({ icon: Icon, label, value, tone, detail, compact }) {
   );
 }
 
+// Define IdentityRow; its parameters and body implement this operation.
 function IdentityRow({ label, value }) {
+  // Return the expression shown below to the caller.
   return <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-3 last:border-0 last:pb-0"><span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</span><span className="max-w-[65%] break-words text-right text-sm font-semibold text-white">{value}</span></div>;
 }
 
+// Define SuperAdminDatabase; its parameters and body implement this operation.
 export default function SuperAdminDatabase() {
+  // Declare [busyAction, setBusyAction] for use by the surrounding module or function.
   const [busyAction, setBusyAction] = useState("");
+  // Declare [actionError, setActionError] for use by the surrounding module or function.
   const [actionError, setActionError] = useState("");
 
+  // Declare databaseQuery for use by the surrounding module or function.
   const databaseQuery = useQuery({ queryKey: ["database-status"], queryFn: getDatabaseStatus, refetchInterval: 30000, retry: 1 });
+  // Declare backupsQuery for use by the surrounding module or function.
   const backupsQuery = useQuery({
     queryKey: ["platform-database-backups"],
     queryFn: async () => (await axios.get("/superadmin/database/backups")).data,
@@ -51,52 +74,84 @@ export default function SuperAdminDatabase() {
     retry: 1,
   });
 
+  // Declare backups for use by the surrounding module or function.
   const backups = useMemo(() => {
+    // Check the condition (!Array.isArray(backupsQuery.data?.backups)) and run the matching branch.
     if (!Array.isArray(backupsQuery.data?.backups)) return [];
+    // Return the result of [...backupsQuery.data.backups].sort() to the caller.
     return [...backupsQuery.data.backups].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }, [backupsQuery.data]);
 
+  // Declare database for use by the surrounding module or function.
   const database = databaseQuery.data?.database || {};
+  // Declare connected for use by the surrounding module or function.
   const connected = String(database.status || "").toLowerCase() === "connected";
+  // Declare backupTelemetryAvailable for use by the surrounding module or function.
   const backupTelemetryAvailable = Array.isArray(backupsQuery.data?.backups);
+  // Declare databaseTelemetryError for use by the surrounding module or function.
   const databaseTelemetryError = databaseQuery.isError && !databaseQuery.data;
+  // Declare backupTelemetryError for use by the surrounding module or function.
   const backupTelemetryError = backupsQuery.isError && !backupTelemetryAvailable;
+  // Declare hasTelemetryError for use by the surrounding module or function.
   const hasTelemetryError = databaseTelemetryError || backupTelemetryError;
+  // Declare hasRefreshWarning for use by the surrounding module or function.
   const hasRefreshWarning = backupsQuery.isError && backupTelemetryAvailable;
 
+  // Declare runAction for use by the surrounding module or function.
   const runAction = async (url, label) => {
+    // Perform the side effect or state update expressed on the following line.
     setBusyAction(label); setActionError("");
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Declare response for use by the surrounding module or function.
       const response = await axios.post(url);
+      // Perform the side effect or state update expressed on the following line.
       await Promise.all([databaseQuery.refetch(), backupsQuery.refetch()]);
+      // Perform the side effect or state update expressed on the following line.
       window.alert(response.data?.message || `${label} completed successfully.`);
     } catch (error) {
+      // Perform the side effect or state update expressed on the following line.
       setActionError(error.response?.data?.message || `Unable to ${label.toLowerCase()}.`);
     } finally { setBusyAction(""); }
   };
 
+  // Declare removeBackup for use by the surrounding module or function.
   const removeBackup = async (id) => {
+    // Check the condition (!id || !window.confirm("Delete this database backup permanently?")) and run the matching branch.
     if (!id || !window.confirm("Delete this database backup permanently?")) return;
+    // Perform the side effect or state update expressed on the following line.
     setBusyAction(`delete:${id}`); setActionError("");
+    // Run this operation with a dedicated error-handling path for failures.
     try { await axios.delete(`/superadmin/database/backups/${id}`); await backupsQuery.refetch(); }
+    // Handle the error raised by the preceding protected operation.
     catch (error) { setActionError(error.response?.data?.message || "Unable to delete the selected backup."); }
     finally { setBusyAction(""); }
   };
 
+  // Declare downloadBackup for use by the surrounding module or function.
   const downloadBackup = async (backup) => {
+    // Check the condition (!backup?._id) and run the matching branch.
     if (!backup?._id) return;
+    // Perform the side effect or state update expressed on the following line.
     setBusyAction(`download:${backup._id}`); setActionError("");
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Declare response for use by the surrounding module or function.
       const response = await axios.get(`/superadmin/database/backup/${backup._id}/download`, { responseType: "blob" });
+      // Declare url for use by the surrounding module or function.
       const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Declare link for use by the surrounding module or function.
       const link = document.createElement("a"); link.href = url; link.download = backup.file || `database-backup-${backup._id}.json`;
+      // Perform the side effect or state update expressed on the following line.
       document.body.appendChild(link); link.click(); link.remove(); window.URL.revokeObjectURL(url);
     } catch (error) { setActionError(error.response?.data?.message || "Unable to download the selected backup."); }
     finally { setBusyAction(""); }
   };
 
+  // Declare refreshAll for use by the surrounding module or function.
   const refreshAll = () => { databaseQuery.refetch(); backupsQuery.refetch(); };
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 text-white">

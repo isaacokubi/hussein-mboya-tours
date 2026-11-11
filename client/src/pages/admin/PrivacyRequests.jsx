@@ -1,31 +1,59 @@
+/**
+ * Purpose: Privacy Requests page-level UI component. Main declarations: clean, requester, formatDate, nextStatuses, PrivacyRequests.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { CheckCircle2, Clock3, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/privacyApi so this module can use its exported dependencies.
 import { getPrivacyRequests, updatePrivacyRequest } from "../../api/privacyApi";
 
+// Declare STATUSES for use by the surrounding module or function.
 const STATUSES = ["received", "identity_verification", "in_progress", "completed", "rejected", "cancelled"];
+// Declare TYPES for use by the surrounding module or function.
 const TYPES = { access: "Access", correction: "Correction", deletion: "Deletion", portability: "Portability", objection: "Objection", restriction: "Restriction" };
+// Declare STATUS_LABELS for use by the surrounding module or function.
 const STATUS_LABELS = { received: "Received", identity_verification: "Identity verification", in_progress: "In progress", completed: "Completed", rejected: "Rejected", cancelled: "Cancelled" };
+// Declare clean for use by the surrounding module or function.
 const clean = (value) => {
+  // Declare text for use by the surrounding module or function.
   const text = String(value ?? "").trim().replace(/\s+/g, " ");
+  // Return the expression shown below to the caller.
   return text && !/^undefined( undefined)?$/i.test(text) && !/^null( null)?$/i.test(text) ? text : "";
 };
+// Declare requester for use by the surrounding module or function.
 const requester = (r) => {
+  // Declare person for use by the surrounding module or function.
   const person = r?.requester || r?.customer || r?.user || {};
+  // Declare personName for use by the surrounding module or function.
   const personName = clean(person?.name) || clean(person?.fullName) || `${clean(person?.firstName)} ${clean(person?.lastName)}`.trim();
+  // Declare snapshotName for use by the surrounding module or function.
   const snapshotName = clean(r?.requesterName) || `${clean(r?.requesterFirstName)} ${clean(r?.requesterLastName)}`.trim();
+  // Declare name for use by the surrounding module or function.
   const name = personName || snapshotName || "Requester";
+  // Declare email for use by the surrounding module or function.
   const email = clean(person?.email) || clean(r?.requesterEmail);
+  // Declare phone for use by the surrounding module or function.
   const phone = clean(person?.phone) || clean(r?.requesterPhone);
+  // Return the object assembled below to the caller.
   return { name, email, phone };
 };
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value, withTime = false) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "—";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Check the condition (Number.isNaN(date.getTime())) and run the matching branch.
   if (Number.isNaN(date.getTime())) return "—";
+  // Return the result of date.toLocaleString() to the caller.
   return date.toLocaleString(undefined, withTime ? {} : { year: "numeric", month: "numeric", day: "numeric" });
 };
+// Declare nextStatuses for use by the surrounding module or function.
 const nextStatuses = (status) => ({
   received: ["identity_verification", "in_progress", "rejected", "cancelled"],
   identity_verification: ["in_progress", "rejected", "cancelled"],
@@ -35,31 +63,49 @@ const nextStatuses = (status) => ({
   cancelled: [],
 }[status] || []);
 
+// Define PrivacyRequests; its parameters and body implement this operation.
 export default function PrivacyRequests() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [filter, setFilter] for use by the surrounding module or function.
   const [filter, setFilter] = useState("");
+  // Declare [selected, setSelected] for use by the surrounding module or function.
   const [selected, setSelected] = useState(null);
+  // Declare [resolutionNotes, setResolutionNotes] for use by the surrounding module or function.
   const [resolutionNotes, setResolutionNotes] = useState("");
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({ queryKey: ["privacy-requests"], queryFn: () => getPrivacyRequests(), staleTime: 15000 });
+  // Declare allRequests for use by the surrounding module or function.
   const allRequests = Array.isArray(query.data?.data) ? query.data.data : Array.isArray(query.data) ? query.data : [];
+  // Declare requests for use by the surrounding module or function.
   const requests = useMemo(() => {
+    // Check the condition (!filter) and run the matching branch.
     if (!filter) return allRequests;
+    // Return the result of allRequests.filter() to the caller.
     return allRequests.filter((r) => String(r?.status || "").toLowerCase() === filter);
   }, [allRequests, filter]);
+  // Declare mutation for use by the surrounding module or function.
   const mutation = useMutation({
     mutationFn: ({ id, payload }) => updatePrivacyRequest(id, payload),
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["privacy-requests"] });
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Privacy request updated successfully.");
     },
     onError: (e) => toast.error(e?.response?.data?.message || "Unable to update privacy request."),
   });
+  // Declare summary for use by the surrounding module or function.
   const summary = useMemo(() => STATUSES.reduce((acc, status) => ({ ...acc, [status]: allRequests.filter((r) => String(r?.status || "").toLowerCase() === status).length }), {}), [allRequests]);
+  // Declare selectRequest for use by the surrounding module or function.
   const selectRequest = (request) => {
+    // Perform the side effect or state update expressed on the following line.
     setSelected(request);
+    // Perform the side effect or state update expressed on the following line.
     setResolutionNotes(clean(request?.resolutionNotes));
   };
 
+  // Return the expression shown below to the caller.
   return <div className="admin-control-center min-h-screen bg-[var(--tenant-background,#f8fafc)] p-4 text-[var(--tenant-text,#0f172a)] md:p-6"><div className="mx-auto max-w-7xl">
     <header className="mb-6 rounded-3xl bg-gradient-to-r from-slate-950 via-emerald-950 to-emerald-900 p-6 text-white shadow-xl"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-widest text-emerald-300">ODPC / Privacy governance</p><h1 className="mt-2 text-3xl font-bold">Data-subject requests</h1><p className="mt-2 max-w-3xl text-slate-300">Track access, correction, deletion, portability, objection and restriction requests with tenant-scoped deadlines, assignment and resolution notes.</p></div><button type="button" onClick={() => query.refetch()} disabled={query.isFetching} className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 disabled:opacity-60"><RefreshCw size={16}/>{query.isFetching ? "Refreshing..." : "Refresh"}</button></div></header>
     <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">{STATUSES.map((status) => <div key={status} className="admin-panel rounded-2xl p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{STATUS_LABELS[status]}</p><p className="mt-2 text-2xl font-black text-slate-900">{summary[status] || 0}</p></div>)}</div>

@@ -1,7 +1,14 @@
+/**
+ * Purpose: Itinerary database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/Itinerary.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -10,6 +17,7 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare activitySchema for use by the surrounding module or function.
 const activitySchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
@@ -86,6 +94,7 @@ const activitySchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Declare daySchema for use by the surrounding module or function.
 const daySchema = new mongoose.Schema(
   {
     dayNumber: {
@@ -119,6 +128,7 @@ const daySchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Declare itinerarySchema for use by the surrounding module or function.
 const itinerarySchema = new mongoose.Schema(
   {
     /*
@@ -227,7 +237,9 @@ const itinerarySchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 itinerarySchema.virtual("totalDays").get(function () {
+  // Return the length value to the caller.
   return this.days.length;
 });
 
@@ -238,18 +250,22 @@ itinerarySchema.virtual("totalDays").get(function () {
 */
 
 
+// Perform the side effect or state update expressed on the following line.
 itinerarySchema.index({
   status: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 itinerarySchema.index({
   createdBy: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 itinerarySchema.index({
   isDeleted: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 itinerarySchema.index({
   createdAt: -1,
 });
@@ -260,7 +276,9 @@ itinerarySchema.index({
 |--------------------------------------------------------------------------
 */
 
+// Declare tenantItinerarySchema for use by the surrounding module or function.
 const tenantItinerarySchema = itinerarySchema.plugin(tenantPlugin);
+// Declare Itinerary for use by the surrounding module or function.
 const Itinerary = mongoose.models.Itinerary || mongoose.model("Itinerary", tenantItinerarySchema);
 
 

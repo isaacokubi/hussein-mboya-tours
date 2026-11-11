@@ -1,9 +1,14 @@
+/**
+ * Purpose: email Templates server application module. Main declarations: bookingConfirmationEmail.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 /*
 |--------------------------------------------------------------------------
 | BOOKING CONFIRMATION EMAIL
 |--------------------------------------------------------------------------
 */
 
+// Declare bookingConfirmationEmail for use by the surrounding module or function.
 export const bookingConfirmationEmail = ({
   customerName,
   bookingNumber,
@@ -13,6 +18,7 @@ export const bookingConfirmationEmail = ({
   paymentMethod,
   companyName = "Global Tours",
 }) => {
+  // Return the expression shown below to the caller.
   return `
 <!DOCTYPE html>
 <html>

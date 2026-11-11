@@ -1,6 +1,13 @@
+/**
+ * Purpose: Custom Tour Request database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Declare schema for use by the surrounding module or function.
 const schema=new mongoose.Schema({
 
     tenantId:{
@@ -33,8 +40,11 @@ specialRequests:{type:String,default:""},
 bookingId:{type:mongoose.Schema.Types.ObjectId,ref:"Booking",default:null},
 paymentId:{type:mongoose.Schema.Types.ObjectId,default:null}},{timestamps:true});
 
+// Perform the side effect or state update expressed on the following line.
 schema.plugin(tenantPlugin);
+// Perform the side effect or state update expressed on the following line.
 schema.plugin(tenantAggregationPlugin);
+// Perform the side effect or state update expressed on the following line.
 schema.index({customer:1,createdAt:-1});
 
 

@@ -1,7 +1,14 @@
+/**
+ * Purpose: Quotation database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/Quotation.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -10,6 +17,7 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare quotationItemSchema for use by the surrounding module or function.
 const quotationItemSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
@@ -71,6 +79,7 @@ const quotationItemSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Declare quotationSchema for use by the surrounding module or function.
 const quotationSchema = new mongoose.Schema(
   {
     /*
@@ -289,8 +298,11 @@ const quotationSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 quotationSchema.pre("save", function (next) {
+  // Check the condition (!this.quotationNumber) and run the matching branch.
   if (!this.quotationNumber) {
+    // Perform the side effect or state update expressed on the following line.
     this.quotationNumber =
       "QT-" +
       Date.now() +
@@ -298,16 +310,19 @@ quotationSchema.pre("save", function (next) {
       Math.floor(Math.random() * 10000);
   }
 
+  // Perform the side effect or state update expressed on the following line.
   this.subtotal = this.items.reduce(
     (sum, item) => sum + item.total,
     0
   );
 
+  // Perform the side effect or state update expressed on the following line.
   this.grandTotal =
     this.subtotal +
     this.tax -
     this.discount;
 
+  // Perform the side effect or state update expressed on the following line.
   next();
 });
 
@@ -317,7 +332,9 @@ quotationSchema.pre("save", function (next) {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 quotationSchema.virtual("isExpired").get(function () {
+  // Return the expression shown below to the caller.
   return new Date() > this.validUntil;
 });
 
@@ -327,21 +344,33 @@ quotationSchema.virtual("isExpired").get(function () {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 quotationSchema.methods.markSent = function () {
+  // Perform the side effect or state update expressed on the following line.
   this.status = "sent";
+  // Perform the side effect or state update expressed on the following line.
   this.sentAt = new Date();
+  // Return the result of this.save() to the caller.
   return this.save();
 };
 
+// Perform the side effect or state update expressed on the following line.
 quotationSchema.methods.markApproved = function () {
+  // Perform the side effect or state update expressed on the following line.
   this.status = "approved";
+  // Perform the side effect or state update expressed on the following line.
   this.approvedAt = new Date();
+  // Return the result of this.save() to the caller.
   return this.save();
 };
 
+// Perform the side effect or state update expressed on the following line.
 quotationSchema.methods.markConverted = function (bookingId) {
+  // Perform the side effect or state update expressed on the following line.
   this.status = "converted";
+  // Perform the side effect or state update expressed on the following line.
   this.booking = bookingId;
+  // Return the result of this.save() to the caller.
   return this.save();
 };
 
@@ -351,20 +380,24 @@ quotationSchema.methods.markConverted = function (bookingId) {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 quotationSchema.index({
   customer: 1,
   status: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 quotationSchema.index({
   agent: 1,
   createdAt: -1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 quotationSchema.index({
   validUntil: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 quotationSchema.index({
   createdAt: -1,
 });
@@ -375,7 +408,9 @@ quotationSchema.index({
 |--------------------------------------------------------------------------
 */
 
+// Declare tenantQuotationSchema for use by the surrounding module or function.
 const tenantQuotationSchema = quotationSchema.plugin(tenantPlugin);
+// Declare Quotation for use by the surrounding module or function.
 const Quotation = mongoose.models.Quotation || mongoose.model("Quotation", tenantQuotationSchema);
 
 

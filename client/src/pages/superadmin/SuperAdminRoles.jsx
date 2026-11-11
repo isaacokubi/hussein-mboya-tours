@@ -1,13 +1,22 @@
+/**
+ * Purpose: Super Admin Roles page-level UI component. Main declarations: normalizeRoleName, permissionId, rolePresentation, SuperAdminRoles, openRole.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load ../../context/AuthContext so this module can use its exported dependencies.
 import { useAuth } from "../../context/AuthContext";
+// Load ../../utils/roleUtils so this module can use its exported dependencies.
 import { getUserRole } from "../../utils/roleUtils";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+// Load ../../api/superadmin/superAdminRoleApi so this module can use its exported dependencies.
 import {
   getSuperAdminRoles,
   getSuperAdminRole,
   getSuperAdminPermissions,
   updateSuperAdminRolePermissions,
 } from "../../api/superadmin/superAdminRoleApi";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   CheckCircle2,
   ChevronRight,
@@ -19,11 +28,16 @@ import {
   Users,
 } from "lucide-react";
 
+// Declare normalizeRoleName for use by the surrounding module or function.
 const normalizeRoleName = (role) => String(role?.name || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
+// Declare permissionId for use by the surrounding module or function.
 const permissionId = (permission) => typeof permission === "object" ? String(permission?._id || "") : String(permission || "");
 
+// Declare rolePresentation for use by the surrounding module or function.
 const rolePresentation = (role) => {
+  // Declare key for use by the surrounding module or function.
   const key = String(role?.name || "").trim().toLowerCase();
+  // Declare map for use by the surrounding module or function.
   const map = {
     super_admin: { label: "Super Admin", tone: "red", description: "Protected platform-wide governance role." },
     superadmin: { label: "Super Admin", tone: "red", description: "Protected platform-wide governance role." },
@@ -36,9 +50,11 @@ const rolePresentation = (role) => {
     driver: { label: "Driver", tone: "cyan", description: "Transport and assigned-trip operations." },
     customer: { label: "Customer", tone: "slate", description: "Customer self-service access." },
   };
+  // Return the expression shown below to the caller.
   return map[key] || { label: role?.displayName || role?.name || "Unnamed role", tone: "slate", description: role?.description || "Custom platform access role." };
 };
 
+// Declare toneClasses for use by the surrounding module or function.
 const toneClasses = {
   red: "border-red-200 bg-red-50 text-red-700",
   blue: "border-blue-200 bg-blue-50 text-blue-700",
@@ -51,64 +67,100 @@ const toneClasses = {
   slate: "border-slate-200 bg-slate-50 text-slate-700",
 };
 
+// Define SuperAdminRoles; its parameters and body implement this operation.
 export default function SuperAdminRoles() {
+  // Declare { user, hasPermission } for use by the surrounding module or function.
   const { user, hasPermission } = useAuth();
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [selectedRole, setSelectedRole] for use by the surrounding module or function.
   const [selectedRole, setSelectedRole] = useState(null);
+  // Declare [selectedPermissions, setSelectedPermissions] for use by the surrounding module or function.
   const [selectedPermissions, setSelectedPermissions] = useState([]);
+  // Declare [loadError, setLoadError] for use by the surrounding module or function.
   const [loadError, setLoadError] = useState("");
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
 
+  // Declare isSuperAdmin for use by the surrounding module or function.
   const isSuperAdmin = normalizeRoleName({ name: getUserRole(user) }) === "superadmin";
+  // Declare canManageRoles for use by the surrounding module or function.
   const canManageRoles = isSuperAdmin || hasPermission("roles.manage");
 
+  // Declare { data: roles = [], isLoading: rolesLoading, isError: rolesError, refetch: refetchRoles } for use by the surrounding module or function.
   const { data: roles = [], isLoading: rolesLoading, isError: rolesError, refetch: refetchRoles } = useQuery({
     queryKey: ["superadmin-rbac-roles"], queryFn: getSuperAdminRoles,
   });
+  // Declare { data: permissions = [], isLoading: permissionsLoading, isError: permissionsError } for use by the surrounding module or function.
   const { data: permissions = [], isLoading: permissionsLoading, isError: permissionsError } = useQuery({
     queryKey: ["superadmin-rbac-permissions"], queryFn: getSuperAdminPermissions,
   });
 
+  // Declare filteredRoles for use by the surrounding module or function.
   const filteredRoles = useMemo(() => {
+    // Declare term for use by the surrounding module or function.
     const term = search.trim().toLowerCase();
+    // Check the condition (!term) and run the matching branch.
     if (!term) return roles;
+    // Return the result of roles.filter() to the caller.
     return roles.filter((role) => `${role.name} ${role.displayName || ""} ${rolePresentation(role).label}`.toLowerCase().includes(term));
   }, [roles, search]);
 
+  // Declare updateRole for use by the surrounding module or function.
   const updateRole = useMutation({
     mutationFn: () => updateSuperAdminRolePermissions(selectedRole._id, selectedPermissions),
     onSuccess: async () => {
+      // Perform the side effect or state update expressed on the following line.
       await queryClient.invalidateQueries({ queryKey: ["superadmin-rbac-roles"] });
+      // Run this operation with a dedicated error-handling path for failures.
       try {
+        // Declare refreshed for use by the surrounding module or function.
         const refreshed = await getSuperAdminRole(selectedRole._id);
+        // Perform the side effect or state update expressed on the following line.
         setSelectedRole(refreshed);
+        // Perform the side effect or state update expressed on the following line.
         setSelectedPermissions((refreshed.permissions || []).map(permissionId));
+        // Perform the side effect or state update expressed on the following line.
         setLoadError("");
       } catch (error) {
+        // Perform the side effect or state update expressed on the following line.
         setLoadError(error?.response?.data?.message || "Permissions were saved, but the role could not be refreshed.");
       }
     },
     onError: (error) => setLoadError(error?.response?.data?.message || "Unable to update permissions."),
   });
 
+  // Check the condition (!canManageRoles) and run the matching branch.
   if (!canManageRoles) return <div className="min-h-[60vh] p-6 lg:p-8"><div className="mx-auto max-w-3xl rounded-2xl border border-red-200 bg-red-50 p-8 text-red-700 shadow-sm"><div className="flex items-start gap-4"><ShieldCheck className="mt-0.5" /><div><h2 className="text-lg font-bold">Access denied</h2><p className="mt-1">You do not have permission to manage platform roles.</p></div></div></div></div>;
 
+  // Declare openRole for use by the surrounding module or function.
   const openRole = async (role) => {
+    // Perform the side effect or state update expressed on the following line.
     setLoadError("");
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Declare fullRole for use by the surrounding module or function.
       const fullRole = await getSuperAdminRole(role._id);
+      // Perform the side effect or state update expressed on the following line.
       setSelectedRole(fullRole);
+      // Perform the side effect or state update expressed on the following line.
       setSelectedPermissions((fullRole.permissions || []).map(permissionId));
     } catch (error) { setLoadError(error?.response?.data?.message || "Unable to load role details."); }
   };
 
+  // Declare selectedIsSuperAdmin for use by the surrounding module or function.
   const selectedIsSuperAdmin = normalizeRoleName(selectedRole) === "superadmin";
+  // Declare togglePermission for use by the surrounding module or function.
   const togglePermission = (id) => {
+    // Check the condition (selectedIsSuperAdmin) and run the matching branch.
     if (selectedIsSuperAdmin) return;
+    // Declare normalizedId for use by the surrounding module or function.
     const normalizedId = String(id);
+    // Perform the side effect or state update expressed on the following line.
     setSelectedPermissions((previous) => previous.includes(normalizedId) ? previous.filter((permission) => permission !== normalizedId) : [...previous, normalizedId]);
   };
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-full bg-slate-50/70 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1500px] space-y-6">

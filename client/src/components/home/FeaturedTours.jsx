@@ -1,17 +1,33 @@
+/**
+ * Purpose: Featured Tours reusable UI component. Main declarations: FeaturedTours.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { getTourImage, TOUR_FALLBACK_IMAGES } from "../../utils/tourImage";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import { ArrowRight, Clock3, MapPin, Star } from "lucide-react";
+// Load ../../api/tourApi so this module can use its exported dependencies.
 import { getFeaturedTours } from "../../api/tourApi";
+// Load ../common/LazyImage so this module can use its exported dependencies.
 import LazyImage from "../common/LazyImage";
+// Load ../../context/TenantContext so this module can use its exported dependencies.
 import { useTenant } from "../../context/TenantContext";
 
+// Define FeaturedTours; its parameters and body implement this operation.
 export default function FeaturedTours() {
+  // Declare { tenant = {} } for use by the surrounding module or function.
   const { tenant = {} } = useTenant() || {};
+  // Declare tenantKey for use by the surrounding module or function.
   const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
+  // Declare { data, isLoading, isError, refetch } for use by the surrounding module or function.
   const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["featuredTours", tenantKey], queryFn: getFeaturedTours, staleTime: 1000 * 60 * 5 });
+  // Declare tours for use by the surrounding module or function.
   const tours = Array.isArray(data) ? data : [];
 
+  // Return the expression shown below to the caller.
   return (
     <section aria-labelledby="featured-tours-heading">
       <div className="mb-9 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

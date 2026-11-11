@@ -1,20 +1,28 @@
+/**
+ * Purpose: Manage Bookings page-level UI component. Main declarations: ManageBookings, Card.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import {
 useQuery,
 useMutation,
 useQueryClient
 } from "@tanstack/react-query";
 
+// Load ../../api/adminBookingApi so this module can use its exported dependencies.
 import {
 getBookings,
 updateBookingStatus
 } from "../../api/adminBookingApi";
 
 
+// Define ManageBookings; its parameters and body implement this operation.
 export default function ManageBookings(){
 
+// Declare queryClient for use by the surrounding module or function.
 const queryClient = useQueryClient();
 
 
+// Declare { data, isLoading } for use by the surrounding module or function.
 const {
 data,
 isLoading
@@ -27,12 +35,14 @@ queryFn:getBookings
 });
 
 
+// Declare statusMutation for use by the surrounding module or function.
 const statusMutation = useMutation({
 
 mutationFn:({id,status})=>
 updateBookingStatus(id,status),
 
 onSuccess:()=>{
+// Perform the side effect or state update expressed on the following line.
 queryClient.invalidateQueries(
 ["admin-bookings"]
 );
@@ -41,6 +51,7 @@ queryClient.invalidateQueries(
 });
 
 
+// Declare bookings for use by the surrounding module or function.
 const bookings =
 data?.data ||
 data?.bookings ||
@@ -49,8 +60,10 @@ data ||
 
 
 
+// Check the condition (isLoading) and run the matching branch.
 if(isLoading){
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="p-8">
@@ -63,6 +76,7 @@ Loading bookings...
 
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="p-6 space-y-6">
@@ -279,8 +293,10 @@ Confirm
 
 
 
+// Define Card; its parameters and body implement this operation.
 function Card({title,value}){
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="

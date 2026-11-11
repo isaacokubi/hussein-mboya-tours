@@ -1,7 +1,14 @@
+/**
+ * Purpose: Loyalty Card reusable UI component. Main declarations: LoyaltyCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Award, Star, Gift } from "lucide-react";
 
+// Define LoyaltyCard; its parameters and body implement this operation.
 export default function LoyaltyCard({ loyalty = {} }) {
+  // Declare tier for use by the surrounding module or function.
   const tier = loyalty.tier || "Bronze";
+  // Declare points for use by the surrounding module or function.
   const points = loyalty.points || 0;
 
   /*
@@ -10,6 +17,7 @@ export default function LoyaltyCard({ loyalty = {} }) {
   |--------------------------------------------------------------------------
   */
 
+  // Declare tiers for use by the surrounding module or function.
   const tiers = {
     Bronze: 1000,
     Silver: 3000,
@@ -17,13 +25,16 @@ export default function LoyaltyCard({ loyalty = {} }) {
     Platinum: 12000,
   };
 
+  // Declare nextTarget for use by the surrounding module or function.
   const nextTarget = tiers[tier] || 1000;
 
+  // Declare progress for use by the surrounding module or function.
   const progress = Math.min(
     (points / nextTarget) * 100,
     100
   );
 
+  // Return the expression shown below to the caller.
   return (
     <div
       className="

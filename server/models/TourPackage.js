@@ -1,8 +1,16 @@
+/**
+ * Purpose: Tour Package database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/TourPackage.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
+// Load slugify so this module can use its exported dependencies.
 import slugify from "slugify";
 
 /*
@@ -11,6 +19,7 @@ import slugify from "slugify";
 |--------------------------------------------------------------------------
 */
 
+// Declare imageSchema for use by the surrounding module or function.
 const imageSchema = new mongoose.Schema(
   {
 
@@ -49,6 +58,7 @@ const imageSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Declare itinerarySchema for use by the surrounding module or function.
 const itinerarySchema = new mongoose.Schema(
   {
     day: {
@@ -80,6 +90,7 @@ const itinerarySchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Declare seoSchema for use by the surrounding module or function.
 const seoSchema = new mongoose.Schema(
   {
     title: String,
@@ -99,6 +110,7 @@ const seoSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Declare tourPackageSchema for use by the surrounding module or function.
 const tourPackageSchema = new mongoose.Schema(
   {
     /*
@@ -399,8 +411,11 @@ const tourPackageSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.pre("validate", function (next) {
+  // Check the condition (this.title && !this.slug) and run the matching branch.
   if (this.title && !this.slug) {
+    // Perform the side effect or state update expressed on the following line.
     this.slug = slugify(this.title, {
       lower: true,
       strict: true,
@@ -408,6 +423,7 @@ tourPackageSchema.pre("validate", function (next) {
     });
   }
 
+  // Perform the side effect or state update expressed on the following line.
   next();
 });
 
@@ -417,20 +433,27 @@ tourPackageSchema.pre("validate", function (next) {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.virtual("customerPrice").get(function () {
+  // Check the condition (this.discountPrice) and run the matching branch.
   if (this.discountPrice) return this.discountPrice;
 
+  // Check the condition (this.discountPercentage > 0) and run the matching branch.
   if (this.discountPercentage > 0) {
+    // Return the expression shown below to the caller.
     return (
       this.basePrice -
       (this.basePrice * this.discountPercentage) / 100
     );
   }
 
+  // Return the base Price value to the caller.
   return this.basePrice;
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.virtual("isAvailable").get(function () {
+  // Return the expression shown below to the caller.
   return (
     this.availableSeats > 0 &&
     this.status === "active"
@@ -443,16 +466,21 @@ tourPackageSchema.virtual("isAvailable").get(function () {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.methods.bookSeats = function (count = 1) {
+  // Perform the side effect or state update expressed on the following line.
   this.availableSeats = Math.max(
     0,
     this.availableSeats - count
   );
 
+  // Check the condition (this.availableSeats === 0) and run the matching branch.
   if (this.availableSeats === 0) {
+    // Perform the side effect or state update expressed on the following line.
     this.status = "sold_out";
   }
 
+  // Return the result of this.save() to the caller.
   return this.save();
 };
 
@@ -464,42 +492,52 @@ tourPackageSchema.methods.bookSeats = function (count = 1) {
 
 
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.index({
   destination: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.index({
   category: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.index({
   status: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.index({
   featured: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.index({
   published: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.index({
   isDeleted: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.index({
   basePrice: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.index({
   averageRating: -1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.index({
   totalBookings: -1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 tourPackageSchema.index({
   title: "text",
   description: "text",
@@ -513,7 +551,9 @@ tourPackageSchema.index({
 |--------------------------------------------------------------------------
 */
 
+// Declare tenantTourPackageSchema for use by the surrounding module or function.
 const tenantTourPackageSchema = tourPackageSchema.plugin(tenantPlugin);
+// Declare TourPackage for use by the surrounding module or function.
 const TourPackage = mongoose.models.TourPackage || mongoose.model("TourPackage", tenantTourPackageSchema);
 
 

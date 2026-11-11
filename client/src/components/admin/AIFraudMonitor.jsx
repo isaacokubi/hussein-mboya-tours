@@ -1,8 +1,13 @@
+/**
+ * Purpose: AIFraud Monitor reusable UI component. Main declarations: AIFraudMonitor.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 export default function AIFraudMonitor({
 data={}
 }){
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="bg-white rounded-xl shadow p-6">

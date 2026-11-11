@@ -1,44 +1,86 @@
+/**
+ * Purpose: Operations Procurement page-level UI component. Main declarations: money, unwrap, statusClass, OperationsProcurement, refresh.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { Activity, AlertTriangle, Boxes, CheckCircle2, ClipboardCheck, FileText, RefreshCw, Truck, WalletCards, XCircle } from "lucide-react";
+// Load ../../api/operationsApi so this module can use its exported dependencies.
 import { getOperationsOverview } from "../../api/operationsApi";
+// Load ../../api/operationsModuleApi so this module can use its exported dependencies.
 import { getSuppliers, getPurchaseOrders, getTourCosts, getSupplierPayables, getCorporateAccounts } from "../../api/operationsModuleApi";
+// Load ../../components/admin/OperationsActionCenter so this module can use its exported dependencies.
 import OperationsActionCenter from "../../components/admin/OperationsActionCenter";
 
+// Declare money for use by the surrounding module or function.
 const money = (v) => `KES ${Number(v || 0).toLocaleString("en-KE", { maximumFractionDigits: 2 })}`;
+// Declare unwrap for use by the surrounding module or function.
 const unwrap = (v) => Array.isArray(v) ? v : (v?.items || v?.data || []);
+// Declare card for use by the surrounding module or function.
 const card = "rounded-2xl border border-slate-200 bg-white shadow-sm";
+// Declare statusClass for use by the surrounding module or function.
 const statusClass = (status) => {
+  // Declare value for use by the surrounding module or function.
   const value = String(status || "").toLowerCase();
+  // Check the condition (value === "confirmed" || value === "completed") and run the matching branch.
   if (value === "confirmed" || value === "completed") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  // Check the condition (value === "ongoing" || value === "assigned") and run the matching branch.
   if (value === "ongoing" || value === "assigned") return "bg-sky-50 text-sky-700 ring-sky-200";
+  // Check the condition (value === "pending") and run the matching branch.
   if (value === "pending") return "bg-amber-50 text-amber-700 ring-amber-200";
+  // Check the condition (value === "cancelled" || value === "refunded") and run the matching branch.
   if (value === "cancelled" || value === "refunded") return "bg-rose-50 text-rose-700 ring-rose-200";
+  // Return a configured text value to the caller.
   return "bg-slate-100 text-slate-600 ring-slate-200";
 };
 
+// Define OperationsProcurement; its parameters and body implement this operation.
 export default function OperationsProcurement() {
+  // Declare overview for use by the surrounding module or function.
   const overview = useQuery({ queryKey: ["operations-overview"], queryFn: getOperationsOverview, staleTime: 15000 });
+  // Declare suppliers for use by the surrounding module or function.
   const suppliers = useQuery({ queryKey: ["operations-suppliers"], queryFn: getSuppliers, staleTime: 15000 });
+  // Declare purchaseOrders for use by the surrounding module or function.
   const purchaseOrders = useQuery({ queryKey: ["operations-purchase-orders"], queryFn: getPurchaseOrders, staleTime: 15000 });
+  // Declare tourCosts for use by the surrounding module or function.
   const tourCosts = useQuery({ queryKey: ["operations-tour-costs"], queryFn: getTourCosts, staleTime: 15000 });
+  // Declare payables for use by the surrounding module or function.
   const payables = useQuery({ queryKey: ["operations-payables"], queryFn: getSupplierPayables, staleTime: 15000 });
+  // Declare corporate for use by the surrounding module or function.
   const corporate = useQuery({ queryKey: ["operations-corporate"], queryFn: getCorporateAccounts, staleTime: 15000 });
+  // Declare queries for use by the surrounding module or function.
   const queries = [overview, suppliers, purchaseOrders, tourCosts, payables, corporate];
+  // Declare refreshing for use by the surrounding module or function.
   const refreshing = queries.some((q) => q.isFetching);
+  // Declare refresh for use by the surrounding module or function.
   const refresh = async () => { await Promise.all(queries.map((q) => q.refetch())); };
+  // Declare o for use by the surrounding module or function.
   const o = overview.data?.data || overview.data || {};
+  // Declare p for use by the surrounding module or function.
   const p = o.procurement || {};
+  // Declare po for use by the surrounding module or function.
   const po = unwrap(purchaseOrders.data);
+  // Declare ps for use by the surrounding module or function.
   const ps = unwrap(suppliers.data);
+  // Declare tourCostRows for use by the surrounding module or function.
   const tourCostRows = unwrap(tourCosts.data);
+  // Declare payableRows for use by the surrounding module or function.
   const payableRows = unwrap(payables.data);
+  // Declare corporateRows for use by the surrounding module or function.
   const corporateRows = unwrap(corporate.data);
+  // Declare committedPoStatuses for use by the surrounding module or function.
   const committedPoStatuses = new Set(["submitted", "approved", "partially_received", "received"]);
+  // Declare fallbackPoValue for use by the surrounding module or function.
   const fallbackPoValue = po.filter((item) => committedPoStatuses.has(String(item.status || "").toLowerCase())).reduce((sum, item) => sum + Number(item.totalAmount || 0), 0);
+  // Declare fallbackPayables for use by the surrounding module or function.
   const fallbackPayables = payableRows.reduce((sum, item) => sum + Number(item.balance || 0), 0);
+  // Declare fallbackTourCosts for use by the surrounding module or function.
   const fallbackTourCosts = tourCostRows.filter((item) => String(item.status || "").toLowerCase() !== "cancelled").reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
+  // Declare fallbackCorporateExposure for use by the surrounding module or function.
   const fallbackCorporateExposure = corporateRows.filter((item) => String(item.status || "").toLowerCase() === "active").reduce((sum, item) => sum + Number(item.currentBalance || 0), 0);
+  // Declare upcoming for use by the surrounding module or function.
   const upcoming = (Array.isArray(o.schedule) ? o.schedule : []).filter((b) => b?.tour?.title || b?.customTourRequest?.destination || b?.customTourRequest?.title);
+  // Declare failedModules for use by the surrounding module or function.
   const failedModules = [
     ["overview", overview],
     ["suppliers", suppliers],
@@ -48,6 +90,7 @@ export default function OperationsProcurement() {
     ["corporate accounts", corporate],
   ].filter(([, q]) => q.isError).map(([name]) => name);
 
+  // Return the expression shown below to the caller.
   return <main className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100">
     <div className="mx-auto max-w-[1550px] px-4 py-6 sm:px-6 lg:px-8">
       <header className="overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 p-6 text-white shadow-xl sm:p-8">
@@ -90,6 +133,9 @@ export default function OperationsProcurement() {
   </main>;
 }
 
+// Declare Kpi for use by the surrounding module or function.
 const Kpi = ({ icon: Icon, label, value, tone }) => { const tones = { sky: "border-sky-200 bg-gradient-to-br from-sky-50 to-white text-sky-700", indigo: "border-indigo-200 bg-gradient-to-br from-indigo-50 to-white text-indigo-700", violet: "border-violet-200 bg-gradient-to-br from-violet-50 to-white text-violet-700", emerald: "border-emerald-200 bg-gradient-to-br from-emerald-50 to-white text-emerald-700" }; return <div className={`rounded-2xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${tones[tone]}`}><Icon size={18}/><p className="mt-3 text-2xl font-black text-slate-950">{value}</p><p className="mt-1 text-[10px] font-black uppercase tracking-[.14em] text-slate-500">{label}</p></div>; };
+// Declare Mini for use by the surrounding module or function.
 const Mini = ({ title, value, tone }) => { const tones = { sky: "ring-sky-200", indigo: "ring-indigo-200", violet: "ring-violet-200", emerald: "ring-emerald-200" }; return <div className={`rounded-2xl bg-white p-4 shadow-sm ring-1 ${tones[tone]}`}><p className="text-[10px] font-black uppercase tracking-[.13em] text-slate-400">{title}</p><p className="mt-1 text-lg font-black text-slate-900">{value}</p></div>; };
+// Declare Readiness for use by the surrounding module or function.
 const Readiness = ({ label, value, tone }) => { const tones = { sky: "bg-sky-50 text-sky-700 ring-sky-100", cyan: "bg-cyan-50 text-cyan-700 ring-cyan-100", orange: "bg-orange-50 text-orange-700 ring-orange-100", indigo: "bg-indigo-50 text-indigo-700 ring-indigo-100" }; return <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100"><span className="text-sm font-semibold text-slate-600">{label}</span><b className={`rounded-lg px-2.5 py-1 text-sm font-black ring-1 ${tones[tone]}`}>{value}</b></div>; };

@@ -1,21 +1,36 @@
+/**
+ * Purpose: Public Packages reusable UI component. Main declarations: PublicPackages.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import LazyImage from "../common/LazyImage";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load ../../api/publicPackageApi so this module can use its exported dependencies.
 import { getPublicPackages } from "../../api/publicPackageApi";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load ../../context/TenantContext so this module can use its exported dependencies.
 import { useTenant } from "../../context/TenantContext";
+// Load lucide-react so this module can use its exported dependencies.
 import { ArrowRight } from "lucide-react";
 
+// Define PublicPackages; its parameters and body implement this operation.
 export default function PublicPackages() {
+  // Declare { tenant = {} } for use by the surrounding module or function.
   const { tenant = {} } = useTenant() || {};
+  // Declare tenantKey for use by the surrounding module or function.
   const tenantKey = tenant?._id || tenant?.id || tenant?.slug || "public";
+  // Declare { data = [], isLoading, isError, refetch } for use by the surrounding module or function.
   const { data = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["public-tenant-packages", tenantKey],
     queryFn: getPublicPackages,
     staleTime: 60_000,
   });
 
+  // Check the condition (!isLoading && data.length === 0 && !isError) and run the matching branch.
   if (!isLoading && data.length === 0 && !isError) return null;
 
+  // Return the expression shown below to the caller.
   return (
     <section className="py-12 md:py-16" aria-labelledby="tenant-packages-heading">
       <div className="mb-8 text-center">

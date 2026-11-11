@@ -1,6 +1,12 @@
+/**
+ * Purpose: Subscription database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare subscriptionSchema for use by the surrounding module or function.
 const subscriptionSchema = new mongoose.Schema(
   {
     tenantId: {
@@ -38,11 +44,15 @@ const subscriptionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Perform the side effect or state update expressed on the following line.
 subscriptionSchema.index({ tenantId: 1, status: 1 });
+// Perform the side effect or state update expressed on the following line.
 subscriptionSchema.index({ trialEndsAt: 1, status: 1 });
 
+// Perform the side effect or state update expressed on the following line.
 subscriptionSchema.plugin(tenantPlugin);
 
+// Declare Subscription for use by the surrounding module or function.
 const Subscription =
   mongoose.models.Subscription || mongoose.model("Subscription", subscriptionSchema);
 

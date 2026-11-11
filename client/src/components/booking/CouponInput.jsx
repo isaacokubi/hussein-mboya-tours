@@ -1,9 +1,14 @@
+/**
+ * Purpose: Coupon Input reusable UI component. Main declarations: CouponInput, submit.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
 
 
 
 
 
+// Define CouponInput; its parameters and body implement this operation.
 export default function CouponInput({
 
     onApply,
@@ -18,6 +23,7 @@ export default function CouponInput({
 
 
 
+// Declare [ code, setCode ] for use by the surrounding module or function.
 const [
 
 code,
@@ -38,9 +44,11 @@ useState("");
 
 
 
+// Declare submit for use by the surrounding module or function.
 const submit = ()=>{
 
 
+// Declare coupon for use by the surrounding module or function.
 const coupon = code
 
 .trim()
@@ -51,14 +59,17 @@ const coupon = code
 
 
 
+// Check the condition (!coupon) and run the matching branch.
 if(!coupon){
 
+// Return the result to the caller.
 return;
 
 }
 
 
 
+// Perform the side effect or state update expressed on the following line.
 onApply(coupon);
 
 
@@ -73,6 +84,7 @@ onApply(coupon);
 
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div

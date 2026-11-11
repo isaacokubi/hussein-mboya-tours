@@ -1,4 +1,9 @@
+/**
+ * Purpose: Agent Sidebar reusable UI component. Main declarations: AgentSidebar.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { NavLink } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   CalendarCheck,
   LayoutDashboard,
@@ -8,8 +13,10 @@ import {
   WalletCards,
   UserRound,
 } from "lucide-react";
+// Load ../../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../../context/SettingsContext";
 
+// Declare links for use by the surrounding module or function.
 const links = [
   ["Dashboard", "/agent", LayoutDashboard],
   ["Bookings", "/agent/bookings", CalendarCheck],
@@ -19,12 +26,16 @@ const links = [
   ["Commissions", "/agent/commission", WalletCards],
 ];
 
+// Define AgentSidebar; its parameters and body implement this operation.
 export default function AgentSidebar() {
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
 
+  // Declare companyName for use by the surrounding module or function.
   const companyName =
     settings?.companyName || "Company";
 
+  // Return the expression shown below to the caller.
   return (
     <div className="h-full w-72 overflow-y-auto bg-slate-950 px-5 py-6 text-white">
       <div className="ops-brand">

@@ -1,7 +1,14 @@
+/**
+ * Purpose: Staff Profile database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/StaffProfile.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -15,6 +22,7 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare emergencyContactSchema for use by the surrounding module or function.
 const emergencyContactSchema = new mongoose.Schema(
   {
 
@@ -47,6 +55,7 @@ const emergencyContactSchema = new mongoose.Schema(
   }
 );
 
+// Declare staffProfileSchema for use by the surrounding module or function.
 const staffProfileSchema = new mongoose.Schema(
   {
     /*
@@ -214,6 +223,7 @@ const staffProfileSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 staffProfileSchema.index({
   profileCompleted: 1,
 });
@@ -224,7 +234,9 @@ staffProfileSchema.index({
 |--------------------------------------------------------------------------
 */
 
+// Declare tenantStaffProfileSchema for use by the surrounding module or function.
 const tenantStaffProfileSchema = staffProfileSchema.plugin(tenantPlugin);
+// Declare StaffProfile for use by the surrounding module or function.
 const StaffProfile = mongoose.models.StaffProfile || mongoose.model("StaffProfile", tenantStaffProfileSchema);
 
 

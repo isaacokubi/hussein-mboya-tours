@@ -1,5 +1,10 @@
+/**
+ * Purpose: Stat Card reusable UI component. Main declarations: StatCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import PropTypes from "prop-types";
 
+// Define StatCard; its parameters and body implement this operation.
 export default function StatCard({
   title,
   value,
@@ -8,6 +13,7 @@ export default function StatCard({
   subtitle,
   loading = false,
 }) {
+  // Return the expression shown below to the caller.
   return (
     <div
       className="
@@ -65,6 +71,7 @@ export default function StatCard({
   );
 }
 
+// Perform the side effect or state update expressed on the following line.
 StatCard.propTypes = {
   title: PropTypes.string.isRequired,
   value: PropTypes.oneOfType([
@@ -77,6 +84,7 @@ StatCard.propTypes = {
   loading: PropTypes.bool,
 };
 
+// Perform the side effect or state update expressed on the following line.
 StatCard.defaultProps = {
   value: "-",
   icon: null,

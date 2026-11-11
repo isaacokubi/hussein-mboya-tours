@@ -1,7 +1,14 @@
+/**
+ * Purpose: Popular Tours reusable UI component. Main declarations: PopularTours.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 export default function PopularTours({ tours = [] }) {
+  // Declare list for use by the surrounding module or function.
   const list = Array.isArray(tours) ? tours : [];
+  // Declare rankStyles for use by the surrounding module or function.
   const rankStyles = ["bg-amber-400 text-amber-950", "bg-slate-300 text-slate-800", "bg-orange-300 text-orange-950", "bg-indigo-200 text-indigo-900"];
 
+  // Return the expression shown below to the caller.
   return (
     <section className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-5 shadow-sm sm:p-6">
       <div className="mb-5 flex items-start justify-between gap-4"><div><h2 className="text-xl font-bold text-slate-900">Top Performing Tours</h2><p className="mt-1 text-sm text-slate-600">Ranked by booking activity and paid bookings.</p></div>{list.length > 0 && <span className="shrink-0 rounded-full bg-orange-600 px-3 py-1 text-xs font-bold text-white shadow-sm">Top {list.length}</span>}</div>

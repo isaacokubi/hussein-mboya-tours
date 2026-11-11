@@ -1,18 +1,28 @@
+/**
+ * Purpose: admin AIFinance Forecast Controller HTTP controller. Main declarations: getAIFinancialForecast.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+// Load ../models/Payment.js so this module can use its exported dependencies.
 import Payment from "../models/Payment.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
 
 
+// Declare getAIFinancialForecast for use by the surrounding module or function.
 export const getAIFinancialForecast = async(
 req,
 res,
 next
 )=>{
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
 
+// Run this operation with a dedicated error-handling path for failures.
 try{
 
 
+// Declare revenueHistory for use by the surrounding module or function.
 const revenueHistory =
 await Payment.aggregate([
 
@@ -54,6 +64,7 @@ $sort:{
 
 
 
+// Declare bookingHistory for use by the surrounding module or function.
 const bookingHistory =
 await Booking.aggregate([
 
@@ -90,6 +101,7 @@ $sort:{
 
 
 
+// Declare totalRevenue for use by the surrounding module or function.
 const totalRevenue =
 revenueHistory.reduce(
 (sum,item)=>
@@ -99,6 +111,7 @@ sum + item.revenue,
 
 
 
+// Declare totalBookings for use by the surrounding module or function.
 const totalBookings =
 bookingHistory.reduce(
 (sum,item)=>
@@ -108,6 +121,7 @@ sum + item.bookings,
 
 
 
+// Declare averageRevenue for use by the surrounding module or function.
 const averageRevenue =
 revenueHistory.length
 ?
@@ -119,6 +133,7 @@ totalRevenue / revenueHistory.length
 
 
 
+// Declare averageBookings for use by the surrounding module or function.
 const averageBookings =
 bookingHistory.length
 ?
@@ -130,6 +145,7 @@ totalBookings / bookingHistory.length
 
 
 
+// Declare forecast for use by the surrounding module or function.
 const forecast = {
 
 nextMonthRevenue:
@@ -149,12 +165,15 @@ averageRevenue > 0
 
 
 
+// Declare recommendations for use by the surrounding module or function.
 const recommendations=[];
 
 
 
+// Check the condition (averageBookings > 0) and run the matching branch.
 if(averageBookings > 0){
 
+// Perform the side effect or state update expressed on the following line.
 recommendations.push(
 "Prepare resources based on expected booking demand."
 );
@@ -163,8 +182,10 @@ recommendations.push(
 
 
 
+// Check the condition (averageRevenue < 100000) and run the matching branch.
 if(averageRevenue < 100000){
 
+// Perform the side effect or state update expressed on the following line.
 recommendations.push(
 "Consider marketing campaigns to increase revenue."
 );
@@ -173,8 +194,10 @@ recommendations.push(
 
 
 
+// Check the condition (!recommendations.length) and run the matching branch.
 if(!recommendations.length){
 
+// Perform the side effect or state update expressed on the following line.
 recommendations.push(
 "Continue monitoring financial performance."
 );
@@ -183,6 +206,7 @@ recommendations.push(
 
 
 
+// Perform the side effect or state update expressed on the following line.
 res.json({
 
 success:true,
@@ -208,6 +232,7 @@ recommendations
 
 }catch(error){
 
+// Perform the side effect or state update expressed on the following line.
 next(error);
 
 }

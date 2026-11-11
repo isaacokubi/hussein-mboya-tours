@@ -1,3 +1,7 @@
+/**
+ * Purpose: categories database seed module. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 [
 {
 name:"Wildlife Safaris",

@@ -1,38 +1,61 @@
+/**
+ * Purpose: Destination Details page-level UI component. Main declarations: DestinationDetails.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { useParams, Link, useNavigate } from "react-router-dom";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load ../api/axios so this module can use its exported dependencies.
 import api from "../api/axios";
 
+// Declare DestinationDetails for use by the surrounding module or function.
 const DestinationDetails = () => {
+  // Declare { slug } for use by the surrounding module or function.
   const { slug } = useParams();
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
 
+  // Declare { data, isLoading } for use by the surrounding module or function.
   const { data, isLoading } = useQuery({
     queryKey: ["destination", slug],
     queryFn: async ({ signal }) => {
+      // Declare res for use by the surrounding module or function.
       const res = await api.get(`/destinations/${encodeURIComponent(slug)}`, { signal });
+      // Return the expression shown below to the caller.
       return res.data?.data?.destination || res.data?.destination || null;
     },
     staleTime: 5 * 60 * 1000,
   });
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Check the condition (data?.seo?.title) and run the matching branch.
     if (data?.seo?.title) document.title = data.seo.title;
   }, [data]);
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <div className="p-10">Loading destination...</div>;
+  // Check the condition (!data) and run the matching branch.
   if (!data) return <div className="p-10">Destination not found</div>;
 
+  // Declare images for use by the surrounding module or function.
   const images = Array.isArray(data.images) ? data.images : [];
+  // Declare destinationId for use by the surrounding module or function.
   const destinationId = String(data._id || "");
+  // Declare tours for use by the surrounding module or function.
   const tours = (Array.isArray(data.tours) ? data.tours : []).filter((tour) => {
     // Never display a tour without an explicit destination match. The server
     // already enforces tenant + destination filtering; this is a final UI
     // boundary against malformed or stale payloads.
+    // Declare tourDestination for use by the surrounding module or function.
     const tourDestination = tour?.destination?._id || tour?.destination;
+    // Return the result of Boolean() to the caller.
     return Boolean(destinationId && tourDestination && String(tourDestination) === destinationId);
   });
 
+  // Return the expression shown below to the caller.
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="grid md:grid-cols-2 gap-6">

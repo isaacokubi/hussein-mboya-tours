@@ -1,5 +1,11 @@
+/**
+ * Purpose: Tour Assignments page-level UI component. Main declarations: getId, normalizeStatus, getTourIdList, getResourceAvailability, isGuideAvailable.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   AlertTriangle,
   CalendarDays,
@@ -17,6 +23,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+// Load ../../api/tourAssignmentApi so this module can use its exported dependencies.
 import {
   getTours,
   getGuides,
@@ -25,77 +32,112 @@ import {
   assignTour,
 } from "../../api/tourAssignmentApi";
 
+// Declare getId for use by the surrounding module or function.
 const getId = (value) => value?._id || value?.id || value || "";
 
+// Declare normalizeStatus for use by the surrounding module or function.
 const normalizeStatus = (value, fallback = "unknown") => {
+  // Declare status for use by the surrounding module or function.
   const status = String(value ?? "").trim().toLowerCase();
+  // Return the expression shown below to the caller.
   return status || fallback;
 };
 
+// Declare getTourIdList for use by the surrounding module or function.
 const getTourIdList = (resource) =>
   Array.isArray(resource?.assignedTours)
     ? resource.assignedTours.map((tour) => String(getId(tour))).filter(Boolean)
     : [];
 
+// Declare getResourceAvailability for use by the surrounding module or function.
 const getResourceAvailability = (resource, type) => {
+  // Check the condition (type === "vehicle") and run the matching branch.
   if (type === "vehicle") return normalizeStatus(resource?.status);
+  // Return the result of normalizeStatus() to the caller.
   return normalizeStatus(resource?.availability);
 };
 
+// Declare isGuideAvailable for use by the surrounding module or function.
 const isGuideAvailable = (guide, tourId) => {
+  // Declare currentId for use by the surrounding module or function.
   const currentId = String(tourId || "");
+  // Return the expression shown below to the caller.
   return (
     getTourIdList(guide).includes(currentId) ||
     getResourceAvailability(guide, "guide") === "available"
   );
 };
 
+// Declare isDriverAvailable for use by the surrounding module or function.
 const isDriverAvailable = (driver, tourId) => {
+  // Declare currentId for use by the surrounding module or function.
   const currentId = String(tourId || "");
+  // Return the expression shown below to the caller.
   return (
     getTourIdList(driver).includes(currentId) ||
     getResourceAvailability(driver, "driver") === "available"
   );
 };
 
+// Declare isVehicleAvailable for use by the surrounding module or function.
 const isVehicleAvailable = (vehicle, tourId) => {
+  // Declare currentId for use by the surrounding module or function.
   const currentId = String(tourId || "");
+  // Return the expression shown below to the caller.
   return (
     String(getId(vehicle?.assignedTour)) === currentId ||
     getResourceAvailability(vehicle, "vehicle") === "available"
   );
 };
 
+// Declare resourceTone for use by the surrounding module or function.
 const resourceTone = (status) => {
+  // Declare value for use by the surrounding module or function.
   const value = normalizeStatus(status);
+  // Check the condition (value === "available") and run the matching branch.
   if (value === "available") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  // Check the condition (["busy", "assigned", "in_use", "in-use"].includes(value)) and run the matching branch.
   if (["busy", "assigned", "in_use", "in-use"].includes(value)) return "bg-amber-50 text-amber-700 ring-amber-200";
+  // Check the condition (["unavailable", "on_leave", "on-leave", "maintenance", "inactive"].inc) and run the matching branch.
   if (["unavailable", "on_leave", "on-leave", "maintenance", "inactive"].includes(value)) return "bg-rose-50 text-rose-700 ring-rose-200";
+  // Return a configured text value to the caller.
   return "bg-slate-100 text-slate-600 ring-slate-200";
 };
 
+// Declare statusLabel for use by the surrounding module or function.
 const statusLabel = (status) =>
   normalizeStatus(status)
     .replace(/[_-]/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+// Declare getPersonName for use by the surrounding module or function.
 const getPersonName = (value) =>
   value?.name ||
   [value?.firstName, value?.lastName].filter(Boolean).join(" ") ||
   value?.fullName ||
   "Not assigned";
 
+// Declare getVehicleName for use by the surrounding module or function.
 const getVehicleName = (vehicle) => {
+  // Check the condition (!vehicle) and run the matching branch.
   if (!vehicle) return "Not assigned";
+  // Declare name for use by the surrounding module or function.
   const name = vehicle.name || "Vehicle";
+  // Declare registration for use by the surrounding module or function.
   const registration = vehicle.registrationNumber || vehicle.registration;
+  // Return the expression shown below to the caller.
   return registration ? `${name} - ${registration}` : name;
 };
 
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "Date not provided";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Check the condition (Number.isNaN(date.getTime())) and run the matching branch.
   if (Number.isNaN(date.getTime())) return "Date not provided";
+  // Return the result of new Intl.DateTimeFormat("en-KE", {     day: "2-digit",     month: "short",     year: "numeric",   }).format() to the caller.
   return new Intl.DateTimeFormat("en-KE", {
     day: "2-digit",
     month: "short",
@@ -103,15 +145,23 @@ const formatDate = (value) => {
   }).format(date);
 };
 
+// Declare normalizeList for use by the surrounding module or function.
 const normalizeList = (value) => (Array.isArray(value) ? value : []);
 
+// Define TourAssignments; its parameters and body implement this operation.
 export default function TourAssignments() {
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [assignments, setAssignments] for use by the surrounding module or function.
   const [assignments, setAssignments] = useState({});
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [statusFilter, setStatusFilter] for use by the surrounding module or function.
   const [statusFilter, setStatusFilter] = useState("all");
+  // Declare [resourceFilter, setResourceFilter] for use by the surrounding module or function.
   const [resourceFilter, setResourceFilter] = useState("all");
 
+  // Declare toursQuery for use by the surrounding module or function.
   const toursQuery = useQuery({
     queryKey: ["assignment-tours"],
     queryFn: () => getTours({ page: 1, limit: 100 }),
@@ -120,6 +170,7 @@ export default function TourAssignments() {
     refetchOnMount: "always",
   });
 
+  // Declare guidesQuery for use by the surrounding module or function.
   const guidesQuery = useQuery({
     queryKey: ["assignment-guides"],
     queryFn: getGuides,
@@ -128,6 +179,7 @@ export default function TourAssignments() {
     refetchOnMount: "always",
   });
 
+  // Declare driversQuery for use by the surrounding module or function.
   const driversQuery = useQuery({
     queryKey: ["assignment-drivers"],
     queryFn: getDrivers,
@@ -136,6 +188,7 @@ export default function TourAssignments() {
     refetchOnMount: "always",
   });
 
+  // Declare vehiclesQuery for use by the surrounding module or function.
   const vehiclesQuery = useQuery({
     queryKey: ["assignment-vehicles"],
     queryFn: getVehicles,
@@ -144,23 +197,35 @@ export default function TourAssignments() {
     refetchOnMount: "always",
   });
 
+  // Declare tours for use by the surrounding module or function.
   const tours = normalizeList(toursQuery.data);
+  // Declare guides for use by the surrounding module or function.
   const guides = normalizeList(guidesQuery.data);
+  // Declare drivers for use by the surrounding module or function.
   const drivers = normalizeList(driversQuery.data);
+  // Declare vehicles for use by the surrounding module or function.
   const vehicles = normalizeList(vehiclesQuery.data);
 
+  // Declare mutation for use by the surrounding module or function.
   const mutation = useMutation({
     mutationFn: ({ tourId, payload }) => assignTour(tourId, payload),
     onSuccess: async (response, variables) => {
+      // Declare updatedTour for use by the surrounding module or function.
       const updatedTour = response?.tour || response?.data || response;
+      // Declare tourId for use by the surrounding module or function.
       const tourId = variables?.tourId;
 
+      // Perform the side effect or state update expressed on the following line.
       setAssignments((current) => {
+        // Declare next for use by the surrounding module or function.
         const next = { ...current };
+        // Perform the side effect or state update expressed on the following line.
         delete next[tourId];
+        // Return the value of next to the caller.
         return next;
       });
 
+      // Perform the side effect or state update expressed on the following line.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["assignment-tours"] }),
         queryClient.invalidateQueries({ queryKey: ["assignment-guides"] }),
@@ -170,6 +235,7 @@ export default function TourAssignments() {
         queryClient.invalidateQueries({ queryKey: ["tour-manager-tours"] }),
       ]);
 
+      // Perform the side effect or state update expressed on the following line.
       window.dispatchEvent(
         new CustomEvent("tour-manager:data-changed", {
           detail: { type: "assignment", tourId, tour: updatedTour },
@@ -178,20 +244,30 @@ export default function TourAssignments() {
     },
   });
 
+  // Declare filteredTours for use by the surrounding module or function.
   const filteredTours = useMemo(() => {
+    // Declare term for use by the surrounding module or function.
     const term = search.trim().toLowerCase();
 
+    // Return the result of tours.filter() to the caller.
     return tours.filter((tour) => {
+      // Declare tourStatus for use by the surrounding module or function.
       const tourStatus = normalizeStatus(tour?.status);
+      // Declare assignmentStatus for use by the surrounding module or function.
       const assignmentStatus = normalizeStatus(tour?.assignmentStatus, "pending");
+      // Declare guide for use by the surrounding module or function.
       const guide = tour?.assignedGuide;
+      // Declare driver for use by the surrounding module or function.
       const driver = tour?.assignedDriver;
+      // Declare vehicle for use by the surrounding module or function.
       const vehicle = tour?.assignedVehicle;
+      // Declare resourceState for use by the surrounding module or function.
       const resourceState =
         guide || driver || vehicle
           ? "assigned"
           : "unassigned";
 
+      // Declare matchesSearch for use by the surrounding module or function.
       const matchesSearch = !term || [
         tour?.title,
         tour?.destination?.name,
@@ -203,27 +279,38 @@ export default function TourAssignments() {
         assignmentStatus,
       ].some((value) => String(value || "").toLowerCase().includes(term));
 
+      // Declare matchesStatus for use by the surrounding module or function.
       const matchesStatus =
         statusFilter === "all" ||
         tourStatus === statusFilter ||
         assignmentStatus === statusFilter;
 
+      // Declare matchesResource for use by the surrounding module or function.
       const matchesResource = resourceFilter === "all" || resourceState === resourceFilter;
 
+      // Return the expression shown below to the caller.
       return matchesSearch && matchesStatus && matchesResource;
     });
   }, [tours, search, statusFilter, resourceFilter]);
 
+  // Declare stats for use by the surrounding module or function.
   const stats = useMemo(() => {
+    // Declare completed for use by the surrounding module or function.
     const completed = tours.filter((tour) => normalizeStatus(tour?.status) === "completed").length;
+    // Declare locked for use by the surrounding module or function.
     const locked = tours.filter((tour) => ["completed", "cancelled", "canceled"].includes(normalizeStatus(tour?.status))).length;
+    // Declare fullyAssigned for use by the surrounding module or function.
     const fullyAssigned = tours.filter((tour) => tour?.assignedGuide && tour?.assignedDriver && tour?.assignedVehicle).length;
+    // Declare needingAssignment for use by the surrounding module or function.
     const needingAssignment = tours.filter((tour) => !tour?.assignedGuide || !tour?.assignedDriver || !tour?.assignedVehicle).length;
 
+    // Return the object assembled below to the caller.
     return { total: tours.length, fullyAssigned, needingAssignment, completed, locked };
   }, [tours]);
 
+  // Declare handleChange for use by the surrounding module or function.
   const handleChange = (tourId, field, value) => {
+    // Perform the side effect or state update expressed on the following line.
     setAssignments((prev) => ({
       ...prev,
       [tourId]: {
@@ -233,40 +320,65 @@ export default function TourAssignments() {
     }));
   };
 
+  // Declare getCurrentId for use by the surrounding module or function.
   const getCurrentId = (tour, field) => {
+    // Declare selected for use by the surrounding module or function.
     const selected = assignments[tour?._id]?.[field];
+    // Check the condition (selected !== undefined) and run the matching branch.
     if (selected !== undefined) return selected;
+    // Check the condition (field === "guideId") and run the matching branch.
     if (field === "guideId") return getId(tour?.assignedGuide);
+    // Check the condition (field === "driverId") and run the matching branch.
     if (field === "driverId") return getId(tour?.assignedDriver);
+    // Check the condition (field === "vehicleId") and run the matching branch.
     if (field === "vehicleId") return getId(tour?.assignedVehicle);
+    // Return a configured text value to the caller.
     return "";
   };
 
+  // Declare handleAssign for use by the surrounding module or function.
   const handleAssign = (tour) => {
+    // Declare tourId for use by the surrounding module or function.
     const tourId = getId(tour);
+    // Check the condition (!tourId) and run the matching branch.
     if (!tourId) {
+      // Perform the side effect or state update expressed on the following line.
       window.alert("This tour has no valid identifier and cannot be assigned.");
+      // Return the result to the caller.
       return;
     }
 
+    // Declare tourStatus for use by the surrounding module or function.
     const tourStatus = normalizeStatus(tour?.status);
+    // Check the condition (["completed", "cancelled", "canceled"].includes(tourStatus)) and run the matching branch.
     if (["completed", "cancelled", "canceled"].includes(tourStatus)) return;
 
+    // Declare selected for use by the surrounding module or function.
     const selected = assignments[tourId] || {};
+    // Declare payload for use by the surrounding module or function.
     const payload = {};
+    // Check the condition (selected.guideId !== undefined) and run the matching branch.
     if (selected.guideId !== undefined) payload.guideId = selected.guideId || null;
+    // Check the condition (selected.driverId !== undefined) and run the matching branch.
     if (selected.driverId !== undefined) payload.driverId = selected.driverId || null;
+    // Check the condition (selected.vehicleId !== undefined) and run the matching branch.
     if (selected.vehicleId !== undefined) payload.vehicleId = selected.vehicleId || null;
 
+    // Check the condition (Object.keys(payload).length === 0) and run the matching branch.
     if (Object.keys(payload).length === 0) {
+      // Perform the side effect or state update expressed on the following line.
       window.alert("No assignment changes were selected.");
+      // Return the result to the caller.
       return;
     }
 
+    // Perform the side effect or state update expressed on the following line.
     mutation.mutate({ tourId, payload });
   };
 
+  // Declare handleRefresh for use by the surrounding module or function.
   const handleRefresh = async () => {
+    // Perform the side effect or state update expressed on the following line.
     await Promise.all([
       toursQuery.refetch(),
       guidesQuery.refetch(),
@@ -275,10 +387,14 @@ export default function TourAssignments() {
     ]);
   };
 
+  // Declare anyLoading for use by the surrounding module or function.
   const anyLoading = toursQuery.isLoading || guidesQuery.isLoading || driversQuery.isLoading || vehiclesQuery.isLoading;
+  // Declare resourceError for use by the surrounding module or function.
   const resourceError = guidesQuery.isError || driversQuery.isError || vehiclesQuery.isError;
 
+  // Check the condition (toursQuery.isLoading) and run the matching branch.
   if (toursQuery.isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl animate-pulse space-y-6">
@@ -292,7 +408,9 @@ export default function TourAssignments() {
     );
   }
 
+  // Check the condition (toursQuery.isError) and run the matching branch.
   if (toursQuery.isError) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-white p-8 shadow-sm">
@@ -314,6 +432,7 @@ export default function TourAssignments() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">

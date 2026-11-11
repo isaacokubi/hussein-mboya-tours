@@ -1,10 +1,19 @@
+/**
+ * Purpose: Super Admin Security page-level UI component. Main declarations: normalizeStatus, SuperAdminSecurity, PageHeader, MetricCard, InfoCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { ShieldCheck, ShieldAlert, Database, KeyRound, RefreshCw, Users, LockKeyhole, Activity, CheckCircle2, AlertTriangle } from "lucide-react";
+// Load ../../api/superAdminApi so this module can use its exported dependencies.
 import { getSecurityStatus } from "../../api/superAdminApi";
 
+// Declare normalizeStatus for use by the surrounding module or function.
 const normalizeStatus = (value) => String(value || "unknown").trim().toLowerCase();
 
+// Define SuperAdminSecurity; its parameters and body implement this operation.
 export default function SuperAdminSecurity() {
+  // Declare { data: response, isLoading, isError, error, refetch, isFetching } for use by the surrounding module or function.
   const { data: response, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["superadmin-security"],
     queryFn: getSecurityStatus,
@@ -12,9 +21,12 @@ export default function SuperAdminSecurity() {
     retry: 1,
   });
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <SecurityLoading />;
 
+  // Check the condition (isError) and run the matching branch.
   if (isError) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
         <PageHeader onRefresh={() => refetch()} refreshing={isFetching} />
@@ -32,18 +44,30 @@ export default function SuperAdminSecurity() {
     );
   }
 
+  // Declare data for use by the surrounding module or function.
   const data = response?.data || response || {};
+  // Declare authenticationStatus for use by the surrounding module or function.
   const authenticationStatus = typeof data.authentication === "object" ? data.authentication.status : data.authentication;
+  // Declare authorization for use by the surrounding module or function.
   const authorization = typeof data.authorization === "object" ? data.authorization : {};
+  // Declare authorizationStatus for use by the surrounding module or function.
   const authorizationStatus = authorization.status || (authorization.roles > 0 && authorization.permissions > 0 ? "Active" : "Warning");
+  // Declare controls for use by the surrounding module or function.
   const controls = Array.isArray(data.controls) ? data.controls : [];
+  // Declare score for use by the surrounding module or function.
   const score = typeof data.securityScore === "number" ? data.securityScore : null;
+  // Declare threat for use by the surrounding module or function.
   const threat = normalizeStatus(data.threatLevel);
+  // Declare failedAttempts for use by the surrounding module or function.
   const failedAttempts = typeof data.failedAttempts24h === "number" ? data.failedAttempts24h : null;
+  // Declare criticalEvents for use by the surrounding module or function.
   const criticalEvents = typeof data.criticalEvents24h === "number" ? data.criticalEvents24h : null;
+  // Declare lastChecked for use by the surrounding module or function.
   const lastChecked = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  // Declare activeControls for use by the surrounding module or function.
   const activeControls = controls.filter((control) => normalizeStatus(control.status) === "active").length;
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
       <PageHeader onRefresh={() => refetch()} refreshing={isFetching} />
@@ -94,9 +118,15 @@ export default function SuperAdminSecurity() {
   );
 }
 
+// Define PageHeader; its parameters and body implement this operation.
 function PageHeader({ onRefresh, refreshing }) { return <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 px-5 py-6 text-white shadow-lg sm:px-7 lg:flex-row lg:items-center lg:justify-between"><div><div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-emerald-200"><ShieldCheck size={14} /> Platform security</div><h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Security Center</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Platform authentication, authorization and threat monitoring with live backend security telemetry.</p></div><button type="button" onClick={onRefresh} disabled={refreshing} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"><RefreshCw size={17} className={refreshing ? "animate-spin" : ""} /> {refreshing ? "Refreshing..." : "Refresh status"}</button></div>; }
+// Define MetricCard; its parameters and body implement this operation.
 function MetricCard({ label, value, helper, icon: Icon, tone }) { const tones = { emerald: "border-emerald-200 bg-emerald-50 text-emerald-700", amber: "border-amber-200 bg-amber-50 text-amber-700", red: "border-red-200 bg-red-50 text-red-700", blue: "border-sky-200 bg-sky-50 text-sky-700", indigo: "border-indigo-200 bg-indigo-50 text-indigo-700", slate: "border-slate-200 bg-slate-100 text-slate-600" }; return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p><p className="mt-2 text-3xl font-black tracking-tight text-slate-950">{value}</p></div><span className={`rounded-xl border p-2.5 ${tones[tone] || tones.slate}`}><Icon size={19} /></span></div><p className="mt-3 text-xs leading-5 text-slate-500">{helper}</p></div>; }
+// Define InfoCard; its parameters and body implement this operation.
 function InfoCard({ icon: Icon, label, value }) { return <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><span className="rounded-lg bg-slate-100 p-2.5 text-slate-600"><Icon size={18} /></span><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 truncate text-lg font-bold text-slate-900">{value === undefined || value === null || value === "" ? "—" : String(value)}</p></div></div>; }
+// Define SnapshotRow; its parameters and body implement this operation.
 function SnapshotRow({ label, value, status, numeric = false, critical = false }) { const normalized = normalizeStatus(status); const good = normalized === "active" || normalized === "connected"; const display = numeric ? (typeof value === "number" ? String(value) : "—") : (value || "—"); const tone = critical ? "bg-red-50 text-red-700" : good ? "bg-emerald-50 text-emerald-700" : normalized === "unknown" ? "bg-slate-100 text-slate-600" : "bg-amber-50 text-amber-700"; return <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6"><span className="text-sm font-medium text-slate-600">{label}</span><span className={`rounded-full px-3 py-1 text-xs font-bold ${tone}`}>{display}</span></div>; }
+// Define EmptyState; its parameters and body implement this operation.
 function EmptyState({ text }) { return <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500 sm:col-span-2">{text}</div>; }
+// Define SecurityLoading; its parameters and body implement this operation.
 function SecurityLoading() { return <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8"><div className="h-40 animate-pulse rounded-2xl bg-slate-200" /><div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[1,2,3,4].map((item) => <div key={item} className="h-36 animate-pulse rounded-2xl bg-slate-200" />)}</div><div className="mt-6 grid gap-6 xl:grid-cols-[1.45fr_0.8fr]"><div className="h-96 animate-pulse rounded-2xl bg-slate-200" /><div className="h-96 animate-pulse rounded-2xl bg-slate-200" /></div></div>; }

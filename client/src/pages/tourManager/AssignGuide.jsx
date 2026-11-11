@@ -1,17 +1,24 @@
+/**
+ * Purpose: Assign Guide page-level UI component. Main declarations: AssignGuide.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/pages/tourManager/AssignGuide.jsx
 
 
+// Load react so this module can use its exported dependencies.
 import {
     useState
 } from "react";
 
 
+// Load react-router-dom so this module can use its exported dependencies.
 import {
     useParams,
     useNavigate
 } from "react-router-dom";
 
 
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import {
     useQuery,
     useMutation,
@@ -19,11 +26,13 @@ import {
 } from "@tanstack/react-query";
 
 
+// Load react-toastify so this module can use its exported dependencies.
 import {
     toast
 } from "react-toastify";
 
 
+// Load ../../api/tourApi so this module can use its exported dependencies.
 import {
 
     getGuides,
@@ -43,10 +52,12 @@ from "../../api/tourApi";
 
 
 
+// Declare AssignGuide for use by the surrounding module or function.
 const AssignGuide =()=>{
 
 
 
+    // Declare { id } for use by the surrounding module or function.
     const {
 
         id
@@ -56,10 +67,12 @@ const AssignGuide =()=>{
 
 
 
+    // Declare navigate for use by the surrounding module or function.
     const navigate = useNavigate();
 
 
 
+    // Declare queryClient for use by the surrounding module or function.
     const queryClient = useQueryClient();
 
 
@@ -68,6 +81,7 @@ const AssignGuide =()=>{
 
 
 
+    // Declare [ guide, setGuide ] for use by the surrounding module or function.
     const [
 
         guide,
@@ -84,6 +98,7 @@ const AssignGuide =()=>{
 
 
 
+    // Declare { data:guidesData } for use by the surrounding module or function.
     const {
 
         data:guidesData
@@ -113,6 +128,7 @@ const AssignGuide =()=>{
 
 
 
+    // Declare { data:tourData, isLoading } for use by the surrounding module or function.
     const {
 
         data:tourData,
@@ -147,6 +163,7 @@ const AssignGuide =()=>{
 
 
 
+    // Declare tour for use by the surrounding module or function.
     const tour =
 
         tourData?.tour ||
@@ -162,6 +179,7 @@ const AssignGuide =()=>{
 
 
 
+    // Declare guidesRaw for use by the surrounding module or function.
     const guidesRaw =
     Array.isArray(guidesData?.data)
         ? guidesData.data
@@ -169,8 +187,11 @@ const AssignGuide =()=>{
         ? guidesData
         : [];
 
+    // Declare guides for use by the surrounding module or function.
     const guides = guidesRaw.filter((item) => {
+        // Declare position for use by the surrounding module or function.
         const position = String(item?.position || item?.role || "").toLowerCase().replace(/[\s_-]/g, "");
+        // Return the expression shown below to the caller.
         return position === "guide" || position === "tourguide";
     });
 
@@ -182,6 +203,7 @@ const AssignGuide =()=>{
 
 
 
+    // Declare { mutate:saveGuide, isPending } for use by the surrounding module or function.
     const {
 
         mutate:saveGuide,
@@ -211,6 +233,7 @@ const AssignGuide =()=>{
 
 
 
+            // Perform the side effect or state update expressed on the following line.
             toast.success(
 
                 "Guide assigned successfully"
@@ -219,6 +242,7 @@ const AssignGuide =()=>{
 
 
 
+            // Perform the side effect or state update expressed on the following line.
             queryClient.invalidateQueries({
 
                 queryKey:[
@@ -233,6 +257,7 @@ const AssignGuide =()=>{
 
 
 
+            // Perform the side effect or state update expressed on the following line.
             navigate(
 
                 "/tour-manager/tours"
@@ -249,6 +274,7 @@ const AssignGuide =()=>{
 
 
 
+            // Perform the side effect or state update expressed on the following line.
             toast.error(
 
                 "Assignment failed"
@@ -270,8 +296,10 @@ const AssignGuide =()=>{
 
 
 
+    // Check the condition (isLoading) and run the matching branch.
     if(isLoading)
 
+    // Return the expression shown below to the caller.
     return (
 
         <div className="p-6">
@@ -290,6 +318,7 @@ const AssignGuide =()=>{
 
 
 
+    // Return the expression shown below to the caller.
     return (
 
 

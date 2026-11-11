@@ -1,6 +1,12 @@
+/**
+ * Purpose: Accounting Subledger database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare accountingSubledgerSchema for use by the surrounding module or function.
 const accountingSubledgerSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   type: { type: String, enum: ["inventory", "payroll", "accrual", "prepayment", "fx"], required: true, index: true },
@@ -23,8 +29,11 @@ const accountingSubledgerSchema = new mongoose.Schema({
   postedAt: { type: Date, default: null },
 }, { timestamps: true });
 
+// Perform the side effect or state update expressed on the following line.
 accountingSubledgerSchema.index({ tenantId: 1, type: 1, reference: 1 }, { unique: true });
+// Perform the side effect or state update expressed on the following line.
 accountingSubledgerSchema.index({ tenantId: 1, type: 1, transactionDate: -1 });
+// Perform the side effect or state update expressed on the following line.
 accountingSubledgerSchema.plugin(tenantPlugin);
 
 export default mongoose.models.AccountingSubledger || mongoose.model("AccountingSubledger", accountingSubledgerSchema);

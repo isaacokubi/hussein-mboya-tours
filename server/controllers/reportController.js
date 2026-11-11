@@ -1,5 +1,11 @@
+/**
+ * Purpose: report Controller HTTP controller. Main declarations: exportBookings.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../services/reportService.js so this module can use its exported dependencies.
 import { generateCSV } from "../services/reportService.js";
 
 /*
@@ -10,11 +16,16 @@ import { generateCSV } from "../services/reportService.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare exportBookings for use by the surrounding module or function.
 export const exportBookings = async (req, res, next) => {
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare { status, paymentStatus, from, to } for use by the surrounding module or function.
     const { status, paymentStatus, from, to } = req.query;
 
+    // Declare filter for use by the surrounding module or function.
     const filter = {};
 
     /*
@@ -23,22 +34,32 @@ export const exportBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (status) and run the matching branch.
     if (status) {
+      // Perform the side effect or state update expressed on the following line.
       filter.status = status;
     }
 
+    // Check the condition (paymentStatus) and run the matching branch.
     if (paymentStatus) {
+      // Perform the side effect or state update expressed on the following line.
       filter.paymentStatus = paymentStatus;
     }
 
+    // Check the condition (from || to) and run the matching branch.
     if (from || to) {
+      // Perform the side effect or state update expressed on the following line.
       filter.createdAt = {};
 
+      // Check the condition (from) and run the matching branch.
       if (from) {
+        // Perform the side effect or state update expressed on the following line.
         filter.createdAt.$gte = new Date(from);
       }
 
+      // Check the condition (to) and run the matching branch.
       if (to) {
+        // Perform the side effect or state update expressed on the following line.
         filter.createdAt.$lte = new Date(to);
       }
     }
@@ -49,6 +70,7 @@ export const exportBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Declare bookings for use by the surrounding module or function.
     const bookings = await Booking.find(filter)
       .populate("customer", "name email phone")
       .populate("user", "name email phone")
@@ -63,6 +85,7 @@ export const exportBookings = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Declare rows for use by the surrounding module or function.
     const rows = bookings.map((booking) => ({
       booking: booking.bookingNumber || booking._id,
       customer:
@@ -90,18 +113,24 @@ export const exportBookings = async (req, res, next) => {
       travelDate: booking.travelDate || "",
     }));
 
+    // Declare csv for use by the surrounding module or function.
     const csv = generateCSV(rows);
 
+    // Perform the side effect or state update expressed on the following line.
     res.setHeader("Content-Type", "text/csv");
 
+    // Perform the side effect or state update expressed on the following line.
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=bookings-report-${Date.now()}.csv`
     );
 
+    // Return the result of res.status(200).send() to the caller.
     return res.status(200).send(csv);
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     console.error("EXPORT BOOKINGS ERROR:", error);
+    // Perform the side effect or state update expressed on the following line.
     next(error);
   }
 };

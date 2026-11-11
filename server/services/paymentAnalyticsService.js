@@ -1,4 +1,9 @@
+/**
+ * Purpose: payment Analytics Service business-logic service. Main declarations: getPaymentStatistics.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+// Load ../models/Payment.js so this module can use its exported dependencies.
 import Payment from "../models/Payment.js";
 
 /*
@@ -10,8 +15,11 @@ import Payment from "../models/Payment.js";
 |
 */
 
+// Declare getPaymentStatistics for use by the surrounding module or function.
 export const getPaymentStatistics = async () => {
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
+  // Declare statistics for use by the surrounding module or function.
   const statistics = await Payment.aggregate([
     {
       $match: {
@@ -62,6 +70,7 @@ export const getPaymentStatistics = async () => {
     },
   ]);
 
+  // Declare totals for use by the surrounding module or function.
   const totals = await Payment.aggregate([
     {
       $match: {
@@ -84,6 +93,7 @@ export const getPaymentStatistics = async () => {
     },
   ]);
 
+  // Return the object assembled below to the caller.
   return {
     methods: statistics,
 

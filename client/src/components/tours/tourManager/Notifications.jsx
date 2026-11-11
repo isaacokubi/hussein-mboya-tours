@@ -1,11 +1,21 @@
+/**
+ * Purpose: Notifications reusable UI component. Main declarations: Notifications, notificationStyle.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Bell, ChevronLeft, ChevronRight } from "lucide-react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
 
+// Load ../../../api/notificationApi so this module can use its exported dependencies.
 import { getNotifications } from "../../../api/notificationApi";
+// Load react so this module can use its exported dependencies.
 import { useState } from "react";
 
+// Define Notifications; its parameters and body implement this operation.
 export default function Notifications() {
+  // Declare [page,setPage] for use by the surrounding module or function.
   const [page,setPage]=useState(1);
+  // Declare { data, isLoading, isError, error, } for use by the surrounding module or function.
   const {
     data,
     isLoading,
@@ -25,6 +35,7 @@ export default function Notifications() {
   |--------------------------------------------------------------------------
   */
 
+  // Declare notifications for use by the surrounding module or function.
   const notifications =
     data?.notifications ||
     data?.data ||
@@ -36,29 +47,39 @@ export default function Notifications() {
   |--------------------------------------------------------------------------
   */
 
+  // Declare notificationStyle for use by the surrounding module or function.
   const notificationStyle = (type) => {
+    // Select the appropriate branch based on type?.toLowerCase().
     switch (type?.toLowerCase()) {
       case "booking":
+        // Return a configured text value to the caller.
         return "bg-blue-100 text-blue-700";
 
       case "payment":
+        // Return a configured text value to the caller.
         return "bg-green-100 text-green-700";
 
       case "vehicle":
+        // Return a configured text value to the caller.
         return "bg-yellow-100 text-yellow-700";
 
       case "guide":
+        // Return a configured text value to the caller.
         return "bg-purple-100 text-purple-700";
 
       case "warning":
+        // Return a configured text value to the caller.
         return "bg-red-100 text-red-700";
 
       default:
+        // Return a configured text value to the caller.
         return "bg-gray-100 text-gray-700";
     }
   };
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <div className="bg-white rounded-xl shadow p-6">
         Loading notifications...
@@ -66,7 +87,9 @@ export default function Notifications() {
     );
   }
 
+  // Check the condition (isError) and run the matching branch.
   if (isError) {
+    // Return the expression shown below to the caller.
     return (
       <div className="bg-white rounded-xl shadow p-6 text-red-600">
         {error?.message || "Failed to load notifications."}
@@ -74,6 +97,7 @@ export default function Notifications() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="bg-white rounded-xl shadow p-6">
       <div className="flex items-center gap-3 mb-6">

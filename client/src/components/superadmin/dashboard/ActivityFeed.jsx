@@ -1,4 +1,9 @@
+/**
+ * Purpose: Activity Feed reusable UI component. Main declarations: ActivityFeed.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 
+// Declare activities for use by the surrounding module or function.
 const activities=[
 "New safari package created",
 "Admin permission updated",
@@ -7,8 +12,10 @@ const activities=[
 "System backup completed"
 ];
 
+// Define ActivityFeed; its parameters and body implement this operation.
 export default function ActivityFeed(){
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="bg-white rounded-xl border p-6">

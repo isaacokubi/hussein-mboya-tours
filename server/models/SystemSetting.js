@@ -1,6 +1,12 @@
+/**
+ * Purpose: System Setting database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare systemSettingSchema for use by the surrounding module or function.
 const systemSettingSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, required: false, default: null },
@@ -33,8 +39,11 @@ const systemSettingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Perform the side effect or state update expressed on the following line.
 systemSettingSchema.index({ tenantId: 1, key: 1 }, { unique: true });
+// Perform the side effect or state update expressed on the following line.
 tenantPlugin(systemSettingSchema);
 
+// Declare SystemSetting for use by the surrounding module or function.
 const SystemSetting = mongoose.models.SystemSetting || mongoose.model("SystemSetting", systemSettingSchema);
 export default SystemSetting;

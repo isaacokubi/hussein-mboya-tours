@@ -1,29 +1,49 @@
+/**
+ * Purpose: admin Controller HTTP controller. Main declarations: cleanName, bookingCustomerFallback, bookingTourFallback, getDashboardStats, getUserAnalytics.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 // server/controllers/adminController.js
 
+// Load ../models/User.js so this module can use its exported dependencies.
 import User from "../models/User.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../models/Tour.js so this module can use its exported dependencies.
 import Tour from "../models/Tour.js";
+// Load ../models/Destination.js so this module can use its exported dependencies.
 import Destination from "../models/Destination.js";
+// Load ../services/bookingRevenueService.js so this module can use its exported dependencies.
 import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
+// Load ../services/financeReportingService.js so this module can use its exported dependencies.
 import { getPostedRevenueReport } from "../services/financeReportingService.js";
 
+// Declare cleanName for use by the surrounding module or function.
 const cleanName = (value) => {
+  // Declare text for use by the surrounding module or function.
   const text = String(value ?? "").trim().replace(/\s+/g, " ");
+  // Return the expression shown below to the caller.
   return text && !/^undefined( undefined)?$/i.test(text) && !/^null( null)?$/i.test(text) ? text : "";
 };
 
+// Declare bookingCustomerFallback for use by the surrounding module or function.
 const bookingCustomerFallback = (booking) => {
+  // Declare customer for use by the surrounding module or function.
   const customer = booking?.customer || {};
+  // Declare snapshot for use by the surrounding module or function.
   const snapshot = booking?.customerSnapshot || {};
+  // Declare contact for use by the surrounding module or function.
   const contact = booking?.contact || {};
+  // Declare user for use by the surrounding module or function.
   const user = booking?.user || {};
+  // Declare name for use by the surrounding module or function.
   const name = cleanName(customer.name)
     || [cleanName(customer.firstName), cleanName(customer.lastName)].filter(Boolean).join(" ")
     || cleanName(snapshot.name)
     || [cleanName(snapshot.firstName), cleanName(snapshot.lastName)].filter(Boolean).join(" ")
     || cleanName(contact.name)
     || cleanName(user.name);
+  // Return the object assembled below to the caller.
   return {
     name: name || cleanName(customer.email) || cleanName(snapshot.email) || cleanName(contact.email) || cleanName(user.email) || cleanName(customer.phone) || cleanName(snapshot.phone) || cleanName(contact.phone) || cleanName(user.phone) || "Customer",
     email: cleanName(customer.email) || cleanName(snapshot.email) || cleanName(contact.email) || cleanName(user.email),
@@ -32,22 +52,35 @@ const bookingCustomerFallback = (booking) => {
   };
 };
 
+// Declare bookingTourFallback for use by the surrounding module or function.
 const bookingTourFallback = (booking) => {
+  // Check the condition (booking?.tour) and run the matching branch.
   if (booking?.tour) return booking.tour;
+  // Check the condition (booking?.customTourRequest?.destination) and run the matching branch.
   if (booking?.customTourRequest?.destination) {
+    // Return the object assembled below to the caller.
     return { title: `Custom tour — ${booking.customTourRequest.destination}`, custom: true };
   }
+  // Return the object assembled below to the caller.
   return { title: "Tour unavailable", deleted: true };
 };
 
+// Declare getDashboardStats for use by the surrounding module or function.
 export const getDashboardStats = async (req, res, next) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Perform the side effect or state update expressed on the following line.
     requireTenantId();
+    // Declare userFilter for use by the surrounding module or function.
     const userFilter = mergeTenantFilter({ isDeleted: { $ne: true } });
+    // Declare bookingFilter for use by the surrounding module or function.
     const bookingFilter = mergeTenantFilter({ isDeleted: { $ne: true } });
+    // Declare tourFilter for use by the surrounding module or function.
     const tourFilter = mergeTenantFilter({ isDeleted: { $ne: true } });
+    // Declare destinationFilter for use by the surrounding module or function.
     const destinationFilter = mergeTenantFilter({ isDeleted: false, active: true });
 
+    // Declare [users, bookings, tours, destinations, revenueData, status, monthlyRevenue, popularTours, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, paymentStatsData] for use by the surrounding module or function.
     const [users, bookings, tours, destinations, revenueData, status, monthlyRevenue, popularTours, pendingBookings, confirmedBookings, completedBookings, cancelledBookings, paymentStatsData] = await Promise.all([
       User.countDocuments(userFilter),
       Booking.countDocuments(bookingFilter),
@@ -82,12 +115,14 @@ export const getDashboardStats = async (req, res, next) => {
       ]),
     ]);
 
+    // Declare paymentStats for use by the surrounding module or function.
     const paymentStats = {
       completed: paymentStatsData.filter((item) => ["paid", "completed", "success"].includes(item._id)).reduce((sum, item) => sum + item.count, 0),
       pending: paymentStatsData.filter((item) => ["pending", "partial"].includes(item._id)).reduce((sum, item) => sum + item.count, 0),
       failed: paymentStatsData.filter((item) => ["failed", "cancelled"].includes(item._id)).reduce((sum, item) => sum + item.count, 0),
     };
 
+    // Declare recentRaw for use by the surrounding module or function.
     const recentRaw = await Booking.find(bookingFilter)
       .sort({ createdAt: -1 })
       .limit(5)
@@ -97,12 +132,14 @@ export const getDashboardStats = async (req, res, next) => {
       .populate("customTourRequest", "destination")
       .lean();
 
+    // Declare recentBookings for use by the surrounding module or function.
     const recentBookings = recentRaw.map((booking) => ({
       ...booking,
       customer: { ...(booking.customer || {}), ...bookingCustomerFallback(booking) },
       tour: bookingTourFallback(booking),
     }));
 
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({
       success: true,
       data: {
@@ -122,37 +159,51 @@ export const getDashboardStats = async (req, res, next) => {
       },
     });
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     next(error);
   }
 };
 
+// Declare getUserAnalytics for use by the surrounding module or function.
 export const getUserAnalytics = async (req, res, next) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare [total, active, customers, agents] for use by the surrounding module or function.
     const [total, active, customers, agents] = await Promise.all([
       User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true } })),
       User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, isActive: { $ne: false } })),
       User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, $or: [{ role: "customer" }, { legacyRole: "customer" }] })), 
       User.countDocuments(mergeTenantFilter({ isDeleted: { $ne: true }, role: "agent" })),
     ]);
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({ success: true, data: { total, active, customers, agents } });
   } catch (error) { next(error); }
 };
 
+// Declare getBookingAnalytics for use by the surrounding module or function.
 export const getBookingAnalytics = async (req, res, next) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare status for use by the surrounding module or function.
     const status = await Booking.aggregate([
       { $match: mergeTenantFilter({ isDeleted: { $ne: true } }) },
       { $group: { _id: "$status", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]);
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({ success: true, data: { status } });
   } catch (error) { next(error); }
 };
 
+// Declare getRevenueAnalytics for use by the surrounding module or function.
 export const getRevenueAnalytics = async (req, res, next) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare report for use by the surrounding module or function.
     const report = await getPostedRevenueReport();
+    // Declare monthly for use by the surrounding module or function.
     const monthly = report.monthly;
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({ success: true, data: { monthly, revenueBasis: "posted_journals" } });
   } catch (error) { next(error); }
 };

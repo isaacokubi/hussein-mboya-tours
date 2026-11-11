@@ -1,11 +1,22 @@
+/**
+ * Purpose: Super Admin Layout client application module. Main declarations: SuperAdminLayout.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Outlet } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import { Menu, Bell } from "lucide-react";
+// Load ../components/superadmin/SuperAdminSidebar so this module can use its exported dependencies.
 import SuperAdminSidebar from "../components/superadmin/SuperAdminSidebar";
+// Load ../components/common/DashboardLogoutButton so this module can use its exported dependencies.
 import DashboardLogoutButton from "../components/common/DashboardLogoutButton";
 
+// Define SuperAdminLayout; its parameters and body implement this operation.
 export default function SuperAdminLayout() {
+  // Declare [open, setOpen] for use by the surrounding module or function.
   const [open, setOpen] = useState(false);
+  // Return the expression shown below to the caller.
   return (
     <div className="dashboard-responsive min-h-screen bg-gray-100">
       <SuperAdminSidebar open={open} setOpen={setOpen} />

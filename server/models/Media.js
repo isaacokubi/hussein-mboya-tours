@@ -1,7 +1,14 @@
+/**
+ * Purpose: Media database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/Media.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -10,6 +17,7 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare mediaSchema for use by the surrounding module or function.
 const mediaSchema = new mongoose.Schema(
   {
 
@@ -225,7 +233,9 @@ const mediaSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 mediaSchema.virtual("fileSizeMB").get(function () {
+  // Return the result of Number() to the caller.
   return Number((this.size / (1024 * 1024)).toFixed(2));
 });
 
@@ -235,9 +245,13 @@ mediaSchema.virtual("fileSizeMB").get(function () {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 mediaSchema.methods.incrementDownloads = function () {
+  // Perform the side effect or state update expressed on the following line.
   this.downloadCount += 1;
+  // Perform the side effect or state update expressed on the following line.
   this.lastDownloadedAt = new Date();
+  // Return the result of this.save() to the caller.
   return this.save();
 };
 
@@ -247,32 +261,39 @@ mediaSchema.methods.incrementDownloads = function () {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 mediaSchema.index({
   uploadedBy: 1,
   createdAt: -1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 mediaSchema.index({
   category: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 mediaSchema.index({
   folder: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 mediaSchema.index({
   relatedModel: 1,
   relatedId: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 mediaSchema.index({
   visibility: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 mediaSchema.index({
   isDeleted: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 mediaSchema.index({
   createdAt: -1,
 });
@@ -283,7 +304,9 @@ mediaSchema.index({
 |--------------------------------------------------------------------------
 */
 
+// Declare tenantMediaSchema for use by the surrounding module or function.
 const tenantMediaSchema = mediaSchema.plugin(tenantPlugin);
+// Declare Media for use by the surrounding module or function.
 const Media = mongoose.models.Media || mongoose.model("Media", tenantMediaSchema);
 
 

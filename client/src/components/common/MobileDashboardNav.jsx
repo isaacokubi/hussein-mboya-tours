@@ -1,20 +1,35 @@
+/**
+ * Purpose: Mobile Dashboard Nav reusable UI component. Main declarations: MobileDashboardNav.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useSettings } from "../../context/SettingsContext";
+// Load react so this module can use its exported dependencies.
 import { useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import { Menu, X, LayoutDashboard, CalendarCheck, UserRound, Heart, FileText, Sparkles } from "lucide-react";
+// Load ./DashboardLogoutButton so this module can use its exported dependencies.
 import DashboardLogoutButton from "./DashboardLogoutButton";
 
+// Declare NAV for use by the surrounding module or function.
 const NAV = {
   customer: [["/dashboard", "Dashboard", LayoutDashboard], ["/my-bookings", "My Bookings", CalendarCheck], ["/custom-tour", "Custom Tour", Sparkles], ["/tours", "Explore Tours", FileText], ["/profile", "Profile", UserRound], ["/wishlist", "Wishlist", Heart]],
   guide: [["/guide/dashboard", "Dashboard", LayoutDashboard], ["/guide/assigned-tours", "Assigned Tours", CalendarCheck], ["/profile", "Profile", UserRound]],
   driver: [["/driver/dashboard", "Dashboard", LayoutDashboard], ["/profile", "Profile & Email", UserRound]],
 };
 
+// Define MobileDashboardNav; its parameters and body implement this operation.
 export default function MobileDashboardNav({ role = "customer", title }) {
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
+  // Declare displayTitle for use by the surrounding module or function.
   const displayTitle = title || settings.companyName || "Company";
+  // Declare [open, setOpen] for use by the surrounding module or function.
   const [open, setOpen] = useState(false);
+  // Declare items for use by the surrounding module or function.
   const items = NAV[role] || NAV.customer;
+  // Return the expression shown below to the caller.
   return (
     <>
       <header className="sticky top-0 z-40 flex min-h-14 items-center justify-between gap-3 border-b border-indigo-100 bg-white/95 px-3 py-2 shadow-sm backdrop-blur sm:px-4 lg:hidden">

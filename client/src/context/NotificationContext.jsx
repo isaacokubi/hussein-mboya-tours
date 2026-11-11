@@ -1,7 +1,12 @@
+/**
+ * Purpose: Notification Context React context/provider. Main declarations: NotificationProvider, handleConnect, handleNotification, handleConnectError, handleDisconnect.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 
 
 // client/src/context/NotificationContext.jsx
 
+// Load react so this module can use its exported dependencies.
 import {
   createContext,
   useContext,
@@ -9,32 +14,40 @@ import {
   useState
 } from "react";
 
+// Load ../api/notificationApi so this module can use its exported dependencies.
 import { getNotifications } from "../api/notificationApi";
+// Load ../socket/socket so this module can use its exported dependencies.
 import socket from "../socket/socket";
 
+// Load ./AuthContext so this module can use its exported dependencies.
 import { useAuth } from "./AuthContext";
 
 
+// Declare NotificationContext for use by the surrounding module or function.
 const NotificationContext =
   createContext();
 
 
+// Define NotificationProvider; its parameters and body implement this operation.
 export function NotificationProvider({
   children
 }) {
 
+  // Declare { user, token } for use by the surrounding module or function.
   const {
     user,
     token
   } = useAuth();
 
 
+  // Declare [ notifications, setNotifications ] for use by the surrounding module or function.
   const [
     notifications,
     setNotifications
   ] = useState([]);
 
 
+  // Declare [ unreadCount, setUnreadCount ] for use by the surrounding module or function.
   const [
     unreadCount,
     setUnreadCount
@@ -47,37 +60,47 @@ export function NotificationProvider({
   |--------------------------------------------------------------------------
   */
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
 
+    // Check the condition (!user?._id || !token) and run the matching branch.
     if (
       !user?._id ||
       !token
     ) {
+      // Return the result to the caller.
       return;
     }
 
 
+    // Declare cancelled for use by the surrounding module or function.
     let cancelled = false;
 
 
+    // Perform the side effect or state update expressed on the following line.
     getNotifications({
       limit: 30
     })
 
       .then((response) => {
 
+        // Check the condition (cancelled) and run the matching branch.
         if (cancelled) {
+          // Return the result to the caller.
           return;
         }
 
 
+        // Declare items for use by the surrounding module or function.
         const items =
           response?.notifications || [];
 
 
+        // Perform the side effect or state update expressed on the following line.
         setNotifications(items);
 
 
+        // Perform the side effect or state update expressed on the following line.
         setUnreadCount(
           items.filter(
             (item) => !item.read
@@ -88,6 +111,7 @@ export function NotificationProvider({
 
       .catch((error) => {
 
+        // Perform the side effect or state update expressed on the following line.
         console.error(
           "Failed to load notifications:",
           error?.message || error
@@ -96,8 +120,10 @@ export function NotificationProvider({
       });
 
 
+    // Return the expression shown below to the caller.
     return () => {
 
+      // Perform the side effect or state update expressed on the following line.
       cancelled = true;
 
     };
@@ -114,18 +140,23 @@ export function NotificationProvider({
   |--------------------------------------------------------------------------
   */
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
 
+    // Check the condition (!user?._id || !token) and run the matching branch.
     if (
       !user?._id ||
       !token
     ) {
+      // Return the result to the caller.
       return;
     }
 
 
+    // Declare handleConnect for use by the surrounding module or function.
     const handleConnect = () => {
 
+      // Perform the side effect or state update expressed on the following line.
       console.log(
         "✅ Notification socket connected",
         socket.id
@@ -136,16 +167,19 @@ export function NotificationProvider({
     };
 
 
+    // Declare handleNotification for use by the surrounding module or function.
     const handleNotification = (
       notification
     ) => {
 
+      // Perform the side effect or state update expressed on the following line.
       console.log(
         "📩 Notification received",
         notification
       );
 
 
+      // Perform the side effect or state update expressed on the following line.
       setNotifications(
         (prev) => [
           notification,
@@ -154,6 +188,7 @@ export function NotificationProvider({
       );
 
 
+      // Perform the side effect or state update expressed on the following line.
       setUnreadCount(
         (prev) => prev + 1
       );
@@ -161,10 +196,12 @@ export function NotificationProvider({
     };
 
 
+    // Declare handleConnectError for use by the surrounding module or function.
     const handleConnectError = (
       error
     ) => {
 
+      // Perform the side effect or state update expressed on the following line.
       console.error(
         "Socket connection error:",
         error?.message || error
@@ -173,10 +210,12 @@ export function NotificationProvider({
     };
 
 
+    // Declare handleDisconnect for use by the surrounding module or function.
     const handleDisconnect = (
       reason
     ) => {
 
+      // Perform the side effect or state update expressed on the following line.
       console.log(
         "Notification socket disconnected:",
         reason
@@ -191,6 +230,7 @@ export function NotificationProvider({
     |--------------------------------------------------------------------------
     */
 
+    // Perform the side effect or state update expressed on the following line.
     socket.auth = {
       ...(socket.auth || {}),
       token
@@ -203,24 +243,28 @@ export function NotificationProvider({
     |--------------------------------------------------------------------------
     */
 
+    // Perform the side effect or state update expressed on the following line.
     socket.on(
       "connect",
       handleConnect
     );
 
 
+    // Perform the side effect or state update expressed on the following line.
     socket.on(
       "notification",
       handleNotification
     );
 
 
+    // Perform the side effect or state update expressed on the following line.
     socket.on(
       "connect_error",
       handleConnectError
     );
 
 
+    // Perform the side effect or state update expressed on the following line.
     socket.on(
       "disconnect",
       handleDisconnect
@@ -233,12 +277,15 @@ export function NotificationProvider({
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (socket.connected) and run the matching branch.
     if (socket.connected) {
 
+      // Perform the side effect or state update expressed on the following line.
       handleConnect();
 
     } else {
 
+      // Perform the side effect or state update expressed on the following line.
       socket.connect();
 
     }
@@ -254,26 +301,31 @@ export function NotificationProvider({
     |
     */
 
+    // Return the expression shown below to the caller.
     return () => {
 
+      // Perform the side effect or state update expressed on the following line.
       socket.off(
         "connect",
         handleConnect
       );
 
 
+      // Perform the side effect or state update expressed on the following line.
       socket.off(
         "notification",
         handleNotification
       );
 
 
+      // Perform the side effect or state update expressed on the following line.
       socket.off(
         "connect_error",
         handleConnectError
       );
 
 
+      // Perform the side effect or state update expressed on the following line.
       socket.off(
         "disconnect",
         handleDisconnect
@@ -293,13 +345,16 @@ export function NotificationProvider({
   |--------------------------------------------------------------------------
   */
 
+  // Declare markAllRead for use by the surrounding module or function.
   const markAllRead = () => {
 
+    // Perform the side effect or state update expressed on the following line.
     setUnreadCount(0);
 
   };
 
 
+  // Return the expression shown below to the caller.
   return (
 
     <NotificationContext.Provider
@@ -321,6 +376,7 @@ export function NotificationProvider({
 }
 
 
+// Declare useNotifications for use by the surrounding module or function.
 export const useNotifications = () =>
   useContext(
     NotificationContext

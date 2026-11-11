@@ -1,9 +1,18 @@
+/**
+ * Purpose: Admin Compliance page-level UI component. Main declarations: formatDate, statusTone, AdminCompliance, begin, update.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { AlertTriangle, CheckCircle2, FileCheck2, History, Save, ShieldCheck, XCircle } from "lucide-react";
+// Load ../../api/complianceApi so this module can use its exported dependencies.
 import { getComplianceRecords, getComplianceSummary, queueEtimsInvoice, saveComplianceRecord } from "../../api/complianceApi";
+// Load ../../api/financeComplianceApi so this module can use its exported dependencies.
 import { createCreditDebitNote, getCreditDebitNotes, getEtimsCredentialStatus, getEtimsSubmissions, getFinanceComplianceSummary, getTaxProfile, queueCreditDebitNote, saveEtimsCredentials, saveTaxProfile } from "../../api/financeComplianceApi";
 
+// Declare labels for use by the surrounding module or function.
 const labels = {
   TRA_LICENSE: "TRA licence",
   ODPC_REGISTRATION: "ODPC registration",
@@ -15,28 +24,46 @@ const labels = {
   ETIMS_ONBOARDING: "eTIMS onboarding",
 };
 
+// Declare types for use by the surrounding module or function.
 const types = Object.keys(labels);
+// Declare statuses for use by the surrounding module or function.
 const statuses = ["not_started", "in_progress", "submitted", "approved", "expired", "action_required", "closed"];
+// Declare inputClass for use by the surrounding module or function.
 const inputClass = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600";
+// Declare buttonClass for use by the surrounding module or function.
 const buttonClass = "inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50";
 
+// Define formatDate; its parameters and body implement this operation.
 function formatDate(value) {
+  // Return the expression shown below to the caller.
   return value ? new Date(value).toLocaleDateString() : "—";
 }
 
+// Define statusTone; its parameters and body implement this operation.
 function statusTone(status) {
+  // Check the condition (status === "synced" || status === "approved") and run the matching branch.
   if (status === "synced" || status === "approved") return "bg-emerald-50 text-emerald-700";
+  // Check the condition (status === "failed" || status === "expired") and run the matching branch.
   if (status === "failed" || status === "expired") return "bg-red-50 text-red-700";
+  // Check the condition (["pending", "in_progress", "submitted"].includes(status)) and run the matching branch.
   if (["pending", "in_progress", "submitted"].includes(status)) return "bg-amber-50 text-amber-700";
+  // Return a configured text value to the caller.
   return "bg-slate-100 text-slate-600";
 }
 
+// Define AdminCompliance; its parameters and body implement this operation.
 export default function AdminCompliance() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [tab, setTab] for use by the surrounding module or function.
   const [tab, setTab] = useState("etims");
+  // Declare [editing, setEditing] for use by the surrounding module or function.
   const [editing, setEditing] = useState(null);
+  // Declare [taxEditing, setTaxEditing] for use by the surrounding module or function.
   const [taxEditing, setTaxEditing] = useState(null);
+  // Declare [credentialEditing, setCredentialEditing] for use by the surrounding module or function.
   const [credentialEditing, setCredentialEditing] = useState(null);
+  // Declare [noteForm, setNoteForm] for use by the surrounding module or function.
   const [noteForm, setNoteForm] = useState({
     type: "credit",
     originalInvoice: "",
@@ -45,107 +72,146 @@ export default function AdminCompliance() {
     reason: "",
   });
 
+  // Declare summary for use by the surrounding module or function.
   const summary = useQuery({
     queryKey: ["compliance-summary"],
     queryFn: getComplianceSummary,
     refetchInterval: 60000,
   });
+  // Declare records for use by the surrounding module or function.
   const records = useQuery({
     queryKey: ["compliance-records"],
     queryFn: getComplianceRecords,
     refetchInterval: 60000,
   });
+  // Declare finance for use by the surrounding module or function.
   const finance = useQuery({
     queryKey: ["finance-compliance-summary"],
     queryFn: getFinanceComplianceSummary,
     refetchInterval: 60000,
   });
+  // Declare taxProfile for use by the surrounding module or function.
   const taxProfile = useQuery({
     queryKey: ["tax-profile"],
     queryFn: getTaxProfile,
   });
+  // Declare environment for use by the surrounding module or function.
   const environment = taxProfile.data?.data?.etimsEnvironment || "sandbox";
+  // Declare credential for use by the surrounding module or function.
   const credential = useQuery({
     queryKey: ["etims-credentials", environment],
     queryFn: () => getEtimsCredentialStatus(environment),
     enabled: Boolean(taxProfile.data),
   });
+  // Declare submissions for use by the surrounding module or function.
   const submissions = useQuery({
     queryKey: ["etims-submissions"],
     queryFn: () => getEtimsSubmissions({ limit: 100 }),
     refetchInterval: 30000,
   });
+  // Declare notes for use by the surrounding module or function.
   const notes = useQuery({
     queryKey: ["credit-debit-notes"],
     queryFn: getCreditDebitNotes,
   });
 
+  // Declare saveM for use by the surrounding module or function.
   const saveM = useMutation({
     mutationFn: ({ type, data }) => saveComplianceRecord(type, data),
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       setEditing(null);
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["compliance-records"] });
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["compliance-summary"] });
     },
   });
 
+  // Declare initM for use by the surrounding module or function.
   const initM = useMutation({
     mutationFn: () => Promise.all(types.map((type) => saveComplianceRecord(type, { status: "not_started" }))),
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["compliance-records"] });
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["compliance-summary"] });
     },
   });
 
+  // Declare taxM for use by the surrounding module or function.
   const taxM = useMutation({
     mutationFn: saveTaxProfile,
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       setTaxEditing(null);
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["tax-profile"] });
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["finance-compliance-summary"] });
     },
   });
 
+  // Declare credentialM for use by the surrounding module or function.
   const credentialM = useMutation({
     mutationFn: saveEtimsCredentials,
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       setCredentialEditing(null);
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["etims-credentials"] });
     },
   });
 
+  // Declare invoiceQueueM for use by the surrounding module or function.
   const invoiceQueueM = useMutation({
     mutationFn: queueEtimsInvoice,
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["etims-submissions"] });
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["finance-compliance-summary"] });
     },
   });
 
+  // Declare noteM for use by the surrounding module or function.
   const noteM = useMutation({
     mutationFn: createCreditDebitNote,
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       setNoteForm({ type: "credit", originalInvoice: "", totalAmount: "", taxAmount: "", reason: "" });
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["credit-debit-notes"] });
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["etims-submissions"] });
     },
   });
 
+  // Declare noteQueueM for use by the surrounding module or function.
   const noteQueueM = useMutation({
     mutationFn: queueCreditDebitNote,
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["credit-debit-notes"] });
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["etims-submissions"] });
     },
   });
 
+  // Declare rows for use by the surrounding module or function.
   const rows = records.data?.data || [];
+  // Declare metrics for use by the surrounding module or function.
   const metrics = summary.data?.data || {};
+  // Declare fp for use by the surrounding module or function.
   const fp = finance.data?.data || {};
+  // Declare profile for use by the surrounding module or function.
   const profile = taxProfile.data?.data || {};
+  // Declare submissionsRows for use by the surrounding module or function.
   const submissionsRows = submissions.data?.data || [];
+  // Declare notesRows for use by the surrounding module or function.
   const notesRows = notes.data?.data || [];
 
+  // Declare cards for use by the surrounding module or function.
   const cards = useMemo(
     () => [
       ["Tracked controls", metrics.total || 0, ShieldCheck],
@@ -156,7 +222,9 @@ export default function AdminCompliance() {
     [metrics, fp]
   );
 
+  // Declare begin for use by the surrounding module or function.
   const begin = (row) => {
+    // Perform the side effect or state update expressed on the following line.
     setEditing({
       ...row,
       issueDate: row.issueDate ? String(row.issueDate).slice(0, 10) : "",
@@ -165,9 +233,12 @@ export default function AdminCompliance() {
     });
   };
 
+  // Declare update for use by the surrounding module or function.
   const update = (key, value) => setEditing((current) => ({ ...current, [key]: value }));
 
+  // Declare startTaxEdit for use by the surrounding module or function.
   const startTaxEdit = () => {
+    // Perform the side effect or state update expressed on the following line.
     setTaxEditing({
       kraPin: profile.kraPin || "",
       vatRegistered: Boolean(profile.vatRegistered),
@@ -188,7 +259,9 @@ export default function AdminCompliance() {
     });
   };
 
+  // Declare startCredentialEdit for use by the surrounding module or function.
   const startCredentialEdit = () => {
+    // Perform the side effect or state update expressed on the following line.
     setCredentialEditing({
       environment: environment,
       credentialRef: credential.data?.data?.credentialRef || "",
@@ -199,6 +272,7 @@ export default function AdminCompliance() {
     });
   };
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-7xl">

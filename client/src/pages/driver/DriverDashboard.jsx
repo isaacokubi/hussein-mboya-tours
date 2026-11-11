@@ -1,5 +1,11 @@
+/**
+ * Purpose: Driver Dashboard page-level UI component. Main declarations: idOf, clean, startOfDay, tourStart, tourEnd.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   AlertTriangle,
   Car,
@@ -16,61 +22,104 @@ import {
   Flag,
   Gauge,
 } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/driverApi so this module can use its exported dependencies.
 import {
   getDriverDashboard,
   getDriverAssignedTours,
   updateDriverTourStatus,
 } from "../../api/driverApi";
+// Load ../../utils/dashboardData so this module can use its exported dependencies.
 import { firstNumeric, numeric, unwrapData } from "../../utils/dashboardData";
 
+// Declare idOf for use by the surrounding module or function.
 const idOf = (value) => value?._id || value?.id || value;
+// Declare clean for use by the surrounding module or function.
 const clean = (value) => String(value ?? "").trim();
+// Declare startOfDay for use by the surrounding module or function.
 const startOfDay = (value) => {
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Check the condition (Number.isNaN(date.getTime())) and run the matching branch.
   if (Number.isNaN(date.getTime())) return null;
+  // Perform the side effect or state update expressed on the following line.
   date.setHours(0, 0, 0, 0);
+  // Return the value of date to the caller.
   return date;
 };
+// Declare tourStart for use by the surrounding module or function.
 const tourStart = (tour) => tour?.startDate || tour?.date || tour?.tourDate || tour?.travelDate;
+// Declare tourEnd for use by the surrounding module or function.
 const tourEnd = (tour) => {
+  // Check the condition (tour?.endDate) and run the matching branch.
   if (tour?.endDate) return tour.endDate;
+  // Declare start for use by the surrounding module or function.
   const start = tourStart(tour);
+  // Check the condition (!start) and run the matching branch.
   if (!start) return null;
+  // Declare days for use by the surrounding module or function.
   const days = Math.max(1, Number(tour?.durationDetails?.days || tour?.duration || 1));
+  // Declare end for use by the surrounding module or function.
   const end = new Date(start);
+  // Perform the side effect or state update expressed on the following line.
   end.setDate(end.getDate() + days - 1);
+  // Return the value of end to the caller.
   return end;
 };
+// Declare isTourActiveOnDate for use by the surrounding module or function.
 const isTourActiveOnDate = (tour, value) => {
+  // Declare day for use by the surrounding module or function.
   const day = startOfDay(value);
+  // Declare start for use by the surrounding module or function.
   const start = startOfDay(tourStart(tour));
+  // Declare end for use by the surrounding module or function.
   const end = startOfDay(tourEnd(tour));
+  // Return the result of Boolean() to the caller.
   return Boolean(day && start && end && day >= start && day <= end);
 };
+// Declare validDate for use by the surrounding module or function.
 const validDate = (value) => {
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Return the expression shown below to the caller.
   return Number.isNaN(date.getTime()) ? null : date;
 };
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value) => {
+  // Declare date for use by the surrounding module or function.
   const date = validDate(value);
+  // Return the expression shown below to the caller.
   return date ? date.toLocaleDateString("en-KE", { day: "2-digit", month: "short", year: "numeric" }) : "Unavailable";
 };
+// Declare formatDateTime for use by the surrounding module or function.
 const formatDateTime = (value) => {
+  // Declare date for use by the surrounding module or function.
   const date = validDate(value);
+  // Return the expression shown below to the caller.
   return date ? date.toLocaleString("en-KE", { timeZone: "Africa/Nairobi", dateStyle: "medium", timeStyle: "short" }) : "Not scheduled";
 };
+// Declare display for use by the surrounding module or function.
 const display = (value, fallback = "Unavailable") => clean(value) || fallback;
+// Declare statusTone for use by the surrounding module or function.
 const statusTone = (status) => {
+  // Declare value for use by the surrounding module or function.
   const value = clean(status).toLowerCase();
+  // Check the condition (["ongoing", "active", "ready", "assigned"].includes(value)) and run the matching branch.
   if (["ongoing", "active", "ready", "assigned"].includes(value)) return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  // Check the condition (["completed", "available"].includes(value)) and run the matching branch.
   if (["completed", "available"].includes(value)) return "border-sky-200 bg-sky-50 text-sky-700";
+  // Check the condition (["cancelled", "maintenance", "unavailable"].includes(value)) and run the matching branch.
   if (["cancelled", "maintenance", "unavailable"].includes(value)) return "border-rose-200 bg-rose-50 text-rose-700";
+  // Return a configured text value to the caller.
   return "border-amber-200 bg-amber-50 text-amber-700";
 };
 
+// Define DriverDashboard; its parameters and body implement this operation.
 export default function DriverDashboard() {
+  // Declare [actionId, setActionId] for use by the surrounding module or function.
   const [actionId, setActionId] = useState("");
+  // Declare dashboardQuery for use by the surrounding module or function.
   const dashboardQuery = useQuery({
     queryKey: ["driver-dashboard"],
     queryFn: getDriverDashboard,
@@ -79,6 +128,7 @@ export default function DriverDashboard() {
     refetchOnMount: "always",
     retry: 1,
   });
+  // Declare toursQuery for use by the surrounding module or function.
   const toursQuery = useQuery({
     queryKey: ["driver-assigned-tours"],
     queryFn: getDriverAssignedTours,
@@ -88,11 +138,17 @@ export default function DriverDashboard() {
     retry: 1,
   });
 
+  // Declare loading for use by the surrounding module or function.
   const loading = dashboardQuery.isLoading || toursQuery.isLoading;
+  // Declare error for use by the surrounding module or function.
   const error = dashboardQuery.error || toursQuery.error;
+  // Declare dashboard for use by the surrounding module or function.
   const dashboard = unwrapData(dashboardQuery.data) || {};
+  // Declare tourPayload for use by the surrounding module or function.
   const tourPayload = unwrapData(toursQuery.data);
+  // Declare assignedTours for use by the surrounding module or function.
   const assignedTours = Array.isArray(tourPayload?.tours) ? tourPayload.tours : Array.isArray(tourPayload) ? tourPayload : [];
+  // Declare dashboardTours for use by the surrounding module or function.
   const dashboardTours = Array.isArray(dashboard?.tours)
     ? dashboard.tours
     : Array.isArray(dashboard?.assignedTours)
@@ -100,9 +156,13 @@ export default function DriverDashboard() {
       : Array.isArray(dashboard?.upcomingTours)
         ? dashboard.upcomingTours
         : [];
+  // Declare source for use by the surrounding module or function.
   const source = assignedTours.length ? assignedTours : dashboardTours;
+  // Declare tours for use by the surrounding module or function.
   const tours = useMemo(() => source.map((tour) => {
+    // Declare dashboardTour for use by the surrounding module or function.
     const dashboardTour = dashboardTours.find((item) => String(idOf(item)) === String(idOf(tour)));
+    // Return the object assembled below to the caller.
     return {
       ...dashboardTour,
       ...tour,
@@ -110,49 +170,81 @@ export default function DriverDashboard() {
     };
   }), [source, dashboardTours]);
 
+  // Declare vehicle for use by the surrounding module or function.
   const vehicle = dashboard?.vehicle || dashboard?.assignedVehicle || tours.find((tour) => tour?.assignedVehicle)?.assignedVehicle || null;
+  // Declare today for use by the surrounding module or function.
   const today = new Date();
+  // Declare activeStatuses for use by the surrounding module or function.
   const activeStatuses = ["completed", "cancelled"];
+  // Declare todayTrips for use by the surrounding module or function.
   const todayTrips = tours.filter((tour) => isTourActiveOnDate(tour, today) && !activeStatuses.includes(clean(tour?.status).toLowerCase()));
+  // Declare nextTour for use by the surrounding module or function.
   const nextTour = tours
     .map((tour) => ({ tour, date: validDate(tourStart(tour)) }))
     .filter(({ tour, date }) => {
+      // Declare todayStart for use by the surrounding module or function.
       const todayStart = startOfDay(today);
+      // Declare tourDay for use by the surrounding module or function.
       const tourDay = startOfDay(date);
+      // Return the expression shown below to the caller.
       return date && todayStart && tourDay && tourDay >= todayStart && !activeStatuses.includes(clean(tour?.status).toLowerCase());
     })
     .sort((a, b) => a.date - b.date)[0]?.tour;
+  // Declare nextPickup for use by the surrounding module or function.
   const nextPickup = nextTour?.pickupTime || nextTour?.pickupDateTime || tourStart(nextTour);
+  // Declare stats for use by the surrounding module or function.
   const stats = dashboard?.stats || dashboard?.summary || {};
+  // Declare completedTours for use by the surrounding module or function.
   const completedTours = firstNumeric(stats.completedTours, dashboard?.completedTours, tours.filter((tour) => clean(tour?.status).toLowerCase() === "completed").length);
+  // Declare ongoingTours for use by the surrounding module or function.
   const ongoingTours = firstNumeric(stats.ongoingTours, dashboard?.ongoingTours, tours.filter((tour) => clean(tour?.status).toLowerCase() === "ongoing").length);
+  // Declare totalTours for use by the surrounding module or function.
   const totalTours = firstNumeric(stats.totalTours, dashboard?.totalTours, tours.length);
+  // Declare vehicleStatus for use by the surrounding module or function.
   const vehicleStatus = vehicle?.status || vehicle?.availability || null;
+  // Declare driverName for use by the surrounding module or function.
   const driverName = dashboard?.driver?.name || dashboard?.profile?.name || "Driver";
+  // Declare refresh for use by the surrounding module or function.
   const refresh = () => {
+    // Perform the side effect or state update expressed on the following line.
     void dashboardQuery.refetch();
+    // Perform the side effect or state update expressed on the following line.
     void toursQuery.refetch();
   };
 
+  // Declare changeStatus for use by the surrounding module or function.
   const changeStatus = async (tour, status) => {
+    // Declare tourId for use by the surrounding module or function.
     const tourId = idOf(tour);
+    // Check the condition (!tourId) and run the matching branch.
     if (!tourId) {
+      // Perform the side effect or state update expressed on the following line.
       toast.error("This tour has no valid identifier. No status change was made.");
+      // Return the result to the caller.
       return;
     }
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       setActionId(`${tourId}:${status}`);
+      // Perform the side effect or state update expressed on the following line.
       await updateDriverTourStatus(tourId, status);
+      // Perform the side effect or state update expressed on the following line.
       toast.success(status === "ongoing" ? "Tour started successfully." : "Tour completed successfully.");
+      // Perform the side effect or state update expressed on the following line.
       await Promise.all([dashboardQuery.refetch(), toursQuery.refetch()]);
     } catch (err) {
+      // Perform the side effect or state update expressed on the following line.
       toast.error(err?.response?.data?.message || err?.message || "Unable to update the tour. No changes were applied.");
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       setActionId("");
     }
   };
 
+  // Check the condition (loading) and run the matching branch.
   if (loading) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-screen bg-slate-50 p-4 md:p-8">
         <div className="mx-auto max-w-7xl space-y-6 animate-pulse">
@@ -164,7 +256,9 @@ export default function DriverDashboard() {
     );
   }
 
+  // Check the condition (error && !dashboardQuery.data && !toursQuery.data) and run the matching branch.
   if (error && !dashboardQuery.data && !toursQuery.data) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-screen bg-slate-50 p-4 md:p-8">
         <div className="mx-auto max-w-5xl rounded-3xl border border-rose-200 bg-white p-8 shadow-sm">
@@ -177,6 +271,7 @@ export default function DriverDashboard() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 pb-10">
       <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white">

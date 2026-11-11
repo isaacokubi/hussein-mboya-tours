@@ -1,7 +1,12 @@
+/**
+ * Purpose: tour Image client application module. Main declarations: isGenericImage, getFallbackIndex, resolveMediaUrl, getTourImage, getTourImages.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 const TOUR_IMAGE_PLACEHOLDER = "/images/image-placeholder.jpg";
 
 // Reliable remote fallbacks. These are used only when a tour record has no
 // usable media or when its stored image fails to load in the browser.
+// Declare TOUR_FALLBACK_IMAGES for use by the surrounding module or function.
 const TOUR_FALLBACK_IMAGES = [
   "/gallery/mara.jpg",
   "/gallery/amboseli.jpg",
@@ -26,41 +31,59 @@ const TOUR_FALLBACK_IMAGES = [
 
 ];
 
+// Declare isGenericImage for use by the surrounding module or function.
 const isGenericImage = (value) => {
+  // Declare raw for use by the surrounding module or function.
   const raw = typeof value === "string"
     ? value
     : value?.url || value?.secure_url || value?.path || "";
+  // Check the condition (!raw) and run the matching branch.
   if (!raw) return true;
+  // Declare normalized for use by the surrounding module or function.
   const normalized = raw.toLowerCase().trim();
+  // Return the expression shown below to the caller.
   return normalized.endsWith("/hero1.jpeg") ||
     normalized.includes("image-placeholder") ||
     normalized.includes("destination-placeholder");
 };
 
+// Declare getFallbackIndex for use by the surrounding module or function.
 const getFallbackIndex = (tour = {}) => {
+  // Declare seed for use by the surrounding module or function.
   const seed = String(
     tour?._id || tour?.slug || tour?.title || tour?.name || "global-tours"
   );
+  // Return the expression shown below to the caller.
   return Math.abs(
     seed.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)
   ) % TOUR_FALLBACK_IMAGES.length;
 };
 
+// Declare resolveMediaUrl for use by the surrounding module or function.
 export const resolveMediaUrl = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "";
+  // Declare raw for use by the surrounding module or function.
   const raw = typeof value === "string"
     ? value
     : value?.url || value?.secure_url || value?.path || "";
+  // Check the condition (!raw) and run the matching branch.
   if (!raw) return "";
+  // Check the condition (/^(https?:|data:|blob:)/i.test(raw)) and run the matching branch.
   if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+  // Check the condition (/^\/(?:destinations|gallery|demo-destinations)\//.test(raw) || /^\/her) and run the matching branch.
   if (/^\/(?:destinations|gallery|demo-destinations)\//.test(raw) || /^\/hero\d+\.(?:jpe?g|png|webp)$/i.test(raw)) return raw;
+  // Declare base for use by the surrounding module or function.
   const base = String(import.meta.env.VITE_API_URL || "")
     .replace(/\/api\/?$/, "")
     .replace(/\/$/, "");
+  // Return the expression shown below to the caller.
   return raw.startsWith("/") && base ? `${base}${raw}` : raw;
 };
 
+// Declare getTourImage for use by the surrounding module or function.
 export const getTourImage = (tour = {}) => {
+  // Declare candidates for use by the surrounding module or function.
   const candidates = [
     tour?.featuredImage,
     ...(Array.isArray(tour?.gallery) ? tour.gallery : []),
@@ -69,15 +92,20 @@ export const getTourImage = (tour = {}) => {
     tour?.thumbnail,
   ];
 
+  // Declare realImage for use by the surrounding module or function.
   const realImage = candidates.find((candidate) => !isGenericImage(candidate));
+  // Declare resolved for use by the surrounding module or function.
   const resolved = resolveMediaUrl(realImage);
 
   // Never intentionally render the placeholder when a tour has no media.
   // Use a deterministic real image instead so every card remains visual.
+  // Return the expression shown below to the caller.
   return resolved || TOUR_FALLBACK_IMAGES[getFallbackIndex(tour)] || TOUR_IMAGE_PLACEHOLDER;
 };
 
+// Declare getTourImages for use by the surrounding module or function.
 export const getTourImages = (tour = {}) => {
+  // Declare media for use by the surrounding module or function.
   const media = [
     tour?.featuredImage,
     ...(Array.isArray(tour?.gallery) ? tour.gallery : []),
@@ -87,13 +115,17 @@ export const getTourImages = (tour = {}) => {
     .map(resolveMediaUrl)
     .filter(Boolean);
 
+  // Check the condition (media.length) and run the matching branch.
   if (media.length) return [...new Set(media)];
 
+  // Declare index for use by the surrounding module or function.
   const index = getFallbackIndex(tour);
+  // Return the collection assembled below to the caller.
   return [
     TOUR_FALLBACK_IMAGES[index],
     TOUR_FALLBACK_IMAGES[(index + 1) % TOUR_FALLBACK_IMAGES.length],
   ];
 };
 
+// Expose the selected declarations or re-exported members to other parts of the application.
 export { TOUR_FALLBACK_IMAGES };

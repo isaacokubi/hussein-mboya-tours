@@ -1,19 +1,37 @@
+/**
+ * Purpose: tour Report Controller HTTP controller. Main declarations: getTourReports.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../models/Tour.js so this module can use its exported dependencies.
 import Tour from "../models/Tour.js";
+// Load ../models/User.js so this module can use its exported dependencies.
 import User from "../models/User.js";
+// Load ../models/Payment.js so this module can use its exported dependencies.
 import Payment from "../models/Payment.js";
+// Load ../services/bookingRevenueService.js so this module can use its exported dependencies.
 import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
+// Load ../services/financeReportingService.js so this module can use its exported dependencies.
 import { getPostedRevenueReport } from "../services/financeReportingService.js";
 
+// Declare getTourReports for use by the surrounding module or function.
 export const getTourReports = async (req, res, next) => {
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare bookingFilter for use by the surrounding module or function.
     const bookingFilter = mergeTenantFilter(req, { isDeleted: { $ne: true } });
+    // Declare paymentFilter for use by the surrounding module or function.
     const paymentFilter = mergeTenantFilter(req, { status: "completed", isDeleted: { $ne: true } });
+    // Declare tourFilter for use by the surrounding module or function.
     const tourFilter = mergeTenantFilter(req, { isDeleted: { $ne: true } });
+    // Declare tenantId for use by the surrounding module or function.
     const tenantId = req.tenantId;
 
+    // Declare [totalBookings, revenueResult, bookingStatus, popularTours, monthlyRevenue, totalCustomers, totalTours, completedTours] for use by the surrounding module or function.
     const [totalBookings, revenueResult, bookingStatus, popularTours, monthlyRevenue, totalCustomers, totalTours, completedTours] = await Promise.all([
       Booking.countDocuments(bookingFilter),
       getBookingRevenueMetrics(req, { isDeleted: { $ne: true } }),
@@ -40,6 +58,7 @@ export const getTourReports = async (req, res, next) => {
       Tour.countDocuments(mergeTenantFilter(req, { status: "completed", isDeleted: { $ne: true } })),
     ]);
 
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({ success: true, data: { totalBookings, totalRevenue: Number(revenueResult?.revenue || 0), totalCustomers, totalTours, completedTours, bookingStatus, popularTours, monthlyRevenue: monthlyRevenue.monthly, revenueBasis: "posted_journals" } });
   } catch (error) { console.error("TOUR REPORT ERROR:", error); next(error); }
 };

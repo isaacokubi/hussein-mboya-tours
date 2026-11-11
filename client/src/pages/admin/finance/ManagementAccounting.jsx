@@ -1,5 +1,11 @@
+/**
+ * Purpose: Management Accounting page-level UI component. Main declarations: money, finite, unwrap, messageOf, asArray.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect, useMemo, useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   AlertCircle,
   CheckCircle2,
@@ -13,10 +19,14 @@ import {
   WalletCards,
   XCircle,
 } from "lucide-react";
+// Load ../../../api/axios so this module can use its exported dependencies.
 import api from "../../../api/axios";
 
+// Declare money for use by the surrounding module or function.
 const money = (value) => {
+  // Declare n for use by the surrounding module or function.
   const n = Number(value);
+  // Return the expression shown below to the caller.
   return Number.isFinite(n)
     ? new Intl.NumberFormat("en-KE", {
         style: "currency",
@@ -26,32 +36,53 @@ const money = (value) => {
     : "—";
 };
 
+// Declare finite for use by the surrounding module or function.
 const finite = (value) => {
+  // Declare n for use by the surrounding module or function.
   const n = Number(value);
+  // Return the expression shown below to the caller.
   return Number.isFinite(n) ? n : null;
 };
 
+// Declare unwrap for use by the surrounding module or function.
 const unwrap = (response) => response?.data?.data ?? response?.data ?? null;
+// Declare messageOf for use by the surrounding module or function.
 const messageOf = (error, fallback) =>
   error?.response?.data?.message || error?.message || fallback;
 
+// Declare asArray for use by the surrounding module or function.
 const asArray = (value) => (Array.isArray(value) ? value : null);
 
+// Define ManagementAccounting; its parameters and body implement this operation.
 export default function ManagementAccounting() {
+  // Declare [year, setYear] for use by the surrounding module or function.
   const [year, setYear] = useState(new Date().getFullYear());
+  // Declare [assets, setAssets] for use by the surrounding module or function.
   const [assets, setAssets] = useState(null);
+  // Declare [budgets, setBudgets] for use by the surrounding module or function.
   const [budgets, setBudgets] = useState(null);
+  // Declare [periods, setPeriods] for use by the surrounding module or function.
   const [periods, setPeriods] = useState(null);
+  // Declare [variance, setVariance] for use by the surrounding module or function.
   const [variance, setVariance] = useState(null);
+  // Declare [error, setError] for use by the surrounding module or function.
   const [error, setError] = useState("");
+  // Declare [notice, setNotice] for use by the surrounding module or function.
   const [notice, setNotice] = useState("");
+  // Declare [loading, setLoading] for use by the surrounding module or function.
   const [loading, setLoading] = useState(true);
+  // Declare [busy, setBusy] for use by the surrounding module or function.
   const [busy, setBusy] = useState("");
 
+  // Declare load for use by the surrounding module or function.
   const load = async () => {
+    // Perform the side effect or state update expressed on the following line.
     setLoading(true);
+    // Perform the side effect or state update expressed on the following line.
     setError("");
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Declare [a, b, p, v] for use by the surrounding module or function.
       const [a, b, p, v] = await Promise.all([
         api.get("/admin/finance/accounting/assets"),
         api.get(`/admin/finance/accounting/budgets?fiscalYear=${year}`),
@@ -59,43 +90,65 @@ export default function ManagementAccounting() {
         api.get(`/admin/finance/accounting/budgets-vs-actual?fiscalYear=${year}`),
       ]);
 
+      // Perform the side effect or state update expressed on the following line.
       setAssets(asArray(unwrap(a)) ?? []);
+      // Perform the side effect or state update expressed on the following line.
       setBudgets(asArray(unwrap(b)) ?? []);
+      // Perform the side effect or state update expressed on the following line.
       setPeriods(asArray(unwrap(p)) ?? []);
+      // Declare varianceData for use by the surrounding module or function.
       const varianceData = unwrap(v);
+      // Perform the side effect or state update expressed on the following line.
       setVariance(asArray(varianceData?.rows) ?? []);
     } catch (e) {
+      // Perform the side effect or state update expressed on the following line.
       setError(messageOf(e, "Unable to load management accounting data."));
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       setLoading(false);
     }
   };
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Perform the side effect or state update expressed on the following line.
     load();
   }, [year]);
 
+  // Declare run for use by the surrounding module or function.
   const run = async (key, fn, successMessage = "Accounting operation completed successfully.") => {
+    // Perform the side effect or state update expressed on the following line.
     setBusy(key);
+    // Perform the side effect or state update expressed on the following line.
     setError("");
+    // Perform the side effect or state update expressed on the following line.
     setNotice("");
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       await fn();
+      // Perform the side effect or state update expressed on the following line.
       setNotice(successMessage);
+      // Perform the side effect or state update expressed on the following line.
       await load();
     } catch (e) {
+      // Perform the side effect or state update expressed on the following line.
       setError(messageOf(e, "Accounting operation failed."));
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       setBusy("");
     }
   };
 
+  // Declare totals for use by the surrounding module or function.
   const totals = useMemo(() => {
+    // Declare sum for use by the surrounding module or function.
     const sum = (rows, selector) =>
       rows === null
         ? null
         : rows.reduce((total, row) => total + (finite(selector(row)) ?? 0), 0);
 
+    // Return the object assembled below to the caller.
     return {
       assets: sum(assets, (a) => a.acquisitionCost),
       budget: sum(budgets, (b) => b.amount),
@@ -103,14 +156,20 @@ export default function ManagementAccounting() {
     };
   }, [assets, budgets, variance]);
 
+  // Declare depreciate for use by the surrounding module or function.
   const depreciate = (asset) => {
+    // Declare months for use by the surrounding module or function.
     const months = Number(window.prompt("Number of depreciation months", "1"));
+    // Check the condition (!Number.isInteger(months) || months < 1) and run the matching branch.
     if (!Number.isInteger(months) || months < 1) return;
+    // Declare period for use by the surrounding module or function.
     const period = window.prompt(
       "Depreciation period (YYYY-MM)",
       new Date().toISOString().slice(0, 7),
     );
+    // Check the condition (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period || "")) and run the matching branch.
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period || "")) return;
+    // Return the result of run() to the caller.
     return run(
       `dep-${asset._id}`,
       () =>
@@ -122,12 +181,17 @@ export default function ManagementAccounting() {
     );
   };
 
+  // Declare dispose for use by the surrounding module or function.
   const dispose = (asset) => {
+    // Declare proceeds for use by the surrounding module or function.
     const proceeds = Number(window.prompt("Disposal proceeds (KES)", "0"));
+    // Check the condition (!Number.isFinite(proceeds) || proceeds < 0) and run the matching branch.
     if (!Number.isFinite(proceeds) || proceeds < 0) return;
+    // Declare reference for use by the surrounding module or function.
     const reference =
       window.prompt("Disposal reference", `DISP-${asset.assetNumber}`) ||
       `DISP-${asset.assetNumber}`;
+    // Return the result of run() to the caller.
     return run(
       `disp-${asset._id}`,
       () =>
@@ -139,6 +203,7 @@ export default function ManagementAccounting() {
     );
   };
 
+  // Declare approveBudget for use by the surrounding module or function.
   const approveBudget = (budget) =>
     run(
       `budget-${budget._id}`,
@@ -146,6 +211,7 @@ export default function ManagementAccounting() {
       "Budget approved successfully.",
     );
 
+  // Declare closePeriod for use by the surrounding module or function.
   const closePeriod = (period) =>
     run(
       `close-${period}`,
@@ -156,6 +222,7 @@ export default function ManagementAccounting() {
       `Accounting period ${period} closed successfully.`,
     );
 
+  // Declare reopenPeriod for use by the surrounding module or function.
   const reopenPeriod = (period) =>
     run(
       `reopen-${period}`,
@@ -163,13 +230,17 @@ export default function ManagementAccounting() {
       `Accounting period ${period} reopened successfully.`,
     );
 
+  // Declare closeYear for use by the surrounding module or function.
   const closeYear = () => {
+    // Check the condition (!window.confirm( `Close fiscal year ${year} and transfer the calculate) and run the matching branch.
     if (
       !window.confirm(
         `Close fiscal year ${year} and transfer the calculated profit/loss to retained earnings?`,
       )
     )
+      // Return the result to the caller.
       return;
+    // Return the result of run() to the caller.
     return run(
       `year-${year}`,
       () => api.post(`/admin/finance/accounting/periods/${year}/year-end-close`),
@@ -177,9 +248,12 @@ export default function ManagementAccounting() {
     );
   };
 
+  // Declare hasDataError for use by the surrounding module or function.
   const hasDataError = Boolean(error);
+  // Declare dataReady for use by the surrounding module or function.
   const dataReady = !loading && !hasDataError;
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
@@ -413,7 +487,9 @@ export default function ManagementAccounting() {
   );
 }
 
+// Define StatusStrip; its parameters and body implement this operation.
 function StatusStrip({ icon: Icon, label, value }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="flex items-center gap-3 border-white/10 px-6 py-4 sm:border-r last:border-r-0">
       <Icon className="h-4 w-4 text-emerald-300" />
@@ -422,12 +498,15 @@ function StatusStrip({ icon: Icon, label, value }) {
   );
 }
 
+// Define Metric; its parameters and body implement this operation.
 function Metric({ icon: Icon, title, value, tone }) {
+  // Declare tones for use by the surrounding module or function.
   const tones = {
     emerald: "bg-emerald-50 text-emerald-700",
     blue: "bg-blue-50 text-blue-700",
     amber: "bg-amber-50 text-amber-700",
   };
+  // Return the expression shown below to the caller.
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
@@ -439,7 +518,9 @@ function Metric({ icon: Icon, title, value, tone }) {
   );
 }
 
+// Define SectionHeader; its parameters and body implement this operation.
 function SectionHeader({ icon: Icon, title, description }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="flex items-start gap-3 border-b border-slate-100 p-5 md:p-6">
       <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-700"><Icon className="h-5 w-5" /></div>
@@ -448,15 +529,23 @@ function SectionHeader({ icon: Icon, title, description }) {
   );
 }
 
+// Define DataState; its parameters and body implement this operation.
 function DataState({ ready, loading, empty, emptyText, error, children }) {
+  // Check the condition (loading) and run the matching branch.
   if (loading) return <div className="p-8 text-center text-sm font-medium text-slate-500">Loading accounting data…</div>;
+  // Check the condition (error || !ready) and run the matching branch.
   if (error || !ready) return <div className="p-8 text-center text-sm font-semibold text-red-600">Data unavailable. Check the accounting API response above.</div>;
+  // Check the condition (empty) and run the matching branch.
   if (empty) return <div className="p-8 text-center text-sm text-slate-500">{emptyText}</div>;
+  // Return the value of children to the caller.
   return children;
 }
 
+// Define StatusBadge; its parameters and body implement this operation.
 function StatusBadge({ status }) {
+  // Declare normalized for use by the surrounding module or function.
   const normalized = String(status || "unknown").toLowerCase();
+  // Declare styles for use by the surrounding module or function.
   const styles = normalized === "approved" || normalized === "active" || normalized === "open"
     ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
     : normalized === "closed" || normalized === "fully_depreciated"
@@ -464,13 +553,17 @@ function StatusBadge({ status }) {
       : normalized === "disposed"
         ? "bg-amber-50 text-amber-700 ring-amber-200"
         : "bg-slate-50 text-slate-600 ring-slate-200";
+  // Return the expression shown below to the caller.
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ring-1 ${styles}`}>{normalized.replaceAll("_", " ")}</span>;
 }
 
+// Define ActionButton; its parameters and body implement this operation.
 function ActionButton({ children, variant = "primary", disabled, onClick, loading }) {
+  // Declare base for use by the surrounding module or function.
   const base = variant === "secondary"
     ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
     : "bg-slate-950 text-white hover:bg-slate-800";
+  // Return the expression shown below to the caller.
   return (
     <button
       type="button"
@@ -483,7 +576,9 @@ function ActionButton({ children, variant = "primary", disabled, onClick, loadin
   );
 }
 
+// Define Table; its parameters and body implement this operation.
 function Table({ headers, rows }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">

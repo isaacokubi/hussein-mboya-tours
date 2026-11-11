@@ -1,8 +1,13 @@
+/**
+ * Purpose: AIBooking Risk reusable UI component. Main declarations: AIBookingRisk.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 export default function AIBookingRisk({
   data={}
 }){
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="bg-white rounded-xl shadow p-6">

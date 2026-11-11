@@ -1,9 +1,19 @@
+/**
+ * Purpose: operations Copilot Controller HTTP controller. Main declarations: getOperationsCopilotSummary, createOperationsQuoteDraft.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../models/Tour.js so this module can use its exported dependencies.
 import Tour from "../models/Tour.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../models/TourCost.js so this module can use its exported dependencies.
 import TourCost from "../models/TourCost.js";
+// Load ../models/OperationalAsset.js so this module can use its exported dependencies.
 import OperationalAsset from "../models/OperationalAsset.js";
+// Load ../tenancy/context.js so this module can use its exported dependencies.
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
+// Load ../services/operationsCopilotCalculations.js so this module can use its exported dependencies.
 import { buildTripOperations, buildPaymentFollowUp, buildAssetAlerts, buildQuoteDraft, toMoney } from "../services/operationsCopilotCalculations.js";
 
 /**
@@ -12,18 +22,25 @@ import { buildTripOperations, buildPaymentFollowUp, buildAssetAlerts, buildQuote
  * database query is scoped to the current tenant. It never sends messages or
  * changes booking/payment records.
  */
+// Declare getOperationsCopilotSummary for use by the surrounding module or function.
 export const getOperationsCopilotSummary = async (req, res, next) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare tenantId for use by the surrounding module or function.
     const tenantId = requireTenantId();
     // Aggregate pipelines bypass Mongoose casting and query middleware.
+    // Declare tenantObjectId for use by the surrounding module or function.
     const tenantObjectId = new mongoose.Types.ObjectId(String(tenantId));
+    // Declare tourFilter for use by the surrounding module or function.
     const tourFilter = mergeTenantFilter({ isDeleted: { $ne: true } });
+    // Declare bookingFilter for use by the surrounding module or function.
     const bookingFilter = {
       tenantId: tenantObjectId,
       isDeleted: { $ne: true },
       status: { $nin: ["cancelled", "refunded"] },
     };
 
+    // Declare [tours, bookingTotals, costTotals, bookingFinancialTotals, outstandingBookings, operationalAssets] for use by the surrounding module or function.
     const [tours, bookingTotals, costTotals, bookingFinancialTotals, outstandingBookings, operationalAssets] = await Promise.all([
       Tour.find(tourFilter)
         .select("title startDate date duration status assignedGuide assignedDriver assignedVehicle capacity")
@@ -79,24 +96,34 @@ export const getOperationsCopilotSummary = async (req, res, next) => {
         .lean(),
     ]);
 
+    // Declare bookingMap for use by the surrounding module or function.
     const bookingMap = new Map(bookingTotals.map((row) => [String(row._id), row]));
+    // Declare costMap for use by the surrounding module or function.
     const costMap = new Map(costTotals.map((row) => [String(row._id), row]));
+    // Declare trips for use by the surrounding module or function.
     const trips = tours.map((tour) => buildTripOperations(
       tour,
       bookingMap.get(String(tour._id)) || {},
       costMap.get(String(tour._id)) || {},
     ));
+    // Declare paymentFollowUps for use by the surrounding module or function.
     const paymentFollowUps = outstandingBookings
       .map((booking) => buildPaymentFollowUp(booking))
       .filter(Boolean);
+    // Declare financialTotals for use by the surrounding module or function.
     const financialTotals = bookingFinancialTotals[0] || {};
+    // Declare assetAlerts for use by the surrounding module or function.
     const assetAlerts = operationalAssets
       .map((asset) => buildAssetAlerts(asset))
       .filter(Boolean);
+    // Declare totalBookedValue for use by the surrounding module or function.
     const totalBookedValue = toMoney(financialTotals.bookedValue);
+    // Declare totalCollectedValue for use by the surrounding module or function.
     const totalCollectedValue = toMoney(financialTotals.collectedValue);
+    // Declare totalEstimatedCost for use by the surrounding module or function.
     const totalEstimatedCost = toMoney(trips.reduce((sum, trip) => sum + trip.estimatedCost, 0));
 
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({
       success: true,
       data: {
@@ -124,6 +151,7 @@ export const getOperationsCopilotSummary = async (req, res, next) => {
       },
     });
   } catch (error) {
+    // Return the result of next() to the caller.
     return next(error);
   }
 };
@@ -132,26 +160,40 @@ export const getOperationsCopilotSummary = async (req, res, next) => {
  * Create a preview-only quotation from catalogue pricing. This intentionally
  * does not save a quotation or create a booking; a manager reviews it first.
  */
+// Declare createOperationsQuoteDraft for use by the surrounding module or function.
 export const createOperationsQuoteDraft = async (req, res, next) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Perform the side effect or state update expressed on the following line.
     requireTenantId();
+    // Declare { tourId, travelerCount, discountPercent = 0, taxPercent = 0 } for use by the surrounding module or function.
     const { tourId, travelerCount, discountPercent = 0, taxPercent = 0 } = req.body || {};
+    // Check the condition (!mongoose.isValidObjectId(tourId)) and run the matching branch.
     if (!mongoose.isValidObjectId(tourId)) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({ success: false, message: "A valid tourId is required." });
     }
+    // Declare tour for use by the surrounding module or function.
     const tour = await Tour.findOne(mergeTenantFilter({
       _id: tourId,
       isDeleted: { $ne: true },
     })).select("title destination price discountPrice inclusions exclusions itinerary cancellationPolicy").populate("destination", "name title").lean();
+    // Check the condition (!tour) and run the matching branch.
     if (!tour) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({ success: false, message: "Tour was not found in this tenant." });
     }
+    // Declare quote for use by the surrounding module or function.
     const quote = buildQuoteDraft(tour, travelerCount, discountPercent, taxPercent);
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({ success: true, data: quote });
   } catch (error) {
+    // Check the condition (/Travellers must|Discount must|Tax rate must|Tour has no valid price/.) and run the matching branch.
     if (/Travellers must|Discount must|Tax rate must|Tour has no valid price/.test(error.message)) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({ success: false, message: error.message });
     }
+    // Return the result of next() to the caller.
     return next(error);
   }
 };

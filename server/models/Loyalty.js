@@ -1,7 +1,14 @@
+/**
+ * Purpose: Loyalty database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/Loyalty.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -10,6 +17,7 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare transactionSchema for use by the surrounding module or function.
 const transactionSchema = new mongoose.Schema(
   {
 
@@ -72,6 +80,7 @@ const transactionSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Declare loyaltySchema for use by the surrounding module or function.
 const loyaltySchema = new mongoose.Schema(
   {
     /*
@@ -224,7 +233,9 @@ const loyaltySchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 loyaltySchema.virtual("totalTransactions").get(function () {
+  // Return the length value to the caller.
   return this.transactions.length;
 });
 
@@ -234,16 +245,21 @@ loyaltySchema.virtual("totalTransactions").get(function () {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 loyaltySchema.methods.addPoints = function (
   points,
   description = "",
   booking = null,
   createdBy = null
 ) {
+  // Perform the side effect or state update expressed on the following line.
   this.availablePoints += points;
+  // Perform the side effect or state update expressed on the following line.
   this.lifetimePoints += points;
+  // Perform the side effect or state update expressed on the following line.
   this.lastEarnedAt = new Date();
 
+  // Perform the side effect or state update expressed on the following line.
   this.transactions.push({
     type: "earned",
     points,
@@ -252,23 +268,31 @@ loyaltySchema.methods.addPoints = function (
     createdBy,
   });
 
+  // Return the expression shown below to the caller.
   return this;
 };
 
+// Perform the side effect or state update expressed on the following line.
 loyaltySchema.methods.redeemPoints = function (
   points,
   description = "",
   booking = null,
   createdBy = null
 ) {
+  // Check the condition (this.availablePoints < points) and run the matching branch.
   if (this.availablePoints < points) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error("Insufficient loyalty points");
   }
 
+  // Perform the side effect or state update expressed on the following line.
   this.availablePoints -= points;
+  // Perform the side effect or state update expressed on the following line.
   this.redeemedPoints += points;
+  // Perform the side effect or state update expressed on the following line.
   this.lastRedeemedAt = new Date();
 
+  // Perform the side effect or state update expressed on the following line.
   this.transactions.push({
     type: "redeemed",
     points,
@@ -277,24 +301,34 @@ loyaltySchema.methods.redeemPoints = function (
     createdBy,
   });
 
+  // Return the expression shown below to the caller.
   return this;
 };
 
+// Perform the side effect or state update expressed on the following line.
 loyaltySchema.methods.updateTier = function () {
+  // Check the condition (this.lifetimePoints >= 10000) and run the matching branch.
   if (this.lifetimePoints >= 10000) {
+    // Perform the side effect or state update expressed on the following line.
     this.tier = "Diamond";
   } else if (this.lifetimePoints >= 5000) {
+    // Perform the side effect or state update expressed on the following line.
     this.tier = "Platinum";
   } else if (this.lifetimePoints >= 2500) {
+    // Perform the side effect or state update expressed on the following line.
     this.tier = "Gold";
   } else if (this.lifetimePoints >= 1000) {
+    // Perform the side effect or state update expressed on the following line.
     this.tier = "Silver";
   } else {
+    // Perform the side effect or state update expressed on the following line.
     this.tier = "Bronze";
   }
 
+  // Perform the side effect or state update expressed on the following line.
   this.tierUpdatedAt = new Date();
 
+  // Return the expression shown below to the caller.
   return this;
 };
 
@@ -304,12 +338,15 @@ loyaltySchema.methods.updateTier = function () {
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 loyaltySchema.index({ tier: 1 });
 
 
 
+// Perform the side effect or state update expressed on the following line.
 loyaltySchema.index({ availablePoints: -1 });
 
+// Perform the side effect or state update expressed on the following line.
 loyaltySchema.index({ createdAt: -1 });
 
 /*
@@ -318,7 +355,9 @@ loyaltySchema.index({ createdAt: -1 });
 |--------------------------------------------------------------------------
 */
 
+// Declare tenantLoyaltySchema for use by the surrounding module or function.
 const tenantLoyaltySchema = loyaltySchema.plugin(tenantPlugin);
+// Declare Loyalty for use by the surrounding module or function.
 const Loyalty = mongoose.models.Loyalty || mongoose.model("Loyalty", tenantLoyaltySchema);
 
 

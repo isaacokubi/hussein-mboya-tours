@@ -1,6 +1,12 @@
+/**
+ * Purpose: Go Live Readiness page-level UI component. Main declarations: GoLiveReadiness.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Link } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import { Activity, CheckCircle2, CreditCard, Database, ExternalLink, FileCheck2, ShieldCheck } from "lucide-react";
 
+// Declare controls for use by the surrounding module or function.
 const controls = [
   { title: "KRA / eTIMS", detail: "Complete applicable KRA/eTIMS onboarding and connect the certified adapter before enabling production submission.", href: "/admin/compliance", label: "Open compliance", icon: FileCheck2 },
   { title: "TRA & tourism licensing", detail: "Record applicable licences, permits, issue dates, expiry dates and review dates in the compliance centre.", href: "/admin/compliance", label: "Review licences", icon: ShieldCheck },
@@ -10,4 +16,5 @@ const controls = [
   { title: "Finance & accounting", detail: "Review tax rules, invoices, payments, supplier costs, reconciliation and the tenant-scoped general ledger.", href: "/admin/finance", label: "Open finance", icon: CheckCircle2 },
 ];
 
+// Define GoLiveReadiness; its parameters and body implement this operation.
 export default function GoLiveReadiness() { return <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start gap-3"><div className="rounded-xl bg-indigo-50 p-2.5 text-indigo-700"><ShieldCheck size={20}/></div><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-600">Production readiness</p><h2 className="mt-1 text-2xl font-black text-slate-950">Go-Live Readiness Center</h2><p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500">Application-side controls are surfaced here; external registrations, provider credentials, certification, backups and deployment infrastructure must still be completed and verified before live operation.</p></div></div><div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{controls.map(({ title, detail, href, label, icon: Icon }) => <section key={title} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md"><div className="flex items-start gap-3"><div className="rounded-xl bg-white p-2 text-indigo-700 shadow-sm"><Icon size={19}/></div><div className="min-w-0"><h3 className="font-bold text-slate-950">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{detail}</p></div></div><Link to={href} className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-indigo-700 hover:text-indigo-500">{label}<ExternalLink size={15}/></Link></section>)}</div><div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900"><strong>Production boundary:</strong> the system never fabricates KRA/eTIMS receipts or silently reads an unrelated company's website. Website booking capture requires owner-authorized integration through a supported connector/API.</div></section>; }

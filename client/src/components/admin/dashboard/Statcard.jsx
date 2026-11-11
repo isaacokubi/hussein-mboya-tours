@@ -1,3 +1,7 @@
+/**
+ * Purpose: Statcard reusable UI component. Main declarations: StatCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 const cardTheme = {
   Revenue: "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/60 ring-1 ring-emerald-100",
   Bookings: "border-sky-200 bg-gradient-to-br from-sky-50 via-white to-sky-100/60 ring-1 ring-sky-100",
@@ -18,6 +22,7 @@ const cardTheme = {
   "Completed Payments": "border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-100/60 ring-1 ring-blue-100",
 };
 
+// Declare valueTheme for use by the surrounding module or function.
 const valueTheme = {
   Revenue: "text-emerald-800",
   Bookings: "text-sky-800",
@@ -38,11 +43,16 @@ const valueTheme = {
   "Completed Payments": "text-blue-800",
 };
 
+// Define StatCard; its parameters and body implement this operation.
 export default function StatCard({ title, value = 0, icon, className = "", valueClassName = "" }) {
+  // Declare displayValue for use by the surrounding module or function.
   const displayValue = typeof value === "object" || value === null ? "0" : String(value);
+  // Declare theme for use by the surrounding module or function.
   const theme = cardTheme[title] || "border-slate-200 bg-white ring-1 ring-slate-100";
+  // Declare valueColor for use by the surrounding module or function.
   const valueColor = valueTheme[title] || "text-slate-900";
 
+  // Return the expression shown below to the caller.
   return (
     <div className={`dashboard-stat-card group relative min-w-0 overflow-hidden rounded-2xl border p-4 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-5 ${theme} ${className}`}>
       <div className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-white/50 blur-2xl transition group-hover:scale-125" />

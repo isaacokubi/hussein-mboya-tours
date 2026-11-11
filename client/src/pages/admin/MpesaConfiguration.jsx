@@ -1,36 +1,64 @@
+/**
+ * Purpose: Mpesa Configuration page-level UI component. Main declarations: MpesaConfiguration, update, submit, ready, PanelHeader.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { CreditCard, Banknote, Building2, Smartphone, Wifi } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../components/admin/PaymentGatewayCenter so this module can use its exported dependencies.
 import PaymentGatewayCenter from "../../components/admin/PaymentGatewayCenter";
+// Load ../../api/settingsApi so this module can use its exported dependencies.
 import { getSettings, updateSettings } from "../../api/settingsApi";
+// Load ../../api/axios so this module can use its exported dependencies.
 import api from "../../api/axios";
 
+// Declare tabs for use by the surrounding module or function.
 const tabs = [
   ["MPESA", "M-Pesa", Smartphone], ["BANK", "Bank transfer", Building2],
   ["STRIPE", "Card payments", CreditCard], ["CASH", "Cash", Banknote], ["PAYPAL", "PayPal", CreditCard],
 ];
+// Declare defaults for use by the surrounding module or function.
 const defaults = { enableBankTransfer: false, bankName: "", bankAccountName: "", bankAccountNumber: "", bankBranch: "", bankSwiftCode: "", bankInstructions: "", bankReferenceInstructions: "", enableCash: false, cashCollectionLocation: "", cashInstructions: "", cashReceiptRequired: false, enableStripe: false };
 
+// Define MpesaConfiguration; its parameters and body implement this operation.
 export default function MpesaConfiguration() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [tab, setTab] for use by the surrounding module or function.
   const [tab, setTab] = useState("MPESA");
+  // Declare [settings, setSettings] for use by the surrounding module or function.
   const [settings, setSettings] = useState(defaults);
+  // Declare [stripeCheck, setStripeCheck] for use by the surrounding module or function.
   const [stripeCheck, setStripeCheck] = useState(null);
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({ queryKey: ["payment-center-settings"], queryFn: getSettings });
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => { const saved = query.data?.data || query.data?.settings; if (saved) setSettings((s) => ({ ...s, ...saved })); }, [query.data]);
+  // Declare save for use by the surrounding module or function.
   const save = useMutation({ mutationFn: updateSettings, onSuccess: async (r) => { const saved = r?.data || r?.settings || {}; setSettings((s) => ({ ...s, ...saved })); await qc.invalidateQueries({ queryKey: ["payment-center-settings"] }); await qc.invalidateQueries({ queryKey: ["public-system-settings"] }); toast.success("Payment settings saved for this tenant."); }, onError: (e) => toast.error(e?.response?.data?.message || "Unable to save tenant payment settings.") });
+  // Declare validateStripe for use by the surrounding module or function.
   const validateStripe = useMutation({ mutationFn: async () => (await api.post("/admin/payment-gateways/STRIPE/validate")).data, onSuccess: (r) => setStripeCheck(r?.data), onError: () => setStripeCheck({ status: "unverified", message: "Stripe could not be reached. Connectivity remains unverified." }) });
+  // Declare update for use by the surrounding module or function.
   const update = (key, value) => setSettings((s) => ({ ...s, [key]: value }));
+  // Declare submit for use by the surrounding module or function.
   const submit = (e) => { e.preventDefault(); const fields = tab === "BANK" ? ["enableBankTransfer", "bankName", "bankAccountName", "bankAccountNumber", "bankBranch", "bankSwiftCode", "bankInstructions", "bankReferenceInstructions"] : tab === "STRIPE" ? ["enableStripe"] : ["enableCash", "cashCollectionLocation", "cashInstructions", "cashReceiptRequired"]; save.mutate(Object.fromEntries(fields.map((key) => [key, settings[key]]))); };
+  // Declare ready for use by the surrounding module or function.
   const ready = (key) => {
+    // Check the condition (!settings[key]) and run the matching branch.
     if (!settings[key]) return "Disabled";
+    // Declare complete for use by the surrounding module or function.
     const complete = key === "enableBankTransfer"
       ? Boolean(settings.bankName?.trim() && settings.bankAccountName?.trim() && /^[A-Za-z0-9][A-Za-z0-9 -]{4,33}$/.test(String(settings.bankAccountNumber || "").trim()) && settings.bankInstructions?.trim())
       : Boolean(settings.cashCollectionLocation?.trim() && settings.cashInstructions?.trim());
+    // Return the expression shown below to the caller.
     return complete ? "Configured · manual confirmation required" : "Validation required · checkout unavailable";
   };
 
+  // Return the expression shown below to the caller.
   return <div className="mx-auto max-w-7xl space-y-5">
     <header className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Tenant settings</p><h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">M-Pesa Configuration</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Payment Configuration Center · settings apply to the current tenant only. Enabled does not mean provider connectivity or payment completion has been verified.</p><p className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">Scope: {query.isLoading ? "Loading tenant…" : settings.companyName || "Current tenant"}</p></header>
     {query.isError && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">Tenant settings could not be loaded. Check your access or connection, then <button type="button" onClick={() => query.refetch()} className="font-bold underline">retry</button>.</div>}
@@ -45,6 +73,9 @@ export default function MpesaConfiguration() {
   </div>;
 }
 
+// Define PanelHeader; its parameters and body implement this operation.
 function PanelHeader({ title, status, detail }) { return <div className="mb-5"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold text-slate-900">{title}</h2><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">{status}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p></div>; }
+// Define Toggle; its parameters and body implement this operation.
 function Toggle({ checked, onChange, label }) { return <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 p-4"><span className="font-semibold">{label}</span><input type="checkbox" checked={Boolean(checked)} onChange={(e)=>onChange(e.target.checked)} className="h-5 w-5 accent-emerald-700"/></label>; }
+// Define SaveButton; its parameters and body implement this operation.
 function SaveButton({ busy, disabled = false }) { return <button type="submit" disabled={busy || disabled} className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : "Save tenant settings"}</button>; }

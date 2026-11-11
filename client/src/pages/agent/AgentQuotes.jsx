@@ -1,40 +1,77 @@
+/**
+ * Purpose: Agent Quotes page-level UI component. Main declarations: money, statusTone, AgentQuotes, submit, updateItem.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { AlertTriangle, Calculator, FileText, Plus, RefreshCw, Send, Trash2 } from "lucide-react";
+// Load ../../api/axios so this module can use its exported dependencies.
 import api from "../../api/axios";
+// Load ../../api/quotationApi so this module can use its exported dependencies.
 import { getAgentQuotations, createQuotation, updateQuotationStatus } from "../../api/quotationApi";
 
+// Declare emptyItem for use by the surrounding module or function.
 const emptyItem = { name: "", category: "Other", description: "", quantity: 1, unitPrice: "" };
+// Declare money for use by the surrounding module or function.
 const money = (value) => { const n = Number(value); return Number.isFinite(n) ? `KES ${n.toLocaleString("en-KE")}` : "—"; };
+// Declare statusTone for use by the surrounding module or function.
 const statusTone = (status) => { const s = String(status || "unknown").toLowerCase(); if (["accepted","approved","sent"].includes(s)) return "bg-emerald-50 text-emerald-700 ring-emerald-200"; if (["draft","pending"].includes(s)) return "bg-amber-50 text-amber-700 ring-amber-200"; if (["rejected","expired","cancelled"].includes(s)) return "bg-rose-50 text-rose-700 ring-rose-200"; return "bg-slate-100 text-slate-600 ring-slate-200"; };
 
+// Define AgentQuotes; its parameters and body implement this operation.
 export default function AgentQuotes() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare quotesQuery for use by the surrounding module or function.
   const quotesQuery = useQuery({ queryKey: ["agent-quotes"], queryFn: getAgentQuotations, staleTime: 30000, refetchOnMount: "always" });
+  // Declare customersQuery for use by the surrounding module or function.
   const customersQuery = useQuery({ queryKey: ["agent-customers"], queryFn: async () => (await api.get("/agent/customers")).data, staleTime: 30000 });
+  // Declare packagesQuery for use by the surrounding module or function.
   const packagesQuery = useQuery({ queryKey: ["agent-packages"], queryFn: async () => (await api.get("/agent/packages")).data, staleTime: 30000 });
+  // Declare [open, setOpen] for use by the surrounding module or function.
   const [open, setOpen] = useState(false);
+  // Declare [customer, setCustomer] for use by the surrounding module or function.
   const [customer, setCustomer] = useState("");
+  // Declare [tourPackage, setTourPackage] for use by the surrounding module or function.
   const [tourPackage, setTourPackage] = useState("");
+  // Declare [validUntil, setValidUntil] for use by the surrounding module or function.
   const [validUntil, setValidUntil] = useState("");
+  // Declare [notes, setNotes] for use by the surrounding module or function.
   const [notes, setNotes] = useState("");
+  // Declare [taxRate, setTaxRate] for use by the surrounding module or function.
   const [taxRate, setTaxRate] = useState(0);
+  // Declare [discount, setDiscount] for use by the surrounding module or function.
   const [discount, setDiscount] = useState(0);
+  // Declare [items, setItems] for use by the surrounding module or function.
   const [items, setItems] = useState([{ ...emptyItem, name: "Safari package" }]);
+  // Declare quotes for use by the surrounding module or function.
   const quotes = Array.isArray(quotesQuery.data?.quotations) ? quotesQuery.data.quotations : Array.isArray(quotesQuery.data?.data) ? quotesQuery.data.data : Array.isArray(quotesQuery.data?.quotes) ? quotesQuery.data.quotes : [];
+  // Declare customers for use by the surrounding module or function.
   const customers = Array.isArray(customersQuery.data?.customers) ? customersQuery.data.customers : Array.isArray(customersQuery.data?.data) ? customersQuery.data.data : [];
+  // Declare packages for use by the surrounding module or function.
   const packages = Array.isArray(packagesQuery.data?.packages) ? packagesQuery.data.packages : Array.isArray(packagesQuery.data?.data) ? packagesQuery.data.data : [];
+  // Declare subtotal for use by the surrounding module or function.
   const subtotal = useMemo(() => items.reduce((sum, i) => sum + Number(i.quantity || 0) * Number(i.unitPrice || 0), 0), [items]);
+  // Declare discountAmount for use by the surrounding module or function.
   const discountAmount = Math.min(subtotal, Math.max(0, Number(discount) || 0));
+  // Declare taxable for use by the surrounding module or function.
   const taxable = Math.max(0, subtotal - discountAmount);
+  // Declare taxAmount for use by the surrounding module or function.
   const taxAmount = taxable * (Math.max(0, Number(taxRate) || 0) / 100);
+  // Declare estimatedTotal for use by the surrounding module or function.
   const estimatedTotal = taxable + taxAmount;
 
+  // Declare createMutation for use by the surrounding module or function.
   const createMutation = useMutation({ mutationFn: createQuotation, onSuccess: () => { setOpen(false); setItems([{ ...emptyItem, name: "Safari package" }]); setCustomer(""); setTourPackage(""); setValidUntil(""); setNotes(""); setDiscount(0); setTaxRate(0); qc.invalidateQueries({ queryKey: ["agent-quotes"] }); } });
+  // Declare statusMutation for use by the surrounding module or function.
   const statusMutation = useMutation({ mutationFn: updateQuotationStatus, onSuccess: () => qc.invalidateQueries({ queryKey: ["agent-quotes"] }) });
+  // Declare submit for use by the surrounding module or function.
   const submit = (e) => { e.preventDefault(); const validItems = items.filter(i => i.name.trim() && Number(i.quantity) > 0 && Number(i.unitPrice) >= 0); if (!customer || !tourPackage || !validUntil || !validItems.length) return; createMutation.mutate({ customer, tourPackage, items: validItems.map(i => ({ ...i, quantity: Number(i.quantity), unitPrice: Number(i.unitPrice), total: Number(i.quantity) * Number(i.unitPrice) })), discount: Number(discount), taxRate: Number(taxRate), notes, validUntil }); };
+  // Declare updateItem for use by the surrounding module or function.
   const updateItem = (index, patch) => setItems((current) => current.map((item, i) => i === index ? { ...item, ...patch } : item));
 
+  // Return the expression shown below to the caller.
   return <section className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6">
     <header className="rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-6 text-white shadow-xl sm:p-8"><div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-emerald-300">Sales workflow</p><h1 className="mt-2 text-3xl font-black">Quotation Builder</h1><p className="mt-2 max-w-2xl text-sm text-slate-300">Turn customer requests into priced, trackable proposals with clear commercial totals.</p></div><button type="button" onClick={()=>setOpen(v=>!v)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-emerald-400"><Plus className="h-4 w-4"/> {open ? "Close builder" : "New quotation"}</button></div></header>
     {(customersQuery.isError || packagesQuery.isError) && <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900"><AlertTriangle className="mt-0.5 h-5 w-5"/><div><p className="font-bold">Quotation dependencies are incomplete</p><p className="mt-1 text-sm">Customer or package data could not be fully loaded. Do not create a quotation using missing dependency data.</p></div></div>}

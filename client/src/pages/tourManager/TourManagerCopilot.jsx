@@ -1,15 +1,25 @@
+/**
+ * Purpose: Tour Manager Copilot page-level UI component. Main declarations: money, Metric, TourManagerCopilot.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMutation, useQuery } from "@tanstack/react-query";
+// Load react so this module can use its exported dependencies.
 import { useState } from "react";
+// Load lucide-react so this module can use its exported dependencies.
 import { AlertTriangle, Bot, CalendarClock, CheckCircle2, RefreshCw, Wallet } from "lucide-react";
+// Load ../../api/tourManagerApi so this module can use its exported dependencies.
 import { createOperationsQuoteDraft, getOperationsCopilotSummary, getTours, sendBookingNotification } from "../../api/tourManagerApi";
 
+// Declare money for use by the surrounding module or function.
 const money = (value) => new Intl.NumberFormat("en-KE", {
   style: "currency",
   currency: "KES",
   maximumFractionDigits: 2,
 }).format(Number(value || 0));
 
+// Define Metric; its parameters and body implement this operation.
 function Metric({ label, value, hint, icon: Icon }) {
+  // Return the expression shown below to the caller.
   return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <div className="flex items-start justify-between gap-3">
       <div><p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">{value}</p><p className="mt-1 text-xs text-slate-500">{hint}</p></div>
@@ -18,27 +28,38 @@ function Metric({ label, value, hint, icon: Icon }) {
   </article>;
 }
 
+// Define TourManagerCopilot; its parameters and body implement this operation.
 export default function TourManagerCopilot() {
+  // Declare [tourId, setTourId] for use by the surrounding module or function.
   const [tourId, setTourId] = useState("");
+  // Declare [travelerCount, setTravelerCount] for use by the surrounding module or function.
   const [travelerCount, setTravelerCount] = useState("2");
+  // Declare [discountPercent, setDiscountPercent] for use by the surrounding module or function.
   const [discountPercent, setDiscountPercent] = useState("0");
+  // Declare [taxPercent, setTaxPercent] for use by the surrounding module or function.
   const [taxPercent, setTaxPercent] = useState("0");
+  // Declare quoteMutation for use by the surrounding module or function.
   const quoteMutation = useMutation({
     mutationFn: createOperationsQuoteDraft,
   });
+  // Declare toursQuery for use by the surrounding module or function.
   const toursQuery = useQuery({
     queryKey: ["tour-manager-copilot-tours"],
     queryFn: getTours,
     staleTime: 60_000,
     retry: 1,
   });
+  // Declare toursPayload for use by the surrounding module or function.
   const toursPayload = toursQuery.data?.data ?? toursQuery.data;
+  // Declare quoteTours for use by the surrounding module or function.
   const quoteTours = Array.isArray(toursPayload) ? toursPayload : (toursPayload?.tours || toursPayload?.data || toursPayload?.results || []);
+  // Declare reminderMutation for use by the surrounding module or function.
   const reminderMutation = useMutation({
     mutationFn: ({ id, channel }) => sendBookingNotification(id, channel),
     onSuccess: () => window.alert("Payment reminder sent successfully."),
     onError: (error) => window.alert(error?.response?.data?.message || error?.message || "Payment reminder could not be sent."),
   });
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({
     queryKey: ["tour-manager-copilot-summary"],
     queryFn: getOperationsCopilotSummary,
@@ -46,11 +67,16 @@ export default function TourManagerCopilot() {
     refetchInterval: 60_000,
     retry: 1,
   });
+  // Declare result for use by the surrounding module or function.
   const result = query.data?.data;
+  // Declare summary for use by the surrounding module or function.
   const summary = result?.summary || {};
+  // Declare trips for use by the surrounding module or function.
   const trips = Array.isArray(result?.trips) ? result.trips : [];
+  // Declare followUps for use by the surrounding module or function.
   const followUps = Array.isArray(result?.paymentFollowUps) ? result.paymentFollowUps : [];
 
+  // Return the expression shown below to the caller.
   return <section className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
     <div className="mx-auto max-w-7xl space-y-6">
       <header className="flex flex-col gap-4 rounded-3xl bg-gradient-to-br from-slate-950 via-emerald-950 to-emerald-800 p-6 text-white shadow-xl sm:flex-row sm:items-center sm:justify-between sm:p-8">

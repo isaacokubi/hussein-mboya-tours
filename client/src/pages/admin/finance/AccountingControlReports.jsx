@@ -1,20 +1,35 @@
+/**
+ * Purpose: Accounting Control Reports page-level UI component. Main declarations: money, date, label, statusClass, fetchReport.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useQuery } from "@tanstack/react-query";
+// Load react so this module can use its exported dependencies.
 import { useState } from "react";
+// Load ../../../api/axios so this module can use its exported dependencies.
 import api from "../../../api/axios";
+// Load ../../../components/admin/Pagination so this module can use its exported dependencies.
 import Pagination from "../../../components/admin/Pagination";
 
+// Declare PAGE_SIZE for use by the surrounding module or function.
 const PAGE_SIZE = 15;
+// Declare TAX_CODES for use by the surrounding module or function.
 const TAX_CODES = ["2100", "2110", "2120", "2130"];
+// Declare STATUTORY_CODES for use by the surrounding module or function.
 const STATUTORY_CODES = ["2140", "2150"];
+// Declare ACCOUNT_LABELS for use by the surrounding module or function.
 const ACCOUNT_LABELS = {
   "2100": "VAT / Tax Payable", "2110": "Output VAT", "2120": "Input VAT",
   "2130": "Withholding Tax Payable", "2140": "Payroll Liabilities", "2150": "Customer Deposits",
 };
 
+// Declare money for use by the surrounding module or function.
 const money = (value) => value == null ? "—" : `KES ${Number(value).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// Declare date for use by the surrounding module or function.
 const date = (value) => value ? new Date(value).toLocaleDateString("en-KE", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
+// Declare label for use by the surrounding module or function.
 const label = (value) => String(value || "manual").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
+// Declare statusClass for use by the surrounding module or function.
 const statusClass = (status) => ({
   linked: "border-emerald-200 bg-emerald-50 text-emerald-900",
   reconciled: "border-emerald-200 bg-emerald-50 text-emerald-900",
@@ -26,40 +41,62 @@ const statusClass = (status) => ({
   no_activity: "border-slate-200 bg-slate-100 text-slate-700",
 }[status] || "border-slate-200 bg-slate-50 text-slate-700");
 
+// Declare fetchReport for use by the surrounding module or function.
 const fetchReport = async (url, name) => {
+  // Declare response for use by the surrounding module or function.
   const response = (await api.get(url)).data;
+  // Check the condition (!response?.success) and run the matching branch.
   if (!response?.success) throw new Error(`${name} returned an invalid response.`);
+  // Return the value of response to the caller.
   return response;
 };
 
+// Define Badge; its parameters and body implement this operation.
 function Badge({ status, children }) {
+  // Return the expression shown below to the caller.
   return <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClass(status)}`}>{children}</span>;
 }
+// Define ErrorBox; its parameters and body implement this operation.
 function ErrorBox({ query, name }) {
+  // Check the condition (!query.isError) and run the matching branch.
   if (!query.isError) return null;
+  // Return the expression shown below to the caller.
   return <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert"><b>{name} unavailable.</b> The API request failed, so no fallback accounting values are displayed.</div>;
 }
+// Define LoadingBox; its parameters and body implement this operation.
 function LoadingBox({ name }) {
+  // Return the expression shown below to the caller.
   return <div className="px-4 py-10 text-center" aria-live="polite"><div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700" /><p className="mt-3 font-semibold text-slate-700">Loading {name.toLowerCase()}…</p><p className="mt-1 text-sm text-slate-500">Reading tenant-scoped posted accounting data.</p></div>;
 }
+// Define Metric; its parameters and body implement this operation.
 function Metric({ title, value, hint }) {
+  // Return the expression shown below to the caller.
   return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p><p className="mt-2 text-2xl font-bold text-slate-900">{money(value)}</p><p className="mt-1 text-xs text-slate-500">{hint}</p></div>;
 }
+// Define MissingAccount; its parameters and body implement this operation.
 function MissingAccount({ code, name }) {
+  // Return the expression shown below to the caller.
   return <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"><b>{name} control account {code} is not configured.</b><p className="mt-1">This control is unavailable and is not represented as KES 0.00.</p></div>;
 }
 
+// Define LedgerSection; its parameters and body implement this operation.
 function LedgerSection({ title, sub, type, from, to }) {
+  // Declare [page, setPage] for use by the surrounding module or function.
   const [page, setPage] = useState(1);
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({
     queryKey: [`${type}-ledger`, from, to, page],
     queryFn: () => fetchReport(`/admin/finance/accounting/${type}-ledger?from=${from}&to=${to}&page=${page}&pageSize=${PAGE_SIZE}`, `${title} report`),
     staleTime: 15000,
     placeholderData: (previous) => previous,
   });
+  // Declare data for use by the surrounding module or function.
   const data = query.data?.data;
+  // Declare rows for use by the surrounding module or function.
   const rows = data?.rows || [];
+  // Declare pagination for use by the surrounding module or function.
   const pagination = data?.pagination || { page, pages: 0, total: 0, pageSize: PAGE_SIZE };
+  // Return the expression shown below to the caller.
   return <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
     <div className="border-b border-slate-100 p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-lg font-bold text-slate-900">{title}</h2><p className="mt-1 text-sm text-slate-500">{sub}</p></div>{data?.accountFound && <div className="rounded-xl bg-emerald-50 px-3 py-2 text-right"><p className="text-xs text-emerald-700">Closing balance</p><p className="font-bold text-emerald-900">{money(data.closingBalance)}</p></div>}</div></div>
     {query.isError ? <ErrorBox query={query} name={title} /> : query.isPending && !data ? <LoadingBox name={title} /> : !data?.accountFound ? <MissingAccount code={data?.account || (type === "customer" ? "1100" : "2000")} name={type === "customer" ? "Accounts receivable" : "Accounts payable"} /> : <>
@@ -69,27 +106,46 @@ function LedgerSection({ title, sub, type, from, to }) {
   </section>;
 }
 
+// Define TaxAccountCards; its parameters and body implement this operation.
 function TaxAccountCards({ data }) {
+  // Declare rows for use by the surrounding module or function.
   const rows = data?.rows || [];
+  // Declare byCode for use by the surrounding module or function.
   const byCode = new Map(rows.map((row) => [row.code, row]));
+  // Declare configured for use by the surrounding module or function.
   const configured = new Set(data?.reconciliation?.availableTaxAccounts || []);
+  // Declare statutoryConfigured for use by the surrounding module or function.
   const statutoryConfigured = new Set(data?.reconciliation?.availableStatutoryAccounts || []);
+  // Declare render for use by the surrounding module or function.
   const render = (code) => { const isConfigured = configured.has(code) || statutoryConfigured.has(code); const row = byCode.get(code); return <div key={code} className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{code}</p><p className="mt-1 font-semibold text-slate-900">{ACCOUNT_LABELS[code]}</p></div><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${isConfigured ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{isConfigured ? "Configured" : "Missing"}</span></div><p className="mt-4 text-lg font-bold text-slate-900">{isConfigured ? money(row?.balance ?? 0) : "—"}</p><p className="mt-1 text-xs text-slate-500">{isConfigured ? "Posted journal balance" : "No active control account"}</p></div>; };
+  // Return the expression shown below to the caller.
   return <div className="space-y-5"><div><p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Tax controls</p><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{TAX_CODES.map(render)}</div></div><div><p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Other statutory controls</p><div className="grid gap-3 sm:grid-cols-2">{STATUTORY_CODES.map(render)}</div></div></div>;
 }
 
+// Define AccountingControlReports; its parameters and body implement this operation.
 export default function AccountingControlReports() {
+  // Declare year for use by the surrounding module or function.
   const year = new Date().getFullYear();
+  // Declare from, to for use by the surrounding module or function.
   const from = `${year}-01-01`, to = `${year}-12-31`;
+  // Declare tax for use by the surrounding module or function.
   const tax = useQuery({ queryKey: ["tax-control", year], queryFn: () => fetchReport(`/admin/finance/accounting/tax-control?from=${from}&to=${to}`, "Tax control report"), staleTime: 15000 });
+  // Declare billing for use by the surrounding module or function.
   const billing = useQuery({ queryKey: ["billing-control", year], queryFn: () => fetchReport(`/admin/finance/accounting/profitability?from=${from}&to=${to}`, "Service billing report"), staleTime: 15000 });
+  // Declare td for use by the surrounding module or function.
   const td = tax.data?.data;
+  // Declare billingData for use by the surrounding module or function.
   const billingData = billing.data;
+  // Declare serviceRows for use by the surrounding module or function.
   const serviceRows = billingData?.data || [];
+  // Declare reconciliation for use by the surrounding module or function.
   const reconciliation = billingData?.reconciliation;
+  // Declare taxReconciliation for use by the surrounding module or function.
   const taxReconciliation = td?.reconciliation;
+  // Declare taxAccounts for use by the surrounding module or function.
   const taxAccounts = taxReconciliation?.availableTaxAccounts || [];
 
+  // Return the expression shown below to the caller.
   return <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8"><div className="mx-auto max-w-7xl space-y-6">
     <header className="rounded-3xl bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-900 p-6 text-white shadow-lg sm:p-8"><p className="text-sm font-semibold uppercase tracking-wider text-emerald-300">Production accounting</p><h1 className="mt-2 text-2xl font-bold sm:text-3xl">Tax, Ledgers &amp; Billing Controls</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-emerald-50/80">Tenant-scoped, read-only accounting controls from posted journals, qualifying invoices and completed payments. Failed controls never fall back to zero.</p><p className="mt-4 inline-flex rounded-full bg-white/10 px-3 py-1.5 text-xs">Reporting period: {from} — {to}</p></header>
     <ErrorBox query={tax} name="Tax control report" /><ErrorBox query={billing} name="Service billing report" />

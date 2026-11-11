@@ -1,5 +1,10 @@
+/**
+ * Purpose: permission Seed database seed module. Main declarations: seedTourGuidePermissions.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import Permission from "../models/Permission.js";
 
+// Declare tourGuidePermissions for use by the surrounding module or function.
 const tourGuidePermissions = [
   {
     name: "view_assigned_tours",
@@ -19,7 +24,9 @@ const tourGuidePermissions = [
   },
 ];
 
+// Declare seedTourGuidePermissions for use by the surrounding module or function.
 const seedTourGuidePermissions = async () => {
+  // Declare operations for use by the surrounding module or function.
   const operations = tourGuidePermissions.map((permission) => ({
     updateOne: {
       filter: { name: permission.name },
@@ -36,8 +43,10 @@ const seedTourGuidePermissions = async () => {
     },
   }));
 
+  // Perform the side effect or state update expressed on the following line.
   await Permission.bulkWrite(operations);
 
+  // Perform the side effect or state update expressed on the following line.
   console.log(
     `✅ Seeded ${tourGuidePermissions.length} tour guide permissions`
   );

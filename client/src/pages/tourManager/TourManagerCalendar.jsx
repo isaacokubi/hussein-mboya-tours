@@ -1,5 +1,11 @@
+/**
+ * Purpose: Tour Manager Calendar page-level UI component. Main declarations: normalizeResponse, loadAllTenantTours, tourId, tourTitle, parseDate.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   AlertTriangle,
   Bell,
@@ -14,35 +20,53 @@ import {
   Route,
   XCircle,
 } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/tourManagerApi so this module can use its exported dependencies.
 import { createCalendarReminder, deleteCalendarReminder, getCalendarReminders, getManagerTours } from "../../api/tourManagerApi";
 
+// Declare WEEKDAYS for use by the surrounding module or function.
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+// Declare normalizeResponse for use by the surrounding module or function.
 const normalizeResponse = (response) => {
+  // Check the condition (Array.isArray(response)) and run the matching branch.
   if (Array.isArray(response)) return response;
+  // Check the condition (Array.isArray(response?.tours)) and run the matching branch.
   if (Array.isArray(response?.tours)) return response.tours;
+  // Check the condition (Array.isArray(response?.data)) and run the matching branch.
   if (Array.isArray(response?.data)) return response.data;
+  // Check the condition (Array.isArray(response?.data?.tours)) and run the matching branch.
   if (Array.isArray(response?.data?.tours)) return response.data.tours;
+  // Check the condition (Array.isArray(response?.items)) and run the matching branch.
   if (Array.isArray(response?.items)) return response.items;
+  // Check the condition (Array.isArray(response?.results)) and run the matching branch.
   if (Array.isArray(response?.results)) return response.results;
+  // Return the collection assembled below to the caller.
   return [];
 };
 
+// Declare loadAllTenantTours for use by the surrounding module or function.
 const loadAllTenantTours = async () => {
+  // Declare firstPage for use by the surrounding module or function.
   const firstPage = await getManagerTours({ page: 1, limit: 50 });
+  // Declare firstTours for use by the surrounding module or function.
   const firstTours = normalizeResponse(firstPage);
+  // Declare pageCount for use by the surrounding module or function.
   const pageCount = Math.max(
     1,
     Number(firstPage?.pagination?.pages) ||
       Math.ceil(Number(firstPage?.total || firstPage?.pagination?.total || firstTours.length) / 50)
   );
+  // Declare remainingPages for use by the surrounding module or function.
   const remainingPages = await Promise.all(
     Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) =>
       getManagerTours({ page: index + 2, limit: 50 })
     )
   );
+  // Declare allTours for use by the surrounding module or function.
   const allTours = [firstPage, ...remainingPages].flatMap(normalizeResponse);
+  // Return the result of Array.from() to the caller.
   return Array.from(
     new Map(allTours.filter(Boolean).map((tour, index) => [
       String(tour?._id || tour?.id || tour?.slug || `tour-${index}`),
@@ -51,96 +75,150 @@ const loadAllTenantTours = async () => {
   );
 };
 
+// Declare tourId for use by the surrounding module or function.
 const tourId = (tour, index) => String(tour?._id || tour?.id || tour?.slug || `tour-${index}`);
 
+// Declare tourTitle for use by the surrounding module or function.
 const tourTitle = (tour) =>
   tour?.title || tour?.name || tour?.tourName || tour?.destination?.name || "Untitled tour";
 
+// Declare parseDate for use by the surrounding module or function.
 const parseDate = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return null;
   // Treat YYYY-MM-DD as a local calendar date instead of UTC midnight, which
   // can shift the displayed day in time zones west of UTC.
+  // Declare dateOnlyMatch for use by the surrounding module or function.
   const dateOnlyMatch = typeof value === "string" && value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  // Declare date for use by the surrounding module or function.
   const date = dateOnlyMatch
     ? new Date(Number(dateOnlyMatch[1]), Number(dateOnlyMatch[2]) - 1, Number(dateOnlyMatch[3]))
     : new Date(value);
+  // Return the expression shown below to the caller.
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+// Declare startDateOf for use by the surrounding module or function.
 const startDateOf = (tour) =>
   parseDate(tour?.startDate || tour?.date || tour?.departureDate || tour?.travelDate || tour?.tourDate);
 
+// Declare durationDaysOf for use by the surrounding module or function.
 const durationDaysOf = (tour) => {
+  // Declare raw for use by the surrounding module or function.
   const raw = tour?.durationDetails?.days ?? tour?.durationDays ?? tour?.duration ?? 1;
+  // Declare match for use by the surrounding module or function.
   const match = String(raw).match(/\d+/);
+  // Declare days for use by the surrounding module or function.
   const days = Number(match?.[0] || 1);
+  // Return the expression shown below to the caller.
   return Number.isFinite(days) && days >= 1 ? Math.min(days, 365) : 1;
 };
 
+// Declare endDateOf for use by the surrounding module or function.
 const endDateOf = (tour) => {
+  // Declare start for use by the surrounding module or function.
   const start = startDateOf(tour);
+  // Check the condition (!start) and run the matching branch.
   if (!start) return null;
+  // Declare explicitEnd for use by the surrounding module or function.
   const explicitEnd = parseDate(tour?.endDate || tour?.returnDate);
+  // Check the condition (explicitEnd && explicitEnd >= start) and run the matching branch.
   if (explicitEnd && explicitEnd >= start) return explicitEnd;
 
+  // Declare end for use by the surrounding module or function.
   const end = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  // Perform the side effect or state update expressed on the following line.
   end.setDate(end.getDate() + durationDaysOf(tour) - 1);
+  // Return the value of end to the caller.
   return end;
 };
 
+// Declare dateOnly for use by the surrounding module or function.
 const dateOnly = (date) => {
+  // Check the condition (!date) and run the matching branch.
   if (!date) return "";
+  // Declare year for use by the surrounding module or function.
   const year = date.getFullYear();
+  // Declare month for use by the surrounding module or function.
   const month = String(date.getMonth() + 1).padStart(2, "0");
+  // Declare day for use by the surrounding module or function.
   const day = String(date.getDate()).padStart(2, "0");
+  // Return the expression shown below to the caller.
   return `${year}-${month}-${day}`;
 };
 
+// Declare scheduledDateKeys for use by the surrounding module or function.
 const scheduledDateKeys = (tour) => {
+  // Declare keys for use by the surrounding module or function.
   const keys = new Set();
+  // Declare start for use by the surrounding module or function.
   const start = startDateOf(tour);
+  // Declare end for use by the surrounding module or function.
   const end = endDateOf(tour);
 
   // Mark every day of a multi-day tour, including both departure and return.
+  // Check the condition (start && end) and run the matching branch.
   if (start && end) {
+    // Declare cursor for use by the surrounding module or function.
     const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    // Declare finalDay for use by the surrounding module or function.
     const finalDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    // Repeat the enclosed work for each required iteration.
     for (; cursor <= finalDay; cursor.setDate(cursor.getDate() + 1)) {
+      // Perform the side effect or state update expressed on the following line.
       keys.add(dateOnly(cursor));
     }
   }
 
   // Some tours are sold on specific departure dates in the availability list.
   // Include those dates too, even when the tour has no single startDate.
+  // Declare availability for use by the surrounding module or function.
   const availability = [
     ...(Array.isArray(tour?.availability) ? tour.availability : []),
     ...(Array.isArray(tour?.availableDates) ? tour.availableDates : []),
     ...(Array.isArray(tour?.travelDates) ? tour.travelDates : []),
   ];
+  // Repeat the enclosed work for each required iteration.
   for (const item of availability) {
+    // Declare date for use by the surrounding module or function.
     const date = parseDate(typeof item === "object" ? item?.date || item?.startDate || item?.departureDate : item);
+    // Check the condition (date) and run the matching branch.
     if (date) keys.add(dateOnly(date));
   }
 
+  // Return the value of keys to the caller.
   return keys;
 };
 
+// Declare statusOf for use by the surrounding module or function.
 const statusOf = (tour) => String(tour?.status || "scheduled").toLowerCase().replace(/[_-]/g, " ");
 
+// Declare statusClasses for use by the surrounding module or function.
 const statusClasses = (status) => {
+  // Check the condition (status.includes("completed")) and run the matching branch.
   if (status.includes("completed")) return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  // Check the condition (status.includes("cancel")) and run the matching branch.
   if (status.includes("cancel")) return "bg-rose-50 text-rose-700 ring-rose-200";
+  // Check the condition (status.includes("ongoing") || status.includes("active")) and run the matching branch.
   if (status.includes("ongoing") || status.includes("active")) return "bg-blue-50 text-blue-700 ring-blue-200";
+  // Return a configured text value to the caller.
   return "bg-indigo-50 text-indigo-700 ring-indigo-200";
 };
 
+// Define TourManagerCalendar; its parameters and body implement this operation.
 export default function TourManagerCalendar() {
+  // Declare [currentDate, setCurrentDate] for use by the surrounding module or function.
   const [currentDate, setCurrentDate] = useState(new Date());
+  // Declare [savingReminder, setSavingReminder] for use by the surrounding module or function.
   const [savingReminder, setSavingReminder] = useState(false);
+  // Declare [deletingReminderId, setDeletingReminderId] for use by the surrounding module or function.
   const [deletingReminderId, setDeletingReminderId] = useState("");
+  // Declare [selectedDay, setSelectedDay] for use by the surrounding module or function.
   const [selectedDay, setSelectedDay] = useState(null);
+  // Declare [title, setTitle] for use by the surrounding module or function.
   const [title, setTitle] = useState("");
 
+  // Declare toursQuery for use by the surrounding module or function.
   const toursQuery = useQuery({
     queryKey: ["tour-manager-calendar-tours"],
     queryFn: loadAllTenantTours,
@@ -148,21 +226,30 @@ export default function TourManagerCalendar() {
     retry: 1,
   });
 
+  // Declare tours for use by the surrounding module or function.
   const tours = useMemo(() => normalizeResponse(toursQuery.data), [toursQuery.data]);
+  // Declare remindersQuery for use by the surrounding module or function.
   const remindersQuery = useQuery({
     queryKey: ["tour-manager-calendar-reminders"],
     queryFn: () => getCalendarReminders(),
     staleTime: 15_000,
     retry: 1,
   });
+  // Declare reminders for use by the surrounding module or function.
   const reminders = useMemo(() => normalizeResponse(remindersQuery.data), [remindersQuery.data]);
 
+  // Declare year for use by the surrounding module or function.
   const year = currentDate.getFullYear();
+  // Declare month for use by the surrounding module or function.
   const month = currentDate.getMonth();
+  // Declare daysInMonth for use by the surrounding module or function.
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // Declare firstDay for use by the surrounding module or function.
   const firstDay = new Date(year, month, 1).getDay();
+  // Declare todayKey for use by the surrounding module or function.
   const todayKey = dateOnly(new Date());
 
+  // Declare days for use by the surrounding module or function.
   const days = useMemo(
     () => [
       ...Array.from({ length: firstDay }, () => null),
@@ -171,12 +258,17 @@ export default function TourManagerCalendar() {
     [firstDay, daysInMonth]
   );
 
+  // Declare dateKey for use by the surrounding module or function.
   const dateKey = (day) => (day ? dateOnly(new Date(year, month, day)) : "");
 
+  // Declare eventsFor for use by the surrounding module or function.
   const eventsFor = (day) => {
+    // Declare keyDate for use by the surrounding module or function.
     const keyDate = dateKey(day);
+    // Check the condition (!keyDate) and run the matching branch.
     if (!keyDate) return [];
 
+    // Declare tourEvents for use by the surrounding module or function.
     const tourEvents = tours
       .filter((tour) => scheduledDateKeys(tour).has(keyDate))
       .map((tour, index) => ({
@@ -187,18 +279,25 @@ export default function TourManagerCalendar() {
         tour,
       }));
 
+    // Declare reminderEvents for use by the surrounding module or function.
     const reminderEvents = reminders
       .filter((reminder) => reminder?.date === keyDate)
       .map((reminder) => ({ kind: "reminder", ...reminder, id: String(reminder?._id || reminder?.id || "") }));
 
+    // Return the collection assembled below to the caller.
     return [...tourEvents, ...reminderEvents];
   };
 
+  // Declare selectedDate for use by the surrounding module or function.
   const selectedDate = selectedDay ? new Date(year, month, selectedDay) : null;
+  // Declare selectedEvents for use by the surrounding module or function.
   const selectedEvents = selectedDay ? eventsFor(selectedDay) : [];
+  // Declare scheduledTourCount for use by the surrounding module or function.
   const scheduledTourCount = selectedEvents.filter((event) => event.kind === "tour").length;
+  // Declare reminderCount for use by the surrounding module or function.
   const reminderCount = selectedEvents.filter((event) => event.kind === "reminder").length;
 
+  // Declare monthTourCount for use by the surrounding module or function.
   const monthTourCount = useMemo(
     () => new Set(
       days.flatMap((day) => eventsFor(day).filter((event) => event.kind === "tour").map((event) => event.id))
@@ -206,50 +305,79 @@ export default function TourManagerCalendar() {
     [days, reminders, tours, year, month]
   );
 
+  // Declare changeMonth for use by the surrounding module or function.
   const changeMonth = (offset) => {
+    // Perform the side effect or state update expressed on the following line.
     setCurrentDate(new Date(year, month + offset, 1));
+    // Perform the side effect or state update expressed on the following line.
     setSelectedDay(null);
   };
 
+  // Declare addReminder for use by the surrounding module or function.
   const addReminder = async () => {
+    // Check the condition (!selectedDay || !title.trim() || savingReminder) and run the matching branch.
     if (!selectedDay || !title.trim() || savingReminder) return;
+    // Declare item for use by the surrounding module or function.
     const item = { date: dateKey(selectedDay), title: title.trim() };
+    // Declare duplicate for use by the surrounding module or function.
     const duplicate = reminders.some(
       (reminder) => reminder.date === item.date && reminder.title?.trim().toLowerCase() === item.title.toLowerCase()
     );
+    // Check the condition (duplicate) and run the matching branch.
     if (duplicate) {
+      // Perform the side effect or state update expressed on the following line.
       toast.info("That reminder already exists on this date.");
+      // Return the result to the caller.
       return;
     }
 
+    // Perform the side effect or state update expressed on the following line.
     setSavingReminder(true);
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       await createCalendarReminder(item);
+      // Perform the side effect or state update expressed on the following line.
       await remindersQuery.refetch();
+      // Perform the side effect or state update expressed on the following line.
       setTitle("");
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Reminder saved to your team calendar.");
     } catch (error) {
+      // Declare message for use by the surrounding module or function.
       const message = error?.response?.data?.message || "Could not save the reminder. Please try again.";
+      // Perform the side effect or state update expressed on the following line.
       toast.error(message);
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       setSavingReminder(false);
     }
   };
 
+  // Declare removeReminder for use by the surrounding module or function.
   const removeReminder = async (id) => {
+    // Check the condition (!id || deletingReminderId) and run the matching branch.
     if (!id || deletingReminderId) return;
+    // Perform the side effect or state update expressed on the following line.
     setDeletingReminderId(id);
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       await deleteCalendarReminder(id);
+      // Perform the side effect or state update expressed on the following line.
       await remindersQuery.refetch();
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Reminder removed.");
     } catch (error) {
+      // Perform the side effect or state update expressed on the following line.
       toast.error(error?.response?.data?.message || "Could not remove the reminder. Please try again.");
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       setDeletingReminderId("");
     }
   };
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
       <div className="mx-auto max-w-7xl">

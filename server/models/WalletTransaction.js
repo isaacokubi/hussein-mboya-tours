@@ -1,7 +1,14 @@
+/**
+ * Purpose: Wallet Transaction database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/WalletTransaction.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -21,6 +28,7 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare walletTransactionSchema for use by the surrounding module or function.
 const walletTransactionSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index:true },
@@ -234,23 +242,28 @@ const walletTransactionSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 walletTransactionSchema.index({
   agent: 1,
   createdAt: -1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 walletTransactionSchema.index({
   booking: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 walletTransactionSchema.index({
   commission: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 walletTransactionSchema.index({
   status: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 walletTransactionSchema.index({
   type: 1,
 });
@@ -261,7 +274,9 @@ walletTransactionSchema.index({
 |--------------------------------------------------------------------------
 */
 
+// Declare tenantWalletTransactionSchema for use by the surrounding module or function.
 const tenantWalletTransactionSchema = walletTransactionSchema.plugin(tenantPlugin);
+// Declare WalletTransaction for use by the surrounding module or function.
 const WalletTransaction = mongoose.models.WalletTransaction || mongoose.model("WalletTransaction", tenantWalletTransactionSchema);
 
 

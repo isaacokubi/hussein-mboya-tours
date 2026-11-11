@@ -1,12 +1,19 @@
+/**
+ * Purpose: socket real-time socket module. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/socket/socket.js
 
+// Load socket.io-client so this module can use its exported dependencies.
 import { io } from "socket.io-client";
+// Load ../api/apiUrls so this module can use its exported dependencies.
 import { socketUrl as SOCKET_URL } from "../api/apiUrls";
 
 
 
 
 
+// Declare socket for use by the surrounding module or function.
 const socket = io(
 
     SOCKET_URL,
@@ -53,10 +60,12 @@ const socket = io(
 
 
 
+// Perform the side effect or state update expressed on the following line.
 socket.on(
     "connect",
     ()=>{
 
+        // Perform the side effect or state update expressed on the following line.
         console.log(
             "Socket connected:",
             socket.id
@@ -71,6 +80,7 @@ socket.on(
 
 
 
+// Perform the side effect or state update expressed on the following line.
 socket.on(
 
     "disconnect",
@@ -78,6 +88,7 @@ socket.on(
     (reason)=>{
 
 
+        // Perform the side effect or state update expressed on the following line.
         console.log(
 
             "Socket disconnected:",
@@ -97,6 +108,7 @@ socket.on(
 
 
 
+// Perform the side effect or state update expressed on the following line.
 socket.on(
 
     "connect_error",
@@ -104,6 +116,7 @@ socket.on(
     (error)=>{
 
 
+        // Perform the side effect or state update expressed on the following line.
         console.error(
 
             "Socket connection error:",

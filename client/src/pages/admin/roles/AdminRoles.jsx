@@ -1,3 +1,7 @@
+/**
+ * Purpose: Admin Roles page-level UI component. Main declarations: AdminRoles.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import {
   useMutation,
   useQuery,
@@ -5,6 +9,7 @@ import {
 } from "@tanstack/react-query";
 
 
+// Load ../../../api/admin/adminRoleApi so this module can use its exported dependencies.
 import {
   getAdminRoles,
   deleteAdminRole,
@@ -13,13 +18,16 @@ import {
 
 
 
+// Define AdminRoles; its parameters and body implement this operation.
 export default function AdminRoles(){
 
 
+// Declare queryClient for use by the surrounding module or function.
 const queryClient = useQueryClient();
 
 
 
+// Declare { data, isLoading } for use by the surrounding module or function.
 const {
   data,
   isLoading
@@ -35,12 +43,15 @@ const {
 
 
 
+// Declare deleteMutation for use by the surrounding module or function.
 const deleteMutation = useMutation({
 
  mutationFn:deleteAdminRole,
 
+ // Implement the onSuccess method for this class.
  onSuccess(){
 
+  // Perform the side effect or state update expressed on the following line.
   queryClient.invalidateQueries([
     "adminRoles"
   ]);
@@ -53,12 +64,15 @@ const deleteMutation = useMutation({
 
 
 
+// Declare statusMutation for use by the surrounding module or function.
 const statusMutation = useMutation({
 
  mutationFn:toggleRoleStatus,
 
+ // Implement the onSuccess method for this class.
  onSuccess(){
 
+  // Perform the side effect or state update expressed on the following line.
   queryClient.invalidateQueries([
     "adminRoles"
   ]);
@@ -71,8 +85,10 @@ const statusMutation = useMutation({
 
 
 
+// Check the condition (isLoading) and run the matching branch.
 if(isLoading){
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="p-6">
@@ -89,6 +105,7 @@ Loading roles...
 
 
 
+// Declare roles for use by the surrounding module or function.
 const roles =
 data?.data ||
 data?.roles ||
@@ -98,6 +115,7 @@ data?.roles ||
 
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="p-6 space-y-6">

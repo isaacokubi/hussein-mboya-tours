@@ -1,24 +1,47 @@
+/**
+ * Purpose: admin AIIntelligence Controller HTTP controller. Main declarations: getAIIntelligence.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { requireTenantId } from "../tenancy/context.js";
+// Load ../tenancy/tenantQuery.js so this module can use its exported dependencies.
 import { tenantFilter } from "../tenancy/tenantQuery.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../models/Payment.js so this module can use its exported dependencies.
 import Payment from "../models/Payment.js";
+// Load ../models/Review.js so this module can use its exported dependencies.
 import Review from "../models/Review.js";
+// Load ../models/Tour.js so this module can use its exported dependencies.
 import Tour from "../models/Tour.js";
+// Load ../models/User.js so this module can use its exported dependencies.
 import User from "../models/User.js";
+// Load ../models/Vehicle.js so this module can use its exported dependencies.
 import Vehicle from "../models/Vehicle.js";
+// Load ../services/bookingRevenueService.js so this module can use its exported dependencies.
 import { getBookingRevenueMetrics } from "../services/bookingRevenueService.js";
 
+// Declare getAIIntelligence for use by the surrounding module or function.
 export const getAIIntelligence = async (req, res, next) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Perform the side effect or state update expressed on the following line.
     requireTenantId();
+    // Declare filter for use by the surrounding module or function.
     const filter = tenantFilter(req);
+    // Declare bookingFilter for use by the surrounding module or function.
     const bookingFilter = { ...filter, isDeleted: { $ne: true } };
+    // Declare paymentFilter for use by the surrounding module or function.
     const paymentFilter = { ...filter };
+    // Declare tourFilter for use by the surrounding module or function.
     const tourFilter = { ...filter, isDeleted: { $ne: true } };
+    // Declare reviewFilter for use by the surrounding module or function.
     const reviewFilter = { ...filter };
+    // Declare customerFilter for use by the surrounding module or function.
     const customerFilter = { ...filter, $or: [{ role: "customer" }, { legacyRole: "customer" }] };
+    // Declare vehicleFilter for use by the surrounding module or function.
     const vehicleFilter = { ...filter, isDeleted: { $ne: true } };
 
+    // Declare [ totalBookings, confirmedBookings, failedPayments, completedPayments, averageBooking, topTours, rating, totalTours, totalCustomers, totalVehicles ] for use by the surrounding module or function.
     const [
       totalBookings,
       confirmedBookings,
@@ -55,15 +78,21 @@ export const getAIIntelligence = async (req, res, next) => {
       Vehicle.countDocuments(vehicleFilter)
     ]);
 
+    // Declare conversionRate for use by the surrounding module or function.
     const conversionRate = totalBookings
       ? Number(((confirmedBookings / totalBookings) * 100).toFixed(1))
       : 0;
+    // Declare recommendations for use by the surrounding module or function.
     const recommendations = [];
 
+    // Check the condition (failedPayments > 0) and run the matching branch.
     if (failedPayments > 0) recommendations.push(`${failedPayments} failed payment attempts detected. Follow up with customers.`);
+    // Check the condition (totalBookings > 0 && conversionRate < 50) and run the matching branch.
     if (totalBookings > 0 && conversionRate < 50) recommendations.push("Booking conversion is below 50%. Review checkout and payment flow.");
+    // Check the condition (rating[0]?.average != null && rating[0].average < 4) and run the matching branch.
     if (rating[0]?.average != null && rating[0].average < 4) recommendations.push("Customer satisfaction needs attention. Review recent feedback and service delivery.");
 
+    // Return the result of res.json() to the caller.
     return res.json({
       success: true,
       data: {
@@ -82,6 +111,7 @@ export const getAIIntelligence = async (req, res, next) => {
       }
     });
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     next(error);
   }
 };

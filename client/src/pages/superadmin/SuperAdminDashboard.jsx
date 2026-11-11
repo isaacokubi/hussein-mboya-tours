@@ -1,5 +1,11 @@
+/**
+ * Purpose: Super Admin Dashboard page-level UI component. Main declarations: number, hasValue, displayCount, displayMoney, unwrapMetrics.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useQuery } from "@tanstack/react-query";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   Activity,
   Building2,
@@ -20,19 +26,30 @@ import {
   WalletCards,
   AlertCircle,
 } from "lucide-react";
+// Load ../../api/superAdminApi so this module can use its exported dependencies.
 import { getSuperAdminDashboardMetrics } from "../../api/superAdminApi";
+// Load ./SuperAdminTenants so this module can use its exported dependencies.
 import SuperAdminTenants from "./SuperAdminTenants";
 
+// Declare number for use by the surrounding module or function.
 const number = (value) => Number(value ?? 0).toLocaleString("en-KE");
+// Declare hasValue for use by the surrounding module or function.
 const hasValue = (value) => value !== undefined && value !== null;
+// Declare displayCount for use by the surrounding module or function.
 const displayCount = (value) => (hasValue(value) ? number(value) : "—");
+// Declare displayMoney for use by the surrounding module or function.
 const displayMoney = (value, currency) =>
   hasValue(value) ? `${currency} ${number(value)}` : "—";
 
+// Declare unwrapMetrics for use by the surrounding module or function.
 const unwrapMetrics = (payload) => {
+  // Declare current for use by the surrounding module or function.
   let current = payload?.data ?? payload ?? {};
+  // Check the condition (current?.data && typeof current.data === "object" && !Array.isArray(cu) and run the matching branch.
   if (current?.data && typeof current.data === "object" && !Array.isArray(current.data)) {
+    // Declare nested for use by the surrounding module or function.
     const nested = current.data;
+    // Check the condition (nested.users !== undefined || nested.customers !== undefined || nested) and run the matching branch.
     if (
       nested.users !== undefined ||
       nested.customers !== undefined ||
@@ -44,15 +61,19 @@ const unwrapMetrics = (payload) => {
       nested.destinations !== undefined ||
       nested.payments !== undefined
     ) {
+      // Perform the side effect or state update expressed on the following line.
       current = nested;
     }
   }
+  // Return the value of current to the caller.
   return current;
 };
 
+// Declare unwrapScope for use by the surrounding module or function.
 const unwrapScope = (payload) =>
   payload?.scope || payload?.data?.scope || payload?.data?.data?.scope || {};
 
+// Declare cards for use by the surrounding module or function.
 const cards = [
   { key: "users", label: "Platform users", icon: Users, tone: "indigo" },
   { key: "customerProfiles", label: "Customer profiles", icon: UserCheck, tone: "sky" },
@@ -69,6 +90,7 @@ const cards = [
   { key: "completedPayments", label: "Completed payments", icon: CheckCircle2, tone: "green" },
 ];
 
+// Declare toneClasses for use by the surrounding module or function.
 const toneClasses = {
   indigo: "bg-indigo-50 text-indigo-700 ring-indigo-100",
   sky: "bg-sky-50 text-sky-700 ring-sky-100",
@@ -85,7 +107,9 @@ const toneClasses = {
   green: "bg-green-50 text-green-700 ring-green-100",
 };
 
+// Define SuperAdminDashboard; its parameters and body implement this operation.
 export default function SuperAdminDashboard() {
+  // Declare { data, isLoading, isError, error, refetch, isFetching } for use by the surrounding module or function.
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["superadmin-dashboard-metrics"],
     queryFn: getSuperAdminDashboardMetrics,
@@ -95,16 +119,26 @@ export default function SuperAdminDashboard() {
     refetchOnWindowFocus: true,
   });
 
+  // Declare stats for use by the surrounding module or function.
   const stats = unwrapMetrics(data);
+  // Declare scope for use by the surrounding module or function.
   const scope = unwrapScope(data);
+  // Declare status for use by the surrounding module or function.
   const status = error?.response?.status;
+  // Declare message for use by the surrounding module or function.
   const message = error?.response?.data?.message;
+  // Declare currency for use by the surrounding module or function.
   const currency = String(stats.revenueCurrency || "KES").toUpperCase();
+  // Declare tenantCount for use by the surrounding module or function.
   const tenantCount = hasValue(scope.tenantCount) ? Number(scope.tenantCount) : null;
+  // Declare activeTenantCount for use by the surrounding module or function.
   const activeTenantCount = hasValue(scope.activeTenantCount) ? Number(scope.activeTenantCount) : null;
+  // Declare trialTenantCount for use by the surrounding module or function.
   const trialTenantCount = hasValue(scope.trialTenantCount) ? Number(scope.trialTenantCount) : null;
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <main className="min-h-screen bg-slate-950 p-6 md:p-8">
         <div className="mx-auto max-w-7xl animate-pulse rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
@@ -121,9 +155,13 @@ export default function SuperAdminDashboard() {
     );
   }
 
+  // Check the condition (isError) and run the matching branch.
   if (isError) {
+    // Declare sessionExpired for use by the surrounding module or function.
     const sessionExpired = status === 401;
+    // Declare forbidden for use by the surrounding module or function.
     const forbidden = status === 403;
+    // Return the expression shown below to the caller.
     return (
       <main className="min-h-screen bg-slate-950 p-6 md:p-8">
         <div className="mx-auto max-w-3xl rounded-3xl border border-slate-800 bg-white p-8 shadow-2xl">
@@ -151,6 +189,7 @@ export default function SuperAdminDashboard() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1700px] space-y-7">

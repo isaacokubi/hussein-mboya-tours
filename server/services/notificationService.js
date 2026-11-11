@@ -1,11 +1,19 @@
+/**
+ * Purpose: notification Service business-logic service. Main declarations: createNotification, sendNotification, notifyUser, sendBookingConfirmation, sendBookingNotification.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
 // services/notificationService.js
+// Load ../services/settingsService.js so this module can use its exported dependencies.
 import { getSystemSettings } from "../services/settingsService.js";
 
+// Load ../models/Notification.js so this module can use its exported dependencies.
 import Notification from "../models/Notification.js";
 
+// Load ./emailService.js so this module can use its exported dependencies.
 import { sendEmail } from "./emailService.js";
 
+// Load ../socket/socketManager.js so this module can use its exported dependencies.
 import { sendNotificationToUser } from "../socket/socketManager.js";
 
 /*
@@ -14,6 +22,7 @@ import { sendNotificationToUser } from "../socket/socketManager.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare createNotification for use by the surrounding module or function.
 export const createNotification = async ({
   recipient,
   title,
@@ -21,19 +30,27 @@ export const createNotification = async ({
   type = "system",
   metadata = {},
 }) => {
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
+  // Check the condition (!recipient) and run the matching branch.
   if (!recipient) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error("Notification recipient is required.");
   }
 
+  // Check the condition (!title) and run the matching branch.
   if (!title) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error("Notification title is required.");
   }
 
+  // Check the condition (!message) and run the matching branch.
   if (!message) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error("Notification message is required.");
   }
 
+  // Declare notification for use by the surrounding module or function.
   const notification = await Notification.create({
     recipient,
     title,
@@ -42,16 +59,20 @@ export const createNotification = async ({
     metadata,
   });
 
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Perform the side effect or state update expressed on the following line.
     sendNotificationToUser(
       recipient.toString(),
       "notification",
       notification
     );
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     console.error("Socket notification failed:", error.message);
   }
 
+  // Return the value of notification to the caller.
   return notification;
 };
 
@@ -61,7 +82,9 @@ export const createNotification = async ({
 |--------------------------------------------------------------------------
 */
 
+// Declare sendNotification for use by the surrounding module or function.
 export const sendNotification = async (data) => {
+  // Return the result of createNotification() to the caller.
   return createNotification(data);
 };
 
@@ -71,6 +94,7 @@ export const sendNotification = async (data) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare notifyUser for use by the surrounding module or function.
 export const notifyUser = async ({
   user,
   subject,
@@ -80,20 +104,25 @@ export const notifyUser = async ({
   type = "system",
   metadata = {},
 }) => {
+  // Declare tasks for use by the surrounding module or function.
   const tasks = [];
 
+  // Check the condition (user?.email) and run the matching branch.
   if (user?.email) {
+    // Perform the side effect or state update expressed on the following line.
     tasks.push(
       sendEmail({
         to: user.email,
         subject,
         html,
       }).catch((error) => {
+        // Perform the side effect or state update expressed on the following line.
         console.error("Email failed:", error.message);
       })
     );
   }
 
+  // Perform the side effect or state update expressed on the following line.
   tasks.push(
     createNotification({
       recipient: user._id,
@@ -104,6 +133,7 @@ export const notifyUser = async ({
     })
   );
 
+  // Perform the side effect or state update expressed on the following line.
   await Promise.all(tasks);
 };
 
@@ -113,13 +143,17 @@ export const notifyUser = async ({
 |--------------------------------------------------------------------------
 */
 
+// Declare sendBookingConfirmation for use by the surrounding module or function.
 export const sendBookingConfirmation = async (
   user,
   booking
 ) => {
+  // Declare settings for use by the surrounding module or function.
   const settings = await getSystemSettings();
+  // Declare companyName for use by the surrounding module or function.
   const companyName = settings.companyName || "Company";
 
+  // Perform the side effect or state update expressed on the following line.
   await notifyUser({
     user,
 
@@ -157,6 +191,7 @@ export const sendBookingConfirmation = async (
 |--------------------------------------------------------------------------
 */
 
+// Declare sendBookingNotification for use by the surrounding module or function.
 export const sendBookingNotification = async ({
   adminUserId,
   customer,
@@ -182,6 +217,7 @@ export const sendBookingNotification = async ({
 |--------------------------------------------------------------------------
 */
 
+// Declare sendPaymentNotification for use by the surrounding module or function.
 export const sendPaymentNotification = async ({
   adminUserId,
   booking,
@@ -206,6 +242,7 @@ export const sendPaymentNotification = async ({
 |--------------------------------------------------------------------------
 */
 
+// Declare sendTourAssignmentNotification for use by the surrounding module or function.
 export const sendTourAssignmentNotification = async ({
   guideUserId,
   tour,
@@ -230,6 +267,7 @@ export const sendTourAssignmentNotification = async ({
 |--------------------------------------------------------------------------
 */
 
+// Declare notifyPaymentSuccess for use by the surrounding module or function.
 export const notifyPaymentSuccess = async (
   user,
   payment
@@ -251,4 +289,5 @@ export const notifyPaymentSuccess = async (
 
 
 
+// Expose the selected declarations or re-exported members to other parts of the application.
 export { sendEmail };

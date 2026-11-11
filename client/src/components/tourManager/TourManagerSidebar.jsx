@@ -1,4 +1,9 @@
+/**
+ * Purpose: Tour Manager Sidebar reusable UI component. Main declarations: TourManagerSidebar, update, scrollToBottom.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { NavLink } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   CalendarDays,
   Bot,
@@ -12,11 +17,14 @@ import {
   UserRoundCheck,
   UserRound,
 } from "lucide-react";
+// Load react so this module can use its exported dependencies.
 import { useEffect, useRef, useState } from "react";
+// Load ../../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../../context/SettingsContext";
 
 // Tour Manager owns day-to-day tour operations. Enterprise administration,
 // CRM, fleet master data, destinations, analytics and reporting stay in Admin.
+// Declare links for use by the surrounding module or function.
 const links = [
   ["Dashboard", "/tour-manager", LayoutDashboard],
   ["Operations Copilot", "/tour-manager/copilot", Bot],
@@ -29,28 +37,45 @@ const links = [
   ["Itineraries", "/tour-manager/itineraries", FileText],
 ];
 
+// Define TourManagerSidebar; its parameters and body implement this operation.
 export default function TourManagerSidebar() {
+  // Declare { companyName } for use by the surrounding module or function.
   const { companyName } = useSettings() || {};
+  // Declare navRef for use by the surrounding module or function.
   const navRef = useRef(null);
+  // Declare [showScrollButton, setShowScrollButton] for use by the surrounding module or function.
   const [showScrollButton, setShowScrollButton] = useState(false);
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Declare nav for use by the surrounding module or function.
     const nav = navRef.current;
+    // Check the condition (!nav) and run the matching branch.
     if (!nav) return undefined;
+    // Declare update for use by the surrounding module or function.
     const update = () => setShowScrollButton(nav.scrollHeight > nav.clientHeight + 8);
+    // Perform the side effect or state update expressed on the following line.
     update();
+    // Perform the side effect or state update expressed on the following line.
     nav.addEventListener("scroll", update, { passive: true });
+    // Perform the side effect or state update expressed on the following line.
     window.addEventListener("resize", update);
+    // Return the expression shown below to the caller.
     return () => {
+      // Perform the side effect or state update expressed on the following line.
       nav.removeEventListener("scroll", update);
+      // Perform the side effect or state update expressed on the following line.
       window.removeEventListener("resize", update);
     };
   }, []);
 
+  // Declare scrollToBottom for use by the surrounding module or function.
   const scrollToBottom = () => {
+    // Perform the side effect or state update expressed on the following line.
     navRef.current?.scrollTo({ top: navRef.current.scrollHeight, behavior: "smooth" });
   };
 
+  // Return the expression shown below to the caller.
   return (
     <div className="relative flex h-full w-72 min-h-0 flex-col overflow-hidden bg-slate-950 px-5 py-6 text-white">
       <div className="ops-brand shrink-0">

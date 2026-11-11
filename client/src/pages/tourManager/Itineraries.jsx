@@ -1,5 +1,11 @@
+/**
+ * Purpose: Itineraries page-level UI component. Main declarations: EMPTY_DAY, EMPTY_ACTIVITY, unwrap, asArray, clean.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   CalendarRange,
   CheckCircle2,
@@ -18,7 +24,9 @@ import {
   Utensils,
   X,
 } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/tourManagerApi so this module can use its exported dependencies.
 import {
   createItinerary,
   deleteItinerary,
@@ -28,7 +36,9 @@ import {
   updateItinerary,
 } from "../../api/tourManagerApi";
 
+// Declare EMPTY_DAY for use by the surrounding module or function.
 const EMPTY_DAY = () => ({ dayNumber: 1, title: "Day 1", summary: "", activities: [] });
+// Declare EMPTY_ACTIVITY for use by the surrounding module or function.
 const EMPTY_ACTIVITY = () => ({
   title: "",
   startTime: "",
@@ -41,30 +51,49 @@ const EMPTY_ACTIVITY = () => ({
   notes: "",
 });
 
+// Declare unwrap for use by the surrounding module or function.
 const unwrap = (data, key) => {
+  // Check the condition (Array.isArray(data)) and run the matching branch.
   if (Array.isArray(data)) return data;
+  // Check the condition (Array.isArray(data?.[key])) and run the matching branch.
   if (Array.isArray(data?.[key])) return data[key];
+  // Check the condition (Array.isArray(data?.data?.[key])) and run the matching branch.
   if (Array.isArray(data?.data?.[key])) return data.data[key];
+  // Check the condition (Array.isArray(data?.data)) and run the matching branch.
   if (Array.isArray(data?.data)) return data.data;
+  // Return the collection assembled below to the caller.
   return [];
 };
 
+// Declare asArray for use by the surrounding module or function.
 const asArray = (value) => (Array.isArray(value) ? value : []);
+// Declare clean for use by the surrounding module or function.
 const clean = (value) => String(value ?? "").trim();
+// Declare tourLabel for use by the surrounding module or function.
 const tourLabel = (tour) => tour?.title || tour?.name || tour?.tourName || "Tour not specified";
+// Declare destinationLabel for use by the surrounding module or function.
 const destinationLabel = (tour) => {
+  // Declare destination for use by the surrounding module or function.
   const destination = tour?.destination;
+  // Check the condition (typeof destination === "string") and run the matching branch.
   if (typeof destination === "string") return destination;
+  // Return the expression shown below to the caller.
   return destination?.name || destination?.title || tour?.location || "Destination not specified";
 };
 
+// Define statusClasses; its parameters and body implement this operation.
 function statusClasses(status) {
+  // Check the condition (status === "published") and run the matching branch.
   if (status === "published") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  // Check the condition (status === "archived") and run the matching branch.
   if (status === "archived") return "bg-slate-100 text-slate-600 ring-slate-200";
+  // Return a configured text value to the caller.
   return "bg-amber-50 text-amber-700 ring-amber-200";
 }
 
+// Define Modal; its parameters and body implement this operation.
 function Modal({ children, onClose, title, subtitle }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm md:items-center md:p-6" role="dialog" aria-modal="true">
       <div className="max-h-[92vh] w-full overflow-hidden rounded-t-3xl bg-white shadow-2xl md:max-w-5xl md:rounded-3xl">
@@ -78,7 +107,9 @@ function Modal({ children, onClose, title, subtitle }) {
   );
 }
 
+// Define ItineraryForm; its parameters and body implement this operation.
 function ItineraryForm({ initial, tours, onCancel, onSaved }) {
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState(() => ({
     tour: initial?.tour?._id || initial?.tour || "",
     overview: initial?.overview || "",
@@ -94,22 +125,35 @@ function ItineraryForm({ initial, tours, onCancel, onSaved }) {
     })) : [EMPTY_DAY()],
   }));
 
+  // Declare [saving, setSaving] for use by the surrounding module or function.
   const [saving, setSaving] = useState(false);
+  // Declare updateDay for use by the surrounding module or function.
   const updateDay = (index, patch) => setForm((prev) => ({ ...prev, days: prev.days.map((d, i) => i === index ? { ...d, ...patch } : d) }));
+  // Declare updateActivity for use by the surrounding module or function.
   const updateActivity = (dayIndex, activityIndex, patch) => setForm((prev) => ({
     ...prev,
     days: prev.days.map((d, i) => i !== dayIndex ? d : { ...d, activities: d.activities.map((a, j) => j === activityIndex ? { ...a, ...patch } : a) }),
   }));
+  // Declare addDay for use by the surrounding module or function.
   const addDay = () => setForm((prev) => ({ ...prev, days: [...prev.days, { ...EMPTY_DAY(), dayNumber: prev.days.length + 1, title: `Day ${prev.days.length + 1}` }] }));
+  // Declare removeDay for use by the surrounding module or function.
   const removeDay = (index) => setForm((prev) => ({ ...prev, days: prev.days.filter((_, i) => i !== index).map((d, i) => ({ ...d, dayNumber: i + 1 })) }));
+  // Declare addActivity for use by the surrounding module or function.
   const addActivity = (dayIndex) => setForm((prev) => ({ ...prev, days: prev.days.map((d, i) => i === dayIndex ? { ...d, activities: [...d.activities, EMPTY_ACTIVITY()] } : d) }));
+  // Declare removeActivity for use by the surrounding module or function.
   const removeActivity = (dayIndex, activityIndex) => setForm((prev) => ({ ...prev, days: prev.days.map((d, i) => i === dayIndex ? { ...d, activities: d.activities.filter((_, j) => j !== activityIndex) } : d) }));
 
+  // Declare submit for use by the surrounding module or function.
   const submit = async (event) => {
+    // Perform the side effect or state update expressed on the following line.
     event.preventDefault();
+    // Check the condition (!form.tour) and run the matching branch.
     if (!form.tour) return toast.error("Select a tour before saving the itinerary.");
+    // Check the condition (!form.days.length) and run the matching branch.
     if (!form.days.length) return toast.error("Add at least one itinerary day.");
+    // Check the condition (form.days.some((d) => !clean(d.title))) and run the matching branch.
     if (form.days.some((d) => !clean(d.title))) return toast.error("Every itinerary day needs a title.");
+    // Declare payload for use by the surrounding module or function.
     const payload = {
       tour: form.tour,
       overview: clean(form.overview),
@@ -134,16 +178,23 @@ function ItineraryForm({ initial, tours, onCancel, onSaved }) {
         })),
       })),
     };
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       setSaving(true);
+      // Declare response for use by the surrounding module or function.
       const response = initial?._id ? await updateItinerary(initial._id, payload) : await createItinerary(payload);
+      // Perform the side effect or state update expressed on the following line.
       toast.success(response?.message || (initial?._id ? "Itinerary updated successfully." : "Itinerary created successfully."));
+      // Perform the side effect or state update expressed on the following line.
       onSaved();
     } catch (error) {
+      // Perform the side effect or state update expressed on the following line.
       toast.error(error?.response?.data?.message || "The itinerary could not be saved. No changes were applied.");
     } finally { setSaving(false); }
   };
 
+  // Return the expression shown below to the caller.
   return (
     <form onSubmit={submit} className="space-y-6 p-5 md:p-7">
       <section className="grid gap-5 md:grid-cols-3">
@@ -195,53 +246,83 @@ function ItineraryForm({ initial, tours, onCancel, onSaved }) {
   );
 }
 
+// Define Input; its parameters and body implement this operation.
 function Input({ label, value, onChange, type = "text", className = "" }) {
+  // Return the expression shown below to the caller.
   return <label className={className}><span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span><input type={type} value={value || ""} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" /></label>;
 }
+// Define ListField; its parameters and body implement this operation.
 function ListField({ label, value, onChange }) { return <label><span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span><textarea rows="4" value={value} onChange={(e) => onChange(e.target.value)} placeholder="One item per line" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" /></label>; }
 
+// Define Itineraries; its parameters and body implement this operation.
 export default function Itineraries() {
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [status, setStatus] for use by the surrounding module or function.
   const [status, setStatus] = useState("all");
+  // Declare [modal, setModal] for use by the surrounding module or function.
   const [modal, setModal] = useState(null);
+  // Declare [menuId, setMenuId] for use by the surrounding module or function.
   const [menuId, setMenuId] = useState(null);
 
+  // Declare itineraryQuery for use by the surrounding module or function.
   const itineraryQuery = useQuery({ queryKey: ["tour-manager-itineraries"], queryFn: getItineraries, placeholderData: (previous) => previous });
+  // Declare toursQuery for use by the surrounding module or function.
   const toursQuery = useQuery({ queryKey: ["tour-manager-itinerary-tours"], queryFn: () => getTours({ limit: 200 }), staleTime: 60_000 });
+  // Declare items for use by the surrounding module or function.
   const items = useMemo(() => unwrap(itineraryQuery.data, "itineraries"), [itineraryQuery.data]);
+  // Declare tours for use by the surrounding module or function.
   const tours = useMemo(() => unwrap(toursQuery.data, "tours"), [toursQuery.data]);
+  // Declare filtered for use by the surrounding module or function.
   const filtered = useMemo(() => {
+    // Declare q for use by the surrounding module or function.
     const q = search.trim().toLowerCase();
+    // Return the result of items.filter() to the caller.
     return items.filter((item) => {
+      // Declare haystack for use by the surrounding module or function.
       const haystack = [item.title, item.name, item.overview, tourLabel(item.tour), destinationLabel(item.tour)].join(" ").toLowerCase();
+      // Return the expression shown below to the caller.
       return (!q || haystack.includes(q)) && (status === "all" || item.status === status);
     });
   }, [items, search, status]);
 
+  // Declare deleteMutation for use by the surrounding module or function.
   const deleteMutation = useMutation({
     mutationFn: deleteItinerary,
     onSuccess: (response) => { toast.success(response?.message || "Itinerary deleted successfully."); queryClient.invalidateQueries({ queryKey: ["tour-manager-itineraries"] }); setMenuId(null); },
     onError: (error) => toast.error(error?.response?.data?.message || "The itinerary could not be deleted. No changes were applied."),
   });
 
+  // Declare openEdit for use by the surrounding module or function.
   const openEdit = async (item) => {
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Declare response for use by the surrounding module or function.
       const response = await getItinerary(item._id);
+      // Perform the side effect or state update expressed on the following line.
       setModal({ type: "edit", item: response?.itinerary || response?.data || item });
     } catch (error) { toast.error(error?.response?.data?.message || "Unable to load the itinerary details."); }
     finally { setMenuId(null); }
   };
 
+  // Declare confirmDelete for use by the surrounding module or function.
   const confirmDelete = (item) => {
+    // Perform the side effect or state update expressed on the following line.
     setMenuId(null);
+    // Check the condition (window.confirm(`Delete the itinerary for ${tourLabel(item.tour)}? This) and run the matching branch.
     if (window.confirm(`Delete the itinerary for ${tourLabel(item.tour)}? This cannot be undone.`)) deleteMutation.mutate(item._id);
   };
 
+  // Declare published for use by the surrounding module or function.
   const published = items.filter((x) => x.status === "published").length;
+  // Declare drafts for use by the surrounding module or function.
   const drafts = items.filter((x) => x.status === "draft").length;
+  // Declare days for use by the surrounding module or function.
   const days = items.reduce((sum, x) => sum + asArray(x.days).length, 0);
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white">
@@ -296,6 +377,9 @@ export default function Itineraries() {
   );
 }
 
+// Define Metric; its parameters and body implement this operation.
 function Metric({ label, value, icon, accent = "slate" }) { const colors = { slate: "bg-white/10 text-white", emerald: "bg-emerald-400/15 text-emerald-300", amber: "bg-amber-400/15 text-amber-300", blue: "bg-sky-400/15 text-sky-300" }; return <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur"><div className={`mb-3 inline-flex rounded-xl p-2 ${colors[accent] || colors.slate}`}>{icon}</div><div className="text-2xl font-black">{value}</div><div className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</div></div>; }
+// Define LoadingState; its parameters and body implement this operation.
 function LoadingState() { return <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{[1,2,3].map((x) => <div key={x} className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-white" />)}</div>; }
+// Define EmptyState; its parameters and body implement this operation.
 function EmptyState({ hasFilters, onCreate }) { return <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center shadow-sm"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><CalendarRange size={28} /></div><h2 className="mt-4 text-xl font-black text-slate-900">{hasFilters ? "No matching itineraries" : "No itineraries yet"}</h2><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">{hasFilters ? "Try clearing the search or status filter." : "Create the first day-by-day operating schedule for a tour. It can remain a draft until your team is ready to publish it."}</p>{hasFilters ? <button onClick={() => window.location.reload()} className="mt-5 rounded-xl border border-slate-300 px-4 py-2.5 font-bold text-slate-700 hover:bg-slate-50">Clear filters</button> : <button onClick={onCreate} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 font-bold text-white hover:bg-emerald-700"><Plus size={17} /> Create itinerary</button>}</div>; }

@@ -1,13 +1,23 @@
+/**
+ * Purpose: plan Feature Service business-logic service. Main declarations: feature, normalize, configuredPlanFeatures, getPlanFeatures, getPlanFeatureCatalog.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import SystemSetting from "../models/SystemSetting.js";
+// Load ../tenancy/context.js so this module can use its exported dependencies.
 import { runWithTenant } from "../tenancy/context.js";
 
+// Declare PLAN_ORDER for use by the surrounding module or function.
 export const PLAN_ORDER = Object.freeze(["starter", "professional", "business", "enterprise"]);
+// Declare PLAN_FEATURE_CATALOG for use by the surrounding module or function.
 export const PLAN_FEATURE_CATALOG = Object.freeze([
   ["dashboard", "Admin dashboard", "Core workspace overview"], ["users", "User management", "Manage company user accounts"], ["staff", "Staff management", "Manage staff records and access"], ["destinations", "Destinations", "Create and manage destinations"], ["tours", "Tours", "Create and manage tour products"], ["bookings", "Bookings & refunds", "Booking lifecycle and refunds"], ["custom_tours", "Custom tour requests", "Handle bespoke customer trips"], ["operations", "Operations & procurement", "Operational planning and procurement"], ["hotels", "Hotels", "Hotel inventory and room management"], ["airport_transfers", "Airport transfers", "Airport transfer inventory and bookings"], ["hospitality_reservations", "Hospitality reservations", "Hospitality booking management"], ["hospitality_operations", "Hospitality operations", "Reservation operations workflow"], ["hospitality_commercial", "Hospitality commercial", "Commercial controls and pricing"], ["payments", "Payments", "Customer payment management"], ["agents", "Agents", "Agent management and distribution"], ["commissions", "Commissions", "Commission calculation and settlement"], ["crm", "Customers CRM", "Customer relationship management"], ["fleet", "Fleet management", "Vehicles, drivers and fleet operations"], ["coupons", "Coupons", "Promotions and discount codes"], ["reviews", "Reviews", "Customer review management"], ["gallery", "Gallery", "Media gallery management"], ["reports", "Reports", "Operational and management reports"], ["analytics", "Analytics", "Advanced business analytics"], ["finance", "Accounting & finance", "Core finance and payment accounting"], ["mpesa_transactions", "M-Pesa transactions", "M-Pesa transaction monitoring"], ["finance_reports", "Finance reports", "Finance reporting"], ["management_accounting", "Management accounting", "Management accounting"], ["complete_accounting", "Complete accounting", "Complete accounting workflows"], ["accounting_control_reports", "Accounting control reports", "Accounting control and audit reports"], ["accounting_subledgers", "Accounting subledgers", "Detailed accounting subledgers"], ["withholding_tax", "Withholding tax", "Withholding tax workflows"], ["reconciliation", "Reconciliation", "Payment and ledger reconciliation"], ["etims", "KRA eTIMS compliance", "Tax invoicing and eTIMS workflows"], ["ai", "AI tools", "AI-assisted operations, sales and finance"], ["notifications", "Notifications", "Workspace notifications"], ["rbac", "Roles & permissions", "Custom role and permission administration"], ["system_health", "System health", "Workspace system health monitoring"], ["billing", "Billing & subscription", "Plan, renewal and subscription payments"], ["developer_platform", "Developer platform", "API and integration developer tools"], ["settings", "Settings", "Workspace configuration"], ["tax", "Tax controls", "Tax rules and tax configuration"], ["credit_debit_notes", "Credit/debit notes", "Credit and debit note workflows"], ["payment_links", "Payment links", "Customer payment links"], ["custom_domain", "Custom domain", "Use a branded custom domain"], ["multi_branch", "Multi-branch workspaces", "Operate multiple branches or business locations"], ["sso", "Single sign-on", "Enterprise identity provider integration"], ["advanced_security", "Advanced security", "Enterprise security and access controls"], ["white_label", "White-label experience", "Remove platform branding from tenant-facing experiences"], ["dedicated_support", "Dedicated support", "Priority platform support entitlement"], ["data_export", "Advanced data export", "Advanced workspace data export and portability"],
 ]);
 
+// Declare FEATURE_IDS for use by the surrounding module or function.
 const FEATURE_IDS = new Set(PLAN_FEATURE_CATALOG.map(([id]) => id));
+// Declare feature for use by the surrounding module or function.
 const feature = (id) => id;
+// Declare DEFAULT_PLAN_FEATURES for use by the surrounding module or function.
 export const DEFAULT_PLAN_FEATURES = Object.freeze({
   starter: ["dashboard", "destinations", "tours", "bookings", "payments", "crm", "reviews", "gallery", "reports", "mpesa_transactions", "notifications", "billing", "settings"],
   professional: ["dashboard", "users", "staff", "destinations", "tours", "bookings", "custom_tours", "operations", "hotels", "airport_transfers", "hospitality_reservations", "payments", "agents", "commissions", "crm", "fleet", "coupons", "reviews", "gallery", "reports", "analytics", "finance", "mpesa_transactions", "finance_reports", "notifications", "rbac", "system_health", "billing", "settings", "payment_links"],
@@ -15,11 +25,19 @@ export const DEFAULT_PLAN_FEATURES = Object.freeze({
   enterprise: [...PLAN_FEATURE_CATALOG.map(([id]) => id)],
 });
 
+// Declare normalize for use by the surrounding module or function.
 const normalize = (items = []) => [...new Set(items.map((item) => String(item || "").trim().toLowerCase()).filter((item) => FEATURE_IDS.has(item)))];
+// Declare configuredPlanFeatures for use by the surrounding module or function.
 const configuredPlanFeatures = (configured, plan) => { const value = typeof configured?.get === "function" ? configured.get(plan) : configured?.[plan]; return Array.isArray(value) && value.length ? value : DEFAULT_PLAN_FEATURES[plan]; };
+// Declare getPlanFeatures for use by the surrounding module or function.
 export const getPlanFeatures = async () => runWithTenant({ role: "super_admin", bypass: true }, async () => { const settings = await SystemSetting.findOne({ tenantId: null, key: "platform" }).lean(); const configured = settings?.subscriptionPlanFeatures || {}; return Object.fromEntries(PLAN_ORDER.map((plan) => [plan, normalize(configuredPlanFeatures(configured, plan))])); });
+// Declare getPlanFeatureCatalog for use by the surrounding module or function.
 export const getPlanFeatureCatalog = () => PLAN_FEATURE_CATALOG.map(([id, name, description]) => ({ id, name, description }));
+// Declare getTenantPlanFeatures for use by the surrounding module or function.
 export const getTenantPlanFeatures = async (plan) => { const normalized = String(plan || "starter").toLowerCase(); const all = await getPlanFeatures(); return all[normalized] || all.starter; };
+// Declare tenantHasFeature for use by the surrounding module or function.
 export const tenantHasFeature = async (plan, featureId) => (await getTenantPlanFeatures(plan)).includes(String(featureId || "").trim().toLowerCase());
+// Declare validatePlanFeatures for use by the surrounding module or function.
 export const validatePlanFeatures = (input) => { const output = {}; for (const plan of PLAN_ORDER) { if (!Array.isArray(input?.[plan])) throw new Error(`${plan} features must be an array.`); const invalid = input[plan].filter((id) => !FEATURE_IDS.has(String(id).toLowerCase())); if (invalid.length) throw new Error(`Unknown ${plan} feature(s): ${invalid.join(", ")}`); output[plan] = normalize(input[plan]); if (!output[plan].includes("billing")) output[plan].push("billing"); } return output; };
+// Declare planFeature for use by the surrounding module or function.
 export const planFeature = feature;

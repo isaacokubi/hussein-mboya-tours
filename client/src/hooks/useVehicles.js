@@ -1,11 +1,17 @@
+/**
+ * Purpose: use Vehicles reusable React hook. Main declarations: useVehicles.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/hooks/useVehicles.js
 
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import {
   useQuery,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
 
+// Load ../api/vehicleApi so this module can use its exported dependencies.
 import {
   getVehicles,
   createVehicle,
@@ -14,8 +20,10 @@ import {
 } from "../api/vehicleApi";
 
 
+// Define useVehicles; its parameters and body implement this operation.
 export default function useVehicles() {
 
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
 
 
@@ -25,12 +33,15 @@ export default function useVehicles() {
   |--------------------------------------------------------------------------
   */
 
+  // Declare vehiclesQuery for use by the surrounding module or function.
   const vehiclesQuery = useQuery({
     queryKey: ["vehicles"],
 
     queryFn: async () => {
+      // Declare response for use by the surrounding module or function.
       const response = await getVehicles();
 
+      // Return the expression shown below to the caller.
       return response?.data || response?.vehicles || [];
     },
   });
@@ -43,11 +54,13 @@ export default function useVehicles() {
   |--------------------------------------------------------------------------
   */
 
+  // Declare createMutation for use by the surrounding module or function.
   const createMutation = useMutation({
 
     mutationFn: createVehicle,
 
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       queryClient.invalidateQueries({
         queryKey: ["vehicles"],
       });
@@ -63,12 +76,14 @@ export default function useVehicles() {
   |--------------------------------------------------------------------------
   */
 
+  // Declare updateMutation for use by the surrounding module or function.
   const updateMutation = useMutation({
 
     mutationFn: ({ id, data }) =>
       updateVehicle(id, data),
 
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       queryClient.invalidateQueries({
         queryKey: ["vehicles"],
       });
@@ -84,11 +99,13 @@ export default function useVehicles() {
   |--------------------------------------------------------------------------
   */
 
+  // Declare deleteMutation for use by the surrounding module or function.
   const deleteMutation = useMutation({
 
     mutationFn: deleteVehicle,
 
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       queryClient.invalidateQueries({
         queryKey: ["vehicles"],
       });
@@ -98,6 +115,7 @@ export default function useVehicles() {
 
 
 
+  // Return the object assembled below to the caller.
   return {
 
     // data

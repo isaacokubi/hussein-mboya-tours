@@ -1,25 +1,48 @@
+/**
+ * Purpose: Super Admin Tenant Mpesa page-level UI component. Main declarations: SuperAdminTenantMpesa, refresh, set.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { ArrowLeft, CheckCircle2, KeyRound, Save, ShieldCheck, Smartphone, XCircle, Wifi } from "lucide-react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link, useNavigate, useParams } from "react-router-dom";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/superAdminTenantsApi so this module can use its exported dependencies.
 import { disableSuperAdminTenantMpesa, getSuperAdminTenantMpesa, saveSuperAdminTenantMpesa, validateSuperAdminTenantMpesa } from "../../api/superAdminTenantsApi";
 
+// Declare emptyForm for use by the surrounding module or function.
 const emptyForm = { environment: "sandbox", enabled: false, accountName: "", shortcode: "", callbackUrl: "", consumerKey: "", consumerSecret: "", passkey: "" };
+// Declare fieldClass for use by the surrounding module or function.
 const fieldClass = "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50";
 
+// Define SuperAdminTenantMpesa; its parameters and body implement this operation.
 export default function SuperAdminTenantMpesa() {
+  // Declare { tenantId } for use by the surrounding module or function.
   const { tenantId } = useParams();
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState(emptyForm);
+  // Declare [validation, setValidation] for use by the surrounding module or function.
   const [validation, setValidation] = useState(null);
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({ queryKey: ["superadmin-tenant-mpesa", tenantId, form.environment], queryFn: () => getSuperAdminTenantMpesa(tenantId, form.environment), enabled: Boolean(tenantId) });
+  // Declare data for use by the surrounding module or function.
   const data = query.data?.data;
+  // Declare tenant for use by the surrounding module or function.
   const tenant = query.data?.tenant;
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Check the condition (!data) and run the matching branch.
     if (!data) return;
+    // Perform the side effect or state update expressed on the following line.
     setForm({
       ...emptyForm,
       environment: data.environment || "sandbox",
@@ -30,27 +53,38 @@ export default function SuperAdminTenantMpesa() {
     });
   }, [data]);
 
+  // Declare refresh for use by the surrounding module or function.
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["superadmin-tenant-mpesa", tenantId] });
+  // Declare save for use by the surrounding module or function.
   const save = useMutation({
     mutationFn: () => saveSuperAdminTenantMpesa(tenantId, form),
     onSuccess: (result) => {
+      // Perform the side effect or state update expressed on the following line.
       setForm((current) => ({ ...current, consumerKey: "", consumerSecret: "", passkey: "" }));
+      // Perform the side effect or state update expressed on the following line.
       refresh();
+      // Perform the side effect or state update expressed on the following line.
       toast.success(result.message || "Tenant M-Pesa settings saved securely.");
     },
     onError: (error) => toast.error(error?.response?.data?.message || "Unable to save tenant M-Pesa settings."),
   });
+  // Declare disable for use by the surrounding module or function.
   const disable = useMutation({
     mutationFn: () => disableSuperAdminTenantMpesa(tenantId),
     onSuccess: (result) => { refresh(); setForm((current) => ({ ...current, enabled: false })); toast.success(result.message || "Tenant M-Pesa gateway disabled."); },
     onError: (error) => toast.error(error?.response?.data?.message || "Unable to disable M-Pesa."),
   });
+  // Declare check for use by the surrounding module or function.
   const check = useMutation({ mutationFn: () => validateSuperAdminTenantMpesa(tenantId, form.environment), onSuccess: (result) => { setValidation(result.data); refresh(); }, onError: (error) => setValidation({ status: "error", message: error?.response?.data?.message || "Configuration check failed.", remoteVerified: false }) });
+  // Declare set for use by the surrounding module or function.
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
+  // Check the condition (query.isLoading) and run the matching branch.
   if (query.isLoading) return <div className="rounded-2xl border border-slate-200 bg-white p-8 text-slate-600">Loading tenant payment settings…</div>;
+  // Check the condition (query.isError) and run the matching branch.
   if (query.isError) return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">{query.error?.response?.data?.message || "Unable to load tenant M-Pesa settings."}</div>;
 
+  // Return the expression shown below to the caller.
   return <main className="mx-auto max-w-5xl space-y-6">
     <Link to="/superadmin" className="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:underline"><ArrowLeft size={16}/> Back to companies</Link>
     <header className="rounded-3xl bg-slate-950 p-6 text-white shadow-xl sm:p-8">

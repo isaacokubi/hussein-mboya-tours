@@ -1,16 +1,31 @@
+/**
+ * Purpose: Tour Guide Dashboard page-level UI component. Main declarations: startDateOf, endDateOf, firstValue, lower, getPickupLocation.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { CalendarDays, CheckCircle2, Clock3, MapPinned, PlayCircle, RefreshCw, Send, Users, X } from "lucide-react";
+// Load react so this module can use its exported dependencies.
 import { useMemo, useState } from "react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load ../../api/guideApi so this module can use its exported dependencies.
 import { getGuideDashboard, getTourGuests, submitTourReport, updateTourStatus } from "../../api/guideApi";
+// Load ../../utils/dashboardData so this module can use its exported dependencies.
 import { asArray, firstNumeric, unwrapData } from "../../utils/dashboardData";
 
+// Declare startDateOf for use by the surrounding module or function.
 const startDateOf = (tour) => tour?.startDate || tour?.date || tour?.travelDate;
+// Declare endDateOf for use by the surrounding module or function.
 const endDateOf = (tour) => tour?.endDate || startDateOf(tour);
+// Declare firstValue for use by the surrounding module or function.
 const firstValue = (...values) => values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+// Declare lower for use by the surrounding module or function.
 const lower = (value) => String(value || "").toLowerCase();
 
+// Declare getPickupLocation for use by the surrounding module or function.
 const getPickupLocation = (guest) => firstValue(
   guest?.pickupLocation,
   guest?.customTour?.pickupLocation,
@@ -18,6 +33,7 @@ const getPickupLocation = (guest) => firstValue(
   guest?.pickup?.location,
 );
 
+// Declare getRouteLabel for use by the surrounding module or function.
 const getRouteLabel = (tour) => firstValue(
   tour?.route,
   tour?.itinerary?.route,
@@ -26,26 +42,41 @@ const getRouteLabel = (tour) => firstValue(
   tour?.title,
 );
 
+// Declare customerName for use by the surrounding module or function.
 const customerName = (guest, index) => {
+  // Declare customer for use by the surrounding module or function.
   const customer = guest?.customer || guest?.user || {};
+  // Declare composed for use by the surrounding module or function.
   const composed = [customer?.firstName, customer?.lastName].filter(Boolean).join(" ").trim();
+  // Return the result of firstValue() to the caller.
   return firstValue(customer?.name, composed, guest?.customerName, guest?.name, `Guest ${index + 1}`);
 };
 
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value, options = { weekday: "short", day: "numeric", month: "short", year: "numeric" }) => {
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Return the expression shown below to the caller.
   return Number.isNaN(date.getTime()) ? "Unavailable" : date.toLocaleDateString("en-KE", options);
 };
 
+// Declare statusLabel for use by the surrounding module or function.
 const statusLabel = (status) => ({ scheduled: "Scheduled", upcoming: "Upcoming", ongoing: "In progress", completed: "Completed", cancelled: "Cancelled" }[lower(status)] || "Status unavailable");
 
+// Define TourGuideDashboard; its parameters and body implement this operation.
 export default function TourGuideDashboard() {
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [openTour, setOpenTour] for use by the surrounding module or function.
   const [openTour, setOpenTour] = useState(null);
+  // Declare [openReadiness, setOpenReadiness] for use by the surrounding module or function.
   const [openReadiness, setOpenReadiness] = useState(null);
+  // Declare [reportSummary, setReportSummary] for use by the surrounding module or function.
   const [reportSummary, setReportSummary] = useState("");
+  // Declare [reportIssues, setReportIssues] for use by the surrounding module or function.
   const [reportIssues, setReportIssues] = useState("");
 
+  // Declare dashboardQuery for use by the surrounding module or function.
   const dashboardQuery = useQuery({
     queryKey: ["guide-dashboard"],
     queryFn: getGuideDashboard,
@@ -55,23 +86,34 @@ export default function TourGuideDashboard() {
     retry: 1,
   });
 
+  // Declare payload for use by the surrounding module or function.
   const payload = unwrapData(dashboardQuery.data);
+  // Declare tours for use by the surrounding module or function.
   const tours = asArray(payload?.tours ?? payload?.data?.tours ?? dashboardQuery.data?.tours ?? []).filter((tour) => tour?.isDeleted !== true);
+  // Declare stats for use by the surrounding module or function.
   const stats = payload?.stats || dashboardQuery.data?.stats || {};
+  // Declare today for use by the surrounding module or function.
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
 
+  // Declare upcoming for use by the surrounding module or function.
   const upcoming = useMemo(() => tours
     .filter((tour) => !["completed", "cancelled"].includes(lower(tour?.status)))
     .map((tour) => ({ tour, date: new Date(startDateOf(tour) || 0) }))
     .filter(({ date }) => !Number.isNaN(date.getTime()) && date >= today)
     .sort((a, b) => a.date - b.date), [tours, today]);
 
+  // Declare activeTours for use by the surrounding module or function.
   const activeTours = tours.filter((tour) => lower(tour?.status) === "ongoing");
+  // Declare nextTour for use by the surrounding module or function.
   const nextTour = upcoming[0]?.tour;
+  // Declare nextTourId for use by the surrounding module or function.
   const nextTourId = nextTour?._id || nextTour?.id;
+  // Declare selectedTour for use by the surrounding module or function.
   const selectedTour = openTour || nextTour;
+  // Declare selectedTourId for use by the surrounding module or function.
   const selectedTourId = selectedTour?._id || selectedTour?.id;
 
+  // Declare guestQuery for use by the surrounding module or function.
   const guestQuery = useQuery({
     queryKey: ["guide-tour-guests", selectedTourId],
     queryFn: () => getTourGuests(selectedTourId),
@@ -81,61 +123,95 @@ export default function TourGuideDashboard() {
     retry: 1,
   });
 
+  // Declare guestPayload for use by the surrounding module or function.
   const guestPayload = unwrapData(guestQuery.data);
+  // Declare guests for use by the surrounding module or function.
   const guests = asArray(guestPayload?.guests ?? guestPayload?.bookings ?? guestPayload?.data ?? guestQuery.data?.guests ?? guestQuery.data?.bookings ?? []);
+  // Declare pickupLocations for use by the surrounding module or function.
   const pickupLocations = [...new Set(guests.map(getPickupLocation).filter(Boolean))];
 
+  // Declare statusMutation for use by the surrounding module or function.
   const statusMutation = useMutation({
     mutationFn: ({ tourId, status }) => updateTourStatus(tourId, status),
     onSuccess: (_, variables) => {
+      // Perform the side effect or state update expressed on the following line.
       toast.success(variables.status === "ongoing" ? "Tour started successfully." : "Tour completed successfully.");
+      // Perform the side effect or state update expressed on the following line.
       queryClient.invalidateQueries({ queryKey: ["guide-dashboard"] });
+      // Perform the side effect or state update expressed on the following line.
       queryClient.invalidateQueries({ queryKey: ["guide-tour-guests"] });
     },
     onError: (error) => toast.error(error?.response?.data?.message || error?.message || "The tour status could not be updated."),
   });
 
+  // Declare reportMutation for use by the surrounding module or function.
   const reportMutation = useMutation({
     mutationFn: ({ tourId, reportData }) => submitTourReport(tourId, reportData),
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Tour report submitted successfully.");
+      // Perform the side effect or state update expressed on the following line.
       setReportSummary("");
+      // Perform the side effect or state update expressed on the following line.
       setReportIssues("");
+      // Perform the side effect or state update expressed on the following line.
       setOpenTour(null);
+      // Perform the side effect or state update expressed on the following line.
       queryClient.invalidateQueries({ queryKey: ["guide-dashboard"] });
     },
     onError: (error) => toast.error(error?.response?.data?.message || error?.message || "The tour report could not be submitted."),
   });
 
+  // Declare assignedTours for use by the surrounding module or function.
   const assignedTours = firstNumeric(stats.totalTours, payload?.count, tours.length);
+  // Declare completedTours for use by the surrounding module or function.
   const completedTours = firstNumeric(stats.completedTours, tours.filter((tour) => lower(tour?.status) === "completed").length);
+  // Declare assignedGuests for use by the surrounding module or function.
   const assignedGuests = tours.reduce((sum, tour) => sum + firstNumeric(tour?.guests, tour?.guestsCount, 0), 0);
+  // Declare departureDate for use by the surrounding module or function.
   const departureDate = nextTour ? new Date(startDateOf(nextTour)) : null;
+  // Declare routeReady for use by the surrounding module or function.
   const routeReady = Boolean(nextTour && getRouteLabel(nextTour) && pickupLocations.length > 0);
+  // Declare manifestReady for use by the surrounding module or function.
   const manifestReady = Boolean(nextTourId && !guestQuery.isLoading && guests.length > 0);
+  // Declare departureReady for use by the surrounding module or function.
   const departureReady = Boolean(departureDate && !Number.isNaN(departureDate.getTime()) && departureDate >= today);
+  // Declare readiness for use by the surrounding module or function.
   const readiness = [
     { key: "route", label: "Confirm route and pickup points", ready: routeReady, detail: routeReady ? `${getRouteLabel(nextTour)} · ${pickupLocations.join(", ")}` : "Route and guest pickup information are required.", icon: MapPinned },
     { key: "manifest", label: "Review guest manifest", ready: manifestReady, detail: guestQuery.isLoading ? "Loading assigned guests..." : `${guests.length} guest${guests.length === 1 ? "" : "s"} on the manifest.`, icon: Users },
     { key: "date", label: "Confirm departure date", ready: departureReady, detail: departureReady ? formatDate(departureDate) : "A valid upcoming departure date is required.", icon: CalendarDays },
   ];
+  // Declare readinessComplete for use by the surrounding module or function.
   const readinessComplete = Boolean(nextTour && readiness.every((item) => item.ready));
 
+  // Declare startTour for use by the surrounding module or function.
   const startTour = (tour) => {
+    // Declare id for use by the surrounding module or function.
     const id = tour?._id || tour?.id;
+    // Check the condition (!id) and run the matching branch.
     if (!id) return toast.error("This assignment has no valid tour identifier.");
+    // Perform the side effect or state update expressed on the following line.
     statusMutation.mutate({ tourId: id, status: "ongoing" });
   };
 
+  // Declare completeTour for use by the surrounding module or function.
   const completeTour = (tour) => {
+    // Declare id for use by the surrounding module or function.
     const id = tour?._id || tour?.id;
+    // Check the condition (!id) and run the matching branch.
     if (!id) return toast.error("This assignment has no valid tour identifier.");
+    // Perform the side effect or state update expressed on the following line.
     statusMutation.mutate({ tourId: id, status: "completed" });
   };
 
+  // Declare submitReport for use by the surrounding module or function.
   const submitReport = () => {
+    // Check the condition (!selectedTourId) and run the matching branch.
     if (!selectedTourId) return toast.error("Select an assigned tour first.");
+    // Check the condition (!reportSummary.trim()) and run the matching branch.
     if (!reportSummary.trim()) return toast.error("Add a short tour summary before submitting the report.");
+    // Perform the side effect or state update expressed on the following line.
     reportMutation.mutate({
       tourId: selectedTourId,
       reportData: {
@@ -146,8 +222,10 @@ export default function TourGuideDashboard() {
     });
   };
 
+  // Check the condition (dashboardQuery.isLoading) and run the matching branch.
   if (dashboardQuery.isLoading) return <div className="ops-page"><div className="ops-card ops-panel">Loading guide operations...</div></div>;
 
+  // Check the condition (dashboardQuery.isError) and run the matching branch.
   if (dashboardQuery.isError) return (
     <div className="ops-page">
       <div className="ops-card ops-panel">
@@ -160,6 +238,7 @@ export default function TourGuideDashboard() {
     </div>
   );
 
+  // Return the expression shown below to the caller.
   return (
     <div className="ops-page">
       <div className="ops-page-head">

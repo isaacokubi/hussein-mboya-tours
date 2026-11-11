@@ -1,26 +1,46 @@
+/**
+ * Purpose: Airport Transfer Details page-level UI component. Main declarations: money, AirportTransferDetails, openReservation, Stat, Info.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Link, useNavigate, useParams } from "react-router-dom";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { ArrowLeft, Car, CheckCircle2, Clock3, Luggage, MapPin, Plane, ShieldCheck, Users } from "lucide-react";
+// Load ../api/airportTransferApi so this module can use its exported dependencies.
 import { getAirportTransfer } from "../api/airportTransferApi";
 
+// Declare money for use by the surrounding module or function.
 const money = (value, currency = "KES") => `${currency} ${Number(value || 0).toLocaleString("en-KE", { maximumFractionDigits: 2 })}`;
 
+// Define AirportTransferDetails; its parameters and body implement this operation.
 export default function AirportTransferDetails() {
+  // Declare { id } for use by the surrounding module or function.
   const { id } = useParams();
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
+  // Declare reservationPath for use by the surrounding module or function.
   const reservationPath = `/airport-transfers/${id}/reserve`;
+  // Declare { data: item, isLoading, isError } for use by the surrounding module or function.
   const { data: item, isLoading, isError } = useQuery({ queryKey: ["airport-transfer", id], queryFn: () => getAirportTransfer(id), enabled: !!id, staleTime: 30000 });
 
+  // Declare openReservation for use by the surrounding module or function.
   const openReservation = () => {
+    // Check the condition (id) and run the matching branch.
     if (id) navigate(reservationPath);
   };
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <main className="min-h-screen bg-slate-50 px-5 py-16"><div className="mx-auto max-w-6xl animate-pulse space-y-6"><div className="h-72 rounded-3xl bg-slate-200"/><div className="h-12 w-1/2 rounded bg-slate-200"/><div className="h-32 rounded-3xl bg-slate-200"/></div></main>;
+  // Check the condition (isError || !item) and run the matching branch.
   if (isError || !item) return <main className="min-h-screen bg-slate-50 px-5 py-20"><div className="mx-auto max-w-xl rounded-3xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200"><Plane className="mx-auto text-slate-300" size={52}/><h1 className="mt-5 text-2xl font-black">Transfer service not available</h1><p className="mt-2 text-sm leading-6 text-slate-500">This transfer may have been removed or is temporarily unavailable.</p><Link to="/airport-transfers" className="mt-6 inline-flex rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white">Back to transfers</Link></div></main>;
 
+  // Declare publicListingText for use by the surrounding module or function.
   const publicListingText = `${item.name || ""} ${item.description || ""} ${item.airportName || ""} ${item.airportCode || ""} ${item.pickupLocation || ""} ${item.dropoffLocation || ""} ${item.vehicleType || ""}`;
+  // Check the condition (/\b(test|demo|synthetic|sample|placeholder|seed data)\b/i.test(publicL) and run the matching branch.
   if (/\b(test|demo|synthetic|sample|placeholder|seed data)\b/i.test(publicListingText)) return <main className="min-h-screen bg-slate-50 px-5 py-20"><div className="mx-auto max-w-xl rounded-3xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200"><Plane className="mx-auto text-slate-300" size={52}/><h1 className="mt-5 text-2xl font-black">Transfer service not available</h1><p className="mt-2 text-sm leading-6 text-slate-500">This service is not currently published for public reservations.</p><Link to="/airport-transfers" className="mt-6 inline-flex rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white">Back to transfers</Link></div></main>;
 
+  // Return the expression shown below to the caller.
   return <main className="min-h-screen bg-slate-50">
     <section className="bg-slate-950 text-white"><div className="mx-auto max-w-7xl px-5 py-5 md:px-8"><Link to="/airport-transfers" className="inline-flex items-center gap-2 text-sm font-bold text-slate-300 hover:text-white"><ArrowLeft size={17}/> Back to airport transfers</Link></div></section>
     <section className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12"><div className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200"><div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-8 text-white md:p-12"><div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between"><div><span className="inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-black uppercase tracking-[.16em] text-emerald-300">{item.airportCode || "Airport"} · Flight-aware service</span><h1 className="mt-5 text-3xl font-black tracking-tight md:text-5xl">{item.name}</h1><p className="mt-3 flex items-center gap-2 text-slate-300"><MapPin size={17} className="text-emerald-300"/>{item.pickupLocation} <span>→</span> {item.dropoffLocation}</p><p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300">{item.description || "Pre-book a reliable airport transfer with your flight, passenger and luggage information captured for the operations team."}</p></div><div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-3xl bg-white/10 text-emerald-300 backdrop-blur"><Car size={58}/></div></div></div><div className="grid gap-px bg-slate-200 md:grid-cols-4"><Stat icon={<Users/>} label="Passengers" value={`Up to ${item.passengerCapacity || 1}`}/><Stat icon={<Luggage/>} label="Luggage" value={`${item.luggageCapacity || 0} bags`}/><Stat icon={<Clock3/>} label="Duration" value={item.durationMinutes ? `${item.durationMinutes} min` : "Scheduled"}/><Stat icon={<Car/>} label="Vehicle" value={item.vehicleType || "Private vehicle"}/></div></div></section>
@@ -28,5 +48,7 @@ export default function AirportTransferDetails() {
   </main>;
 }
 
+// Define Stat; its parameters and body implement this operation.
 function Stat({ icon, label, value }) { return <div className="bg-white p-5"><div className="flex items-center gap-2 text-emerald-600">{icon}</div><p className="mt-2 text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</p><p className="mt-1 text-sm font-black text-slate-900">{value}</p></div>; }
+// Define Info; its parameters and body implement this operation.
 function Info({ label, value }) { return <div className="rounded-2xl bg-slate-50 p-5"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</p><p className="mt-2 text-sm font-black text-slate-900">{value}</p></div>; }

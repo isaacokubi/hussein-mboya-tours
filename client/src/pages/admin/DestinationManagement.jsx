@@ -1,16 +1,30 @@
+/**
+ * Purpose: Destination Management page-level UI component. Main declarations: DestinationManagement, getImageUrl.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { useNavigate } from "react-router-dom";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { MapPin, Plus, Search, RefreshCw, Eye, Pencil, Star, CheckCircle2, XCircle } from "lucide-react";
 
+// Load ../../api/adminDestinationApi so this module can use its exported dependencies.
 import { getAdminDestinations } from "../../api/adminDestinationApi";
 
+// Declare DestinationManagement for use by the surrounding module or function.
 const DestinationManagement = () => {
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [statusFilter, setStatusFilter] for use by the surrounding module or function.
   const [statusFilter, setStatusFilter] = useState("all");
+  // Declare [featuredFilter, setFeaturedFilter] for use by the surrounding module or function.
   const [featuredFilter, setFeaturedFilter] = useState("all");
 
+  // Declare { data: destinations = [], isLoading, isFetching, error, refetch, } for use by the surrounding module or function.
   const {
     data: destinations = [],
     isLoading,
@@ -22,39 +36,56 @@ const DestinationManagement = () => {
     queryFn: getAdminDestinations,
   });
 
+  // Declare filteredDestinations for use by the surrounding module or function.
   const filteredDestinations = useMemo(() => {
+    // Declare term for use by the surrounding module or function.
     const term = search.trim().toLowerCase();
 
+    // Return the result of destinations.filter() to the caller.
     return destinations.filter((destination) => {
+      // Declare matchesSearch for use by the surrounding module or function.
       const matchesSearch = !term || [
         destination.name,
         destination.country,
         destination.description,
       ].some((value) => String(value || "").toLowerCase().includes(term));
 
+      // Declare status for use by the surrounding module or function.
       const status = String(destination.status || "active").toLowerCase();
+      // Declare matchesStatus for use by the surrounding module or function.
       const matchesStatus = statusFilter === "all" || status === statusFilter;
+      // Declare matchesFeatured for use by the surrounding module or function.
       const matchesFeatured = featuredFilter === "all"
         || (featuredFilter === "featured" && destination.featured)
         || (featuredFilter === "standard" && !destination.featured);
 
+      // Return the expression shown below to the caller.
       return matchesSearch && matchesStatus && matchesFeatured;
     });
   }, [destinations, search, statusFilter, featuredFilter]);
 
+  // Declare activeCount for use by the surrounding module or function.
   const activeCount = destinations.filter((d) => String(d.status || "active").toLowerCase() === "active").length;
+  // Declare featuredCount for use by the surrounding module or function.
   const featuredCount = destinations.filter((d) => Boolean(d.featured)).length;
+  // Declare inactiveCount for use by the surrounding module or function.
   const inactiveCount = destinations.length - activeCount;
 
+  // Declare getImageUrl for use by the surrounding module or function.
   const getImageUrl = (destination) => {
+    // Declare image for use by the surrounding module or function.
     const image = destination.images?.[0]?.url || destination.images?.[0];
+    // Check the condition (!image) and run the matching branch.
     if (!image) return "";
+    // Return the expression shown below to the caller.
     return image.startsWith("http")
       ? image
       : `${import.meta.env.VITE_API_URL?.replace("/api", "") || window.location.origin}${image}`;
   };
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-[70vh] bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 p-6">
         <div className="mx-auto max-w-7xl animate-pulse space-y-6">
@@ -67,7 +98,9 @@ const DestinationManagement = () => {
     );
   }
 
+  // Check the condition (error) and run the matching branch.
   if (error) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-[70vh] bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 p-6">
         <div className="mx-auto max-w-3xl rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-xl">
@@ -82,6 +115,7 @@ const DestinationManagement = () => {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">

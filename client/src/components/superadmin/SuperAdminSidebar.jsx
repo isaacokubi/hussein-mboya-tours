@@ -1,16 +1,30 @@
+/**
+ * Purpose: Super Admin Sidebar reusable UI component. Main declarations: normalizeRole, isSuperAdminUser, SuperAdminSidebar.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useSettings } from "../../context/SettingsContext";
+// Load ../../context/AuthContext so this module can use its exported dependencies.
 import { useAuth } from "../../context/AuthContext";
 
+// Declare normalizeRole for use by the surrounding module or function.
 const normalizeRole = (user) => {
+  // Check the condition (!user) and run the matching branch.
   if (!user) return "";
+  // Check the condition (typeof user.role === "string") and run the matching branch.
   if (typeof user.role === "string") return user.role.toLowerCase().replace(/[\\s-]/g, "_");
+  // Check the condition (user.role?.name) and run the matching branch.
   if (user.role?.name) return String(user.role.name).toLowerCase().replace(/[\\s-]/g, "_");
+  // Check the condition (Array.isArray(user.roles) && user.roles[0]?.name) and run the matching branch.
   if (Array.isArray(user.roles) && user.roles[0]?.name) return String(user.roles[0].name).toLowerCase().replace(/[\\s-]/g, "_");
+  // Return a configured text value to the caller.
   return "";
 };
+// Declare isSuperAdminUser for use by the surrounding module or function.
 const isSuperAdminUser = (user) => ["super_admin", "superadmin"].includes(normalizeRole(user));
 
+// Load react-router-dom so this module can use its exported dependencies.
 import {NavLink} from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import {
 Shield,
 Users,
@@ -28,6 +42,7 @@ UserRound
 } from "lucide-react";
 
 
+// Declare sections for use by the surrounding module or function.
 const sections=[
 
 {
@@ -60,13 +75,19 @@ items:[
 ];
 
 
+// Define SuperAdminSidebar; its parameters and body implement this operation.
 export default function SuperAdminSidebar({ open, setOpen }) {
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
+  // Declare { user } for use by the surrounding module or function.
   const { user } = useAuth();
+  // Declare isPlatformOwner for use by the surrounding module or function.
   const isPlatformOwner = isSuperAdminUser(user);
+  // Declare platformName for use by the surrounding module or function.
   const platformName = "Kenya Tours";
 
 
+// Return the expression shown below to the caller.
 return (
 
 <>

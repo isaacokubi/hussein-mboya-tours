@@ -1,25 +1,47 @@
+/**
+ * Purpose: Hussein AIWidget reusable UI component. Main declarations: HusseinAIWidget, sendMessage.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/components/HusseinAIWidget.jsx
+// Load react so this module can use its exported dependencies.
 import { useState } from "react";
+// Load lucide-react so this module can use its exported dependencies.
 import { MessageCircle, X, Send } from "lucide-react";
+// Load ../api/aiApi so this module can use its exported dependencies.
 import { askTravelAI } from "../api/aiApi";
 
+// Declare HusseinAIWidget for use by the surrounding module or function.
 const HusseinAIWidget = () => {
+  // Declare [open, setOpen] for use by the surrounding module or function.
   const [open, setOpen] = useState(false);
+  // Declare [message, setMessage] for use by the surrounding module or function.
   const [message, setMessage] = useState("");
+  // Declare [messages, setMessages] for use by the surrounding module or function.
   const [messages, setMessages] = useState([
     { role: "assistant", text: "👋 Hello, I am Hussein AI. How can I help plan your trip?" },
   ]);
+  // Declare [loading, setLoading] for use by the surrounding module or function.
   const [loading, setLoading] = useState(false);
 
+  // Declare sendMessage for use by the surrounding module or function.
   const sendMessage = async () => {
+    // Check the condition (!message.trim()) and run the matching branch.
     if (!message.trim()) return;
+    // Declare userMessage for use by the surrounding module or function.
     const userMessage = { role: "user", text: message };
+    // Perform the side effect or state update expressed on the following line.
     setMessages((prev) => [...prev, userMessage]);
+    // Perform the side effect or state update expressed on the following line.
     setMessage("");
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       setLoading(true);
+      // Declare data for use by the surrounding module or function.
       const data = await askTravelAI(message);
+      // Declare reply for use by the surrounding module or function.
       const reply = data?.data?.reply || "I can help you plan your journey.";
+      // Perform the side effect or state update expressed on the following line.
       setMessages((prev) => [...prev, {
         role: "assistant",
         text: reply,
@@ -28,12 +50,15 @@ const HusseinAIWidget = () => {
         bookingId: reply.match(/Booking ID:\s*([a-f0-9]+)/i)?.[1],
       }]);
     } catch {
+      // Perform the side effect or state update expressed on the following line.
       setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I am unavailable right now." }]);
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       setLoading(false);
     }
   };
 
+  // Return the expression shown below to the caller.
   return (
     <>
       {!open && (

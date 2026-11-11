@@ -1,6 +1,12 @@
+/**
+ * Purpose: Website Integration Event database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare websiteIntegrationEventSchema for use by the surrounding module or function.
 const websiteIntegrationEventSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
@@ -17,7 +23,9 @@ const websiteIntegrationEventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Perform the side effect or state update expressed on the following line.
 websiteIntegrationEventSchema.index({ tenantId: 1, externalBookingId: 1, eventType: 1 });
+// Perform the side effect or state update expressed on the following line.
 websiteIntegrationEventSchema.plugin(tenantPlugin);
 
 export default mongoose.models.WebsiteIntegrationEvent ||

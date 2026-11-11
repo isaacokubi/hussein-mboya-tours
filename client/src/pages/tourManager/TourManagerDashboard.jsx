@@ -1,19 +1,36 @@
+/**
+ * Purpose: Tour Manager Dashboard page-level UI component. Main declarations: formatCurrency, TourManagerDashboard, refreshAll.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { AlertTriangle, CalendarDays, CheckCircle2, Map, RefreshCw, Users, Wallet } from "lucide-react";
+// Load ../../api/tourManagerApi so this module can use its exported dependencies.
 import { getDashboardStats } from "../../api/tourManagerApi";
+// Load ../../components/tours/tourManager/StatCard so this module can use its exported dependencies.
 import StatCard from "../../components/tours/tourManager/StatCard";
+// Load ../../components/tours/tourManager/UpcomingTours so this module can use its exported dependencies.
 import UpcomingTours from "../../components/tours/tourManager/UpcomingTours";
+// Load ../../components/tours/tourManager/BookingTable so this module can use its exported dependencies.
 import BookingTable from "../../components/tours/tourManager/BookingTable";
+// Load ../../utils/dashboardData so this module can use its exported dependencies.
 import { asArray, firstNumeric, unwrapData } from "../../utils/dashboardData";
+// Load ../../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../../context/SettingsContext";
 
+// Declare formatCurrency for use by the surrounding module or function.
 const formatCurrency = (value, symbol) => `${symbol} ${Number(value || 0).toLocaleString("en-KE", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
+// Define TourManagerDashboard; its parameters and body implement this operation.
 export default function TourManagerDashboard() {
+  // Declare { settings } for use by the surrounding module or function.
   const { settings } = useSettings();
+  // Declare currencySymbol for use by the surrounding module or function.
   const currencySymbol = settings?.currencySymbol || settings?.currency || "KSh";
+  // Declare companyName for use by the surrounding module or function.
   const companyName = String(settings?.companyName || settings?.displayName || "Global Tours").trim();
 
+  // Declare dashboardQuery for use by the surrounding module or function.
   const dashboardQuery = useQuery({
     queryKey: ["tour-manager-dashboard"],
     queryFn: getDashboardStats,
@@ -24,22 +41,37 @@ export default function TourManagerDashboard() {
     retry: 1,
   });
 
+  // Declare dashboard for use by the surrounding module or function.
   const dashboard = unwrapData(dashboardQuery.data);
+  // Declare stats for use by the surrounding module or function.
   const stats = dashboard.stats || dashboard.summary || {};
+  // Declare upcomingTours for use by the surrounding module or function.
   const upcomingTours = asArray(dashboard.upcomingTours ?? dashboard.tours);
+  // Declare recentBookings for use by the surrounding module or function.
   const recentBookings = asArray(dashboard.recentBookings ?? dashboard.bookings);
+  // Declare isLoading for use by the surrounding module or function.
   const isLoading = dashboardQuery.isLoading;
+  // Declare isFetching for use by the surrounding module or function.
   const isFetching = dashboardQuery.isFetching;
+  // Declare isError for use by the surrounding module or function.
   const isError = dashboardQuery.isError;
+  // Declare error for use by the surrounding module or function.
   const error = dashboardQuery.error;
 
+  // Declare totalTours for use by the surrounding module or function.
   const totalTours = firstNumeric(stats.totalTours, dashboard.totalTours, upcomingTours.length);
+  // Declare upcomingCount for use by the surrounding module or function.
   const upcomingCount = firstNumeric(stats.upcomingTours, dashboard.upcomingToursCount, upcomingTours.length);
+  // Declare totalCustomers for use by the surrounding module or function.
   const totalCustomers = firstNumeric(stats.totalCustomers, dashboard.totalCustomers, dashboard.customerCount);
+  // Declare revenue for use by the surrounding module or function.
   const revenue = firstNumeric(stats.revenue, dashboard.revenue);
+  // Declare refreshAll for use by the surrounding module or function.
   const refreshAll = () => void dashboardQuery.refetch();
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <section className="min-h-[60vh] bg-slate-50 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl animate-pulse space-y-6">
@@ -51,9 +83,13 @@ export default function TourManagerDashboard() {
     );
   }
 
+  // Check the condition (isError) and run the matching branch.
   if (isError) {
+    // Declare status for use by the surrounding module or function.
     const status = error?.response?.status;
+    // Declare message for use by the surrounding module or function.
     const message = error?.response?.data?.message;
+    // Return the expression shown below to the caller.
     return (
       <section className="min-h-[60vh] bg-slate-50 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-3xl rounded-3xl border border-rose-200 bg-white p-8 shadow-sm">
@@ -69,6 +105,7 @@ export default function TourManagerDashboard() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <section className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-7">

@@ -1,8 +1,16 @@
+/**
+ * Purpose: Destination database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/Destination.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
+// Load slugify so this module can use its exported dependencies.
 import slugify from "slugify";
 
 
@@ -12,6 +20,7 @@ import slugify from "slugify";
 |--------------------------------------------------------------------------
 */
 
+// Declare destinationSchema for use by the surrounding module or function.
 const destinationSchema = new mongoose.Schema(
 
     {
@@ -566,15 +575,18 @@ images: [
 */
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.pre(
     "save",
     function(next){
 
+        // Check the condition (!this.slug && this.name) and run the matching branch.
         if(
             !this.slug &&
             this.name
         ){
 
+            // Perform the side effect or state update expressed on the following line.
             this.slug = slugify(
                 this.name,
                 {
@@ -591,6 +603,7 @@ destinationSchema.pre(
         }
 
 
+        // Perform the side effect or state update expressed on the following line.
         next();
 
 
@@ -611,20 +624,26 @@ destinationSchema.pre(
 */
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.virtual("image").get(function () {
+    // Return the expression shown below to the caller.
     return this.images?.[0]?.url || this.featuredImage || "";
 });
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.virtual("imageUrl").get(function () {
+    // Return the expression shown below to the caller.
     return this.images?.[0]?.url || this.featuredImage || "";
 });
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.virtual(
     "location"
 )
 .get(function(){
 
 
+    // Return the result of [          this.city,          this.region,          this.country       ]      .filter(Boolean)      .join() to the caller.
     return [
 
         this.city,
@@ -660,15 +679,18 @@ destinationSchema.virtual(
 
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.index({
 
     country:1
 
 });
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.index({ tenantId: 1, slug: 1 }, { unique: true, partialFilterExpression: { slug: { $type: "string" } } });
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.index({
 
     region:1
@@ -676,6 +698,7 @@ destinationSchema.index({
 });
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.index({
 
     city:1
@@ -683,6 +706,7 @@ destinationSchema.index({
 });
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.index({
 
     featured:1
@@ -690,6 +714,7 @@ destinationSchema.index({
 });
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.index({
 
     popular:1
@@ -697,6 +722,7 @@ destinationSchema.index({
 });
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.index({
 
     status:1
@@ -704,6 +730,7 @@ destinationSchema.index({
 });
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.index({
 
     active:1
@@ -711,6 +738,7 @@ destinationSchema.index({
 });
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.index({
 
     averageRating:-1
@@ -718,6 +746,7 @@ destinationSchema.index({
 });
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.index({
 
     totalBookings:-1
@@ -725,6 +754,7 @@ destinationSchema.index({
 });
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.index({
 
     isDeleted:1
@@ -744,13 +774,16 @@ destinationSchema.index({
 */
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.methods.updateRating =
 function(rating){
 
 
+    // Perform the side effect or state update expressed on the following line.
     this.averageRating = rating;
 
 
+    // Return the result of this.save() to the caller.
     return this.save();
 
 
@@ -769,8 +802,10 @@ function(rating){
 */
 
 
+// Perform the side effect or state update expressed on the following line.
 destinationSchema.plugin(tenantPlugin);
 
+// Declare Destination for use by the surrounding module or function.
 const Destination = mongoose.model(
     "Destination",
     destinationSchema,

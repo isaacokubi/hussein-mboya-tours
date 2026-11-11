@@ -1,29 +1,53 @@
+/**
+ * Purpose: Travel Service Desk reusable UI component. Main declarations: labelFor, TravelServiceDesk, submit, RequestRow, Stat.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { AlertTriangle, CalendarClock, Car, ClipboardList, FileText, Hotel, ShieldCheck, Plane } from "lucide-react";
+// Load ../../api/travelServiceRequestApi so this module can use its exported dependencies.
 import { createTravelServiceRequest, getTravelServiceRequests, getTravelServiceSummary, updateTravelServiceRequest } from "../../api/travelServiceRequestApi";
 
+// Declare types for use by the surrounding module or function.
 const types = [
   ["airport_transfer", "Airport transfer", Plane], ["accommodation", "Accommodation", Hotel], ["rooming_list", "Rooming list", ClipboardList],
   ["travel_document", "Travel documents", FileText], ["insurance", "Travel insurance", ShieldCheck], ["manifest", "Trip manifest", ClipboardList],
   ["incident", "Incident / emergency", AlertTriangle], ["schedule", "Schedule / staffing", CalendarClock], ["cancellation", "Cancellation request", FileText], ["special_service", "Special service", Car],
 ];
+// Declare input for use by the surrounding module or function.
 const input = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
+// Declare btn for use by the surrounding module or function.
 const btn = "rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-50";
+// Declare labelFor for use by the surrounding module or function.
 const labelFor = (value) => types.find(([id]) => id === value)?.[1] || String(value || "").replaceAll("_", " ");
 
+// Define TravelServiceDesk; its parameters and body implement this operation.
 export default function TravelServiceDesk() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [filter, setFilter] for use by the surrounding module or function.
   const [filter, setFilter] = useState("");
+  // Declare [status, setStatus] for use by the surrounding module or function.
   const [status, setStatus] = useState("");
+  // Declare [notice, setNotice] for use by the surrounding module or function.
   const [notice, setNotice] = useState("");
+  // Declare { data: listResponse, isLoading } for use by the surrounding module or function.
   const { data: listResponse, isLoading } = useQuery({ queryKey: ["travel-service-requests", filter, status], queryFn: () => getTravelServiceRequests({ type: filter || undefined, status: status || undefined }), refetchInterval: 60000 });
+  // Declare { data: summaryResponse } for use by the surrounding module or function.
   const { data: summaryResponse } = useQuery({ queryKey: ["travel-service-summary"], queryFn: getTravelServiceSummary, refetchInterval: 60000 });
+  // Declare rows for use by the surrounding module or function.
   const rows = useMemo(() => listResponse?.data?.data || listResponse?.data || [], [listResponse]);
+  // Declare summary for use by the surrounding module or function.
   const summary = summaryResponse?.data?.data || {};
+  // Declare createMutation for use by the surrounding module or function.
   const createMutation = useMutation({ mutationFn: createTravelServiceRequest, onSuccess: () => { setNotice("Service request created."); qc.invalidateQueries({ queryKey: ["travel-service-requests"] }); qc.invalidateQueries({ queryKey: ["travel-service-summary"] }); }, onError: e => setNotice(e?.response?.data?.message || e?.message || "Unable to create request.") });
+  // Declare updateMutation for use by the surrounding module or function.
   const updateMutation = useMutation({ mutationFn: ({ id, payload }) => updateTravelServiceRequest(id, payload), onSuccess: () => { setNotice("Request updated."); qc.invalidateQueries({ queryKey: ["travel-service-requests"] }); qc.invalidateQueries({ queryKey: ["travel-service-summary"] }); }, onError: e => setNotice(e?.response?.data?.message || e?.message || "Unable to update request.") });
+  // Declare submit for use by the surrounding module or function.
   const submit = (e) => { e.preventDefault(); const f = new FormData(e.currentTarget); createMutation.mutate({ type: f.get("type"), title: f.get("title"), description: f.get("description"), requestedDate: f.get("requestedDate") || undefined, dueDate: f.get("dueDate") || undefined, priority: f.get("priority"), location: f.get("location"), contactPhone: f.get("contactPhone"), booking: f.get("booking") || undefined, metadata: { flightNumber: f.get("flightNumber"), pickupTime: f.get("pickupTime"), roomingReference: f.get("roomingReference"), documentType: f.get("documentType"), incidentSeverity: f.get("incidentSeverity") } }); e.currentTarget.reset(); };
+  // Return the expression shown below to the caller.
   return <section className="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
     <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Field & guest services</p><h2 className="text-xl font-bold">Service desk & trip operations</h2><p className="mt-1 text-sm text-slate-500">Manage transfers, accommodation, rooming lists, manifests, documents, insurance, incidents, scheduling and cancellations in one tenant-scoped queue.</p></div>{notice && <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">{notice}</div>}</div>
     <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat label="Open" value={summary.byStatus?.find(x => x._id === "open")?.count || 0}/><Stat label="In progress" value={summary.byStatus?.find(x => x._id === "in_progress")?.count || 0}/><Stat label="Resolved" value={summary.byStatus?.find(x => x._id === "resolved")?.count || 0}/><Stat label="Urgent" value={summary.urgent || 0}/></div>
@@ -33,7 +57,11 @@ export default function TravelServiceDesk() {
     </div>
   </section>;
 }
+// Define RequestRow; its parameters and body implement this operation.
 function RequestRow({ row, onUpdate, busy }) { return <tr className="border-t"><td className="p-3 capitalize">{labelFor(row.type)}</td><td className="p-3"><div className="font-semibold">{row.title}</div><div className="text-xs text-slate-500">{row.description || "No description"}</div></td><td className="p-3">{row.requestedDate ? new Date(row.requestedDate).toLocaleDateString() : "—"}</td><td className="p-3 capitalize">{row.priority}</td><td className="p-3 capitalize">{row.status?.replaceAll("_", " ")}</td><td className="p-3"><select disabled={busy} className="rounded-lg border border-slate-200 px-2 py-1" value={row.status} onChange={e => onUpdate({ status: e.target.value })}>{["open","in_progress","awaiting_customer","resolved","cancelled"].map(x => <option key={x}>{x}</option>)}</select></td></tr>; }
+// Define Stat; its parameters and body implement this operation.
 function Stat({ label, value }) { return <div className="rounded-xl border border-slate-200 p-4"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 text-2xl font-black">{value}</p></div>; }
+// Define Field; its parameters and body implement this operation.
 function Field({ name, label, type="text", required }) { return <label className="block text-xs font-semibold text-slate-600">{label}<input name={name} type={type} required={required} className={input}/></label>; }
+// Define Select; its parameters and body implement this operation.
 function Select({ name, label, options, labels={} }) { return <label className="block text-xs font-semibold text-slate-600">{label}<select name={name} className={input}>{options.map(x => <option key={x} value={x}>{labels[x] || x.replaceAll("_", " ") || "Not specified"}</option>)}</select></label>; }

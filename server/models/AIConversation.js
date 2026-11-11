@@ -1,8 +1,15 @@
+/**
+ * Purpose: AIConversation database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 
+// Declare messageSchema for use by the surrounding module or function.
 const messageSchema =
 new mongoose.Schema({
 
@@ -40,6 +47,7 @@ new mongoose.Schema({
 });
 
 
+// Declare aiConversationSchema for use by the surrounding module or function.
 const aiConversationSchema =
 new mongoose.Schema({
 
@@ -102,6 +110,7 @@ new mongoose.Schema({
 
 export default aiConversationSchema.plugin(tenantPlugin);
 
+// Perform the side effect or state update expressed on the following line.
 mongoose.model(
   "AIConversation",
   aiConversationSchema

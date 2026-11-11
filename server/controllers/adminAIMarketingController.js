@@ -1,18 +1,28 @@
+/**
+ * Purpose: admin AIMarketing Controller HTTP controller. Main declarations: generateAIMarketingCampaign.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter } from "../tenancy/context.js";
+// Load ../models/Tour.js so this module can use its exported dependencies.
 import Tour from "../models/Tour.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../models/User.js so this module can use its exported dependencies.
 import User from "../models/User.js";
 
 
+// Declare generateAIMarketingCampaign for use by the surrounding module or function.
 export const generateAIMarketingCampaign = async(
 req,
 res,
 next
 )=>{
 
+// Run this operation with a dedicated error-handling path for failures.
 try{
 
 
+// Declare [ tours, bookings, customers ] for use by the surrounding module or function.
 const [
 
 tours,
@@ -39,6 +49,7 @@ role:"customer"
 
 
 
+// Declare campaigns for use by the surrounding module or function.
 const campaigns=[
 
 {
@@ -104,6 +115,7 @@ message:
 
 
 
+// Perform the side effect or state update expressed on the following line.
 res.json({
 
 success:true,
@@ -129,6 +141,7 @@ campaigns
 
 }catch(error){
 
+// Perform the side effect or state update expressed on the following line.
 next(error);
 
 }

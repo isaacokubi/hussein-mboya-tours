@@ -1,19 +1,33 @@
+/**
+ * Purpose: Dashboard Logout Button reusable UI component. Main declarations: DashboardLogoutButton, handleLogout.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { LogOut } from "lucide-react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { useNavigate } from "react-router-dom";
+// Load ../../context/AuthContext so this module can use its exported dependencies.
 import { useAuth } from "../../context/AuthContext";
 
+// Define DashboardLogoutButton; its parameters and body implement this operation.
 export default function DashboardLogoutButton({ className = "" }) {
+  // Declare { logout } for use by the surrounding module or function.
   const { logout } = useAuth();
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
 
+  // Declare handleLogout for use by the surrounding module or function.
   const handleLogout = async () => {
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       await logout();
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       navigate("/login", { replace: true });
     }
   };
 
+  // Return the expression shown below to the caller.
   return (
     <button
       type="button"

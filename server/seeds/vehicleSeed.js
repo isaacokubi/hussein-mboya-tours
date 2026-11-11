@@ -1,11 +1,19 @@
+/**
+ * Purpose: vehicle Seed database seed module. Main declarations: seedVehicles.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load dotenv so this module can use its exported dependencies.
 import dotenv from "dotenv";
 
+// Load ../models/Vehicle.js so this module can use its exported dependencies.
 import Vehicle from "../models/Vehicle.js";
 
+// Perform the side effect or state update expressed on the following line.
 dotenv.config();
 
 
+// Declare vehicles for use by the surrounding module or function.
 const vehicles = [
 
     {
@@ -40,37 +48,46 @@ const vehicles = [
 ];
 
 
+// Declare seedVehicles for use by the surrounding module or function.
 const seedVehicles = async()=>{
 
+    // Run this operation with a dedicated error-handling path for failures.
     try{
 
+        // Perform the side effect or state update expressed on the following line.
         await mongoose.connect(
             process.env.MONGODB_URI
         );
 
 
+        // Perform the side effect or state update expressed on the following line.
         await Vehicle.deleteMany();
 
 
+        // Perform the side effect or state update expressed on the following line.
         await Vehicle.insertMany(
             vehicles
         );
 
 
+        // Perform the side effect or state update expressed on the following line.
         console.log(
             "✅ Vehicles seeded successfully"
         );
 
 
+        // Perform the side effect or state update expressed on the following line.
         process.exit();
 
 
     }catch(error){
 
+        // Perform the side effect or state update expressed on the following line.
         console.error(
             error.message
         );
 
+        // Perform the side effect or state update expressed on the following line.
         process.exit(1);
 
     }
@@ -78,4 +95,5 @@ const seedVehicles = async()=>{
 };
 
 
+// Perform the side effect or state update expressed on the following line.
 seedVehicles();

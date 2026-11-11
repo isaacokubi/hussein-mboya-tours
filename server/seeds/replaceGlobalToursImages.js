@@ -1,16 +1,28 @@
+/**
+ * Purpose: replace Global Tours Images database seed module. Main declarations: image, run.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load dotenv so this module can use its exported dependencies.
 import dotenv from "dotenv";
+// Load ../models/Destination.js so this module can use its exported dependencies.
 import Destination from "../models/Destination.js";
+// Load ../models/Tour.js so this module can use its exported dependencies.
 import Tour from "../models/Tour.js";
+// Load ../models/Gallery.js so this module can use its exported dependencies.
 import Gallery from "../models/Gallery.js";
+// Load ../tenancy/context.js so this module can use its exported dependencies.
 import { runWithTenant } from "../tenancy/context.js";
 
+// Perform the side effect or state update expressed on the following line.
 dotenv.config();
 
+// Declare image for use by the surrounding module or function.
 const image = (id) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1600&q=85`;
 
 // Fresh, stable Unsplash image set. No local placeholders are used.
+// Declare IMAGES for use by the surrounding module or function.
 const IMAGES = {
   safari: image("photo-1516426122078-c23e76319801"),
   elephant: image("photo-1557050543-4d5f4e07ef46"),
@@ -34,6 +46,7 @@ const IMAGES = {
   wildlife: image("photo-1518709268805-4e9042af9f23"),
 };
 
+// Declare destinationMedia for use by the surrounding module or function.
 const destinationMedia = {
   "samburu-national-reserve": [IMAGES.safari, IMAGES.giraffe],
   "mount-kenya": [IMAGES.mountain, IMAGES.kenyaMountain],
@@ -43,6 +56,7 @@ const destinationMedia = {
   mombasa: [IMAGES.coast, IMAGES.palm],
 };
 
+// Declare tourMedia for use by the surrounding module or function.
 const tourMedia = {
   "Malindi & Watamu Coastal Escape": [IMAGES.coast, IMAGES.beach],
   "Watamu Marine Discovery": [IMAGES.ocean, IMAGES.coast2],
@@ -66,6 +80,7 @@ const tourMedia = {
   "Samburu Luxury Wilderness Experience": [IMAGES.giraffe, IMAGES.wildlife],
 };
 
+// Declare gallery for use by the surrounding module or function.
 const gallery = [
   ["Kenya Wildlife", IMAGES.elephant],
   ["Maasai Mara Safari", IMAGES.safari],
@@ -81,18 +96,27 @@ const gallery = [
   ["Safari Adventure", IMAGES.adventure],
 ];
 
+// Declare run for use by the surrounding module or function.
 const run = async () => {
+  // Check the condition (!process.env.MONGODB_URI) and run the matching branch.
   if (!process.env.MONGODB_URI) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error("MONGODB_URI is missing in .env");
   }
 
+  // Perform the side effect or state update expressed on the following line.
   await mongoose.connect(process.env.MONGODB_URI);
 
+  // Perform the side effect or state update expressed on the following line.
   await runWithTenant({ role: "super_admin", bypass: true }, async () => {
+    // Declare destinationsUpdated for use by the surrounding module or function.
     let destinationsUpdated = 0;
+    // Declare toursUpdated for use by the surrounding module or function.
     let toursUpdated = 0;
 
+    // Repeat the enclosed work for each required iteration.
     for (const [slug, [featuredImage, secondImage]] of Object.entries(destinationMedia)) {
+      // Declare result for use by the surrounding module or function.
       const result = await Destination.updateOne(
         { slug },
         {
@@ -108,10 +132,13 @@ const run = async () => {
           },
         }
       );
+      // Perform the side effect or state update expressed on the following line.
       destinationsUpdated += result.matchedCount;
     }
 
+    // Repeat the enclosed work for each required iteration.
     for (const [title, [featuredImage, secondImage]] of Object.entries(tourMedia)) {
+      // Declare result for use by the surrounding module or function.
       const result = await Tour.updateMany(
         { title },
         {
@@ -128,14 +155,18 @@ const run = async () => {
           },
         }
       );
+      // Perform the side effect or state update expressed on the following line.
       toursUpdated += result.matchedCount;
     }
 
     // Remove only the old placeholder test gallery records, then replace them
     // with real gallery entries. Other gallery records are left untouched.
+    // Perform the side effect or state update expressed on the following line.
     await Gallery.deleteMany({ title: /^Gallery Test/i });
 
+    // Perform the side effect or state update expressed on the following line.
     await Gallery.deleteMany({ title: { $in: gallery.map(([title]) => title) } });
+    // Perform the side effect or state update expressed on the following line.
     await Gallery.insertMany(
       gallery.map(([title, url], index) => ({
         title,
@@ -146,17 +177,24 @@ const run = async () => {
       }))
     );
 
+    // Perform the side effect or state update expressed on the following line.
     console.log(`Global Tours image seed complete: ${destinationsUpdated} destinations + ${toursUpdated} tours updated.`);
+    // Perform the side effect or state update expressed on the following line.
     console.log(`${gallery.length} real Safari Gallery images seeded.`);
+    // Perform the side effect or state update expressed on the following line.
     console.log("Placeholder Gallery Test records were removed; unrelated gallery records were preserved.");
   });
 };
 
+// Perform the side effect or state update expressed on the following line.
 run()
   .catch((error) => {
+    // Perform the side effect or state update expressed on the following line.
     console.error("Global Tours image seed failed:", error.message);
+    // Perform the side effect or state update expressed on the following line.
     process.exitCode = 1;
   })
   .finally(async () => {
+    // Perform the side effect or state update expressed on the following line.
     await mongoose.connection.close().catch(() => {});
   });

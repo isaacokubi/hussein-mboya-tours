@@ -1,12 +1,22 @@
+/**
+ * Purpose: accounting Controller HTTP controller. Main declarations: userId, ok, ensureDefaults, assertTenantAccounts, listAccounts.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../models/ChartOfAccount.js so this module can use its exported dependencies.
 import ChartOfAccount from "../models/ChartOfAccount.js";
+// Load ../models/JournalEntry.js so this module can use its exported dependencies.
 import JournalEntry from "../models/JournalEntry.js";
+// Load ../tenancy/tenantQuery.js so this module can use its exported dependencies.
 import { tenantFilter } from "../tenancy/tenantQuery.js";
 
+// Declare userId for use by the surrounding module or function.
 const userId = (req) => req.user?._id || req.user?.id || null;
+// Declare ok for use by the surrounding module or function.
 const ok = (res, data, status = 200) => res.status(status).json({ success: true, data });
 
 // Stable system accounts. Existing codes are preserved so current journals and modules keep working.
+// Declare DEFAULT_ACCOUNTS for use by the surrounding module or function.
 const DEFAULT_ACCOUNTS = [
   ["1000", "Cash on Hand", "asset", "cash"], ["1010", "Bank Account", "asset", "bank"], ["1020", "M-Pesa", "asset", "mobile_money"], ["1030", "Card / Gateway Clearing", "asset", "payment_clearing"],
   ["1100", "Accounts Receivable", "asset", "receivable"], ["1110", "Corporate Receivables", "asset", "corporate_receivable"], ["1200", "Inventory", "asset", "inventory"], ["1300", "Prepayments", "asset", "prepayment"], ["1400", "Property, Plant & Equipment", "asset", "fixed_asset"], ["1490", "Accumulated Depreciation", "asset", "accumulated_depreciation"],
@@ -16,33 +26,56 @@ const DEFAULT_ACCOUNTS = [
   ["5000", "Tour / Supplier Costs", "expense", "cost_of_sales"], ["5010", "Hotel Direct Costs", "expense", "cost_of_sales"], ["5020", "Transport Direct Costs", "expense", "cost_of_sales"], ["5100", "Commissions", "expense", "commission"], ["5200", "General Operating Expenses", "expense", "operating"], ["5210", "Salaries & Wages", "expense", "payroll_expense"], ["5220", "Rent & Occupancy", "expense", "operating"], ["5230", "Utilities", "expense", "operating"], ["5240", "Fuel & Transport", "expense", "operating"], ["5250", "Marketing", "expense", "operating"], ["5260", "Bank & Payment Charges", "expense", "operating"], ["5270", "Depreciation Expense", "expense", "depreciation"], ["5280", "Professional Fees", "expense", "operating"], ["6000", "Operating Expenses", "expense", "operating"], ["6100", "Interest Expense", "expense", "finance_cost"], ["7000", "Foreign Exchange Gain", "revenue", "fx_gain"], ["7010", "Foreign Exchange Loss", "expense", "fx_loss"],
 ];
 
+// Define ensureDefaults; its parameters and body implement this operation.
 async function ensureDefaults(tenantId) {
+  // Declare filter for use by the surrounding module or function.
   const filter = tenantFilter({ tenantId });
+  // Repeat the enclosed work for each required iteration.
   for (const [code, name, type, subtype] of DEFAULT_ACCOUNTS) await ChartOfAccount.updateOne({ ...filter, code }, { $setOnInsert: { tenantId, code, name, type, subtype, currency: "KES", system: true, active: true } }, { upsert: true });
 }
 
+// Define assertTenantAccounts; its parameters and body implement this operation.
 async function assertTenantAccounts(req, lines) {
+  // Declare ids for use by the surrounding module or function.
   const ids = [...new Set((lines || []).map((line) => String(line.account || "")))];
+  // Check the condition (ids.length < 2 || ids.some((id) => !mongoose.isValidObjectId(id))) and run the matching branch.
   if (ids.length < 2 || ids.some((id) => !mongoose.isValidObjectId(id))) throw Object.assign(new Error("Each journal line must reference a valid account."), { statusCode: 422 });
+  // Declare accounts for use by the surrounding module or function.
   const accounts = await ChartOfAccount.find({ ...tenantFilter(req), _id: { $in: ids }, active: true }).select("_id").lean();
+  // Check the condition (accounts.length !== ids.length) and run the matching branch.
   if (accounts.length !== ids.length) throw Object.assign(new Error("One or more journal accounts do not belong to this tenant or are inactive."), { statusCode: 403 });
 }
 
+// Declare listAccounts for use by the surrounding module or function.
 export const listAccounts = async (req, res, next) => { try { await ensureDefaults(req.tenantId); return ok(res, await ChartOfAccount.find({ ...tenantFilter(req), active: { $ne: false } }).sort({ code: 1 }).lean()); } catch (e) { return next(e); } };
+// Declare createAccount for use by the surrounding module or function.
 export const createAccount = async (req, res, next) => { try { const data = await ChartOfAccount.create({ ...req.body, tenantId: req.tenantId, system: false }); return ok(res, data, 201); } catch (e) { return next(e); } };
+// Declare listJournalEntries for use by the surrounding module or function.
 export const listJournalEntries = async (req, res, next) => { try { const filter = { ...tenantFilter(req), status: req.query.status || { $in: ["draft", "posted", "void"] } }; if (req.query.status) filter.status = req.query.status; if (req.query.from || req.query.to) { filter.entryDate = {}; if (req.query.from) filter.entryDate.$gte = new Date(req.query.from); if (req.query.to) { const to = new Date(req.query.to); to.setHours(23, 59, 59, 999); filter.entryDate.$lte = to; } } return ok(res, await JournalEntry.find(filter).populate("lines.account", "code name type subtype").sort({ entryDate: -1, createdAt: -1 }).limit(Math.min(Number(req.query.limit) || 200, 500)).lean()); } catch (e) { return next(e); } };
+// Declare createJournalEntry for use by the surrounding module or function.
 export const createJournalEntry = async (req, res, next) => { try { await assertTenantAccounts(req, req.body?.lines); const entry = await JournalEntry.create({ ...req.body, tenantId: req.tenantId, status: "draft", createdBy: userId(req) }); return ok(res, await entry.populate("lines.account", "code name type subtype"), 201); } catch (e) { return next(e); } };
+// Declare postJournalEntry for use by the surrounding module or function.
 export const postJournalEntry = async (req, res, next) => { try { const entry = await JournalEntry.findOne({ ...tenantFilter(req), _id: req.params.id }); if (!entry) return res.status(404).json({ success: false, message: "Journal entry not found." }); if (entry.status === "posted") return ok(res, entry); if (entry.status === "void") return res.status(409).json({ success: false, message: "Void entries cannot be posted." }); await assertTenantAccounts(req, entry.lines); const debit = entry.lines.reduce((s, l) => s + Number(l.debit || 0), 0); const credit = entry.lines.reduce((s, l) => s + Number(l.credit || 0), 0); if (entry.lines.length < 2 || Math.abs(debit - credit) > 0.01 || debit <= 0) return res.status(422).json({ success: false, message: "Journal entry is not balanced." }); entry.status = "posted"; entry.postedAt = new Date(); entry.postedBy = userId(req); await entry.save(); return ok(res, await entry.populate("lines.account", "code name type subtype")); } catch (e) { return next(e); } };
+// Declare voidJournalEntry for use by the surrounding module or function.
 export const voidJournalEntry = async (req, res, next) => { try { const entry = await JournalEntry.findOne({ ...tenantFilter(req), _id: req.params.id }); if (!entry) return res.status(404).json({ success: false, message: "Journal entry not found." }); if (entry.status === "posted") return res.status(409).json({ success: false, message: "Posted entries must be reversed with a new journal entry; they cannot be edited or voided." }); entry.status = "void"; await entry.save(); return ok(res, entry); } catch (e) { return next(e); } };
 
+// Declare getLedgerSummary for use by the surrounding module or function.
 export const getLedgerSummary = async (req, res, next) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Perform the side effect or state update expressed on the following line.
     await ensureDefaults(req.tenantId); const accounts = await ChartOfAccount.find({ ...tenantFilter(req), active: { $ne: false } }).sort({ code: 1 }).lean(); const entries = await JournalEntry.find({ ...tenantFilter(req), status: "posted" }).select("lines entryDate").lean();
+    // Declare balances for use by the surrounding module or function.
     const balances = new Map(accounts.map((a) => [String(a._id), { account: a, debit: 0, credit: 0, balance: 0 }]));
+    // Repeat the enclosed work for each required iteration.
     for (const entry of entries) for (const line of entry.lines || []) { const row = balances.get(String(line.account)); if (row) { row.debit += Number(line.debit || 0); row.credit += Number(line.credit || 0); } }
+    // Repeat the enclosed work for each required iteration.
     for (const row of balances.values()) { row.debit = Math.round(row.debit * 100) / 100; row.credit = Math.round(row.credit * 100) / 100; row.balance = Math.round((["asset", "expense"].includes(row.account.type) ? row.debit - row.credit : row.credit - row.debit) * 100) / 100; }
+    // Declare rows for use by the surrounding module or function.
     const rows = [...balances.values()]; const totals = rows.reduce((a, r) => ({ debit: a.debit + r.debit, credit: a.credit + r.credit }), { debit: 0, credit: 0 });
+    // Declare revenue for use by the surrounding module or function.
     const revenue = rows.filter((r) => r.account.type === "revenue").reduce((s, r) => s + r.balance, 0); const expenses = rows.filter((r) => r.account.type === "expense").reduce((s, r) => s + r.balance, 0); const assets = rows.filter((r) => r.account.type === "asset").reduce((s, r) => s + r.balance, 0); const liabilities = rows.filter((r) => r.account.type === "liability").reduce((s, r) => s + r.balance, 0); const equity = rows.filter((r) => r.account.type === "equity").reduce((s, r) => s + r.balance, 0);
+    // Return the result of ok() to the caller.
     return ok(res, { accounts: rows, totals: { debit: Math.round(totals.debit * 100) / 100, credit: Math.round(totals.credit * 100) / 100 }, profitLoss: { revenue: Math.round(revenue * 100) / 100, expenses: Math.round(expenses * 100) / 100, netProfit: Math.round((revenue - expenses) * 100) / 100 }, balanceSheet: { assets: Math.round(assets * 100) / 100, liabilities: Math.round(liabilities * 100) / 100, equity: Math.round(equity * 100) / 100, retainedResult: Math.round((revenue - expenses) * 100) / 100, liabilitiesAndEquity: Math.round((liabilities + equity + revenue - expenses) * 100) / 100 } });
   } catch (e) { return next(e); }
 };

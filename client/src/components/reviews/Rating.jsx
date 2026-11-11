@@ -1,13 +1,20 @@
+/**
+ * Purpose: Rating reusable UI component. Main declarations: Rating.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Star } from "lucide-react";
 
+// Define Rating; its parameters and body implement this operation.
 export default function Rating({
   value = 0,
   reviews,
   showValue = false,
   size = 18,
 }) {
+  // Declare rating for use by the surrounding module or function.
   const rating = Math.max(0, Math.min(5, Number(value) || 0));
 
+  // Return the expression shown below to the caller.
   return (
     <div
       className="flex items-center gap-2"

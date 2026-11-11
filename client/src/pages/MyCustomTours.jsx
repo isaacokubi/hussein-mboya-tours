@@ -1,12 +1,21 @@
+/**
+ * Purpose: My Custom Tours page-level UI component. Main declarations: statusLabel, MyCustomTours, handleProceed.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useTenant } from "../context/TenantContext";
+// Load ../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../context/SettingsContext";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load ../api/customTourApi so this module can use its exported dependencies.
 import {
   convertCustomTourRequest,
   getMyCustomTourRequests,
 } from "../api/customTourApi";
+// Load ../components/common/MobileDashboardNav so this module can use its exported dependencies.
 import MobileDashboardNav from "../components/common/MobileDashboardNav";
 
+// Declare statusClasses for use by the surrounding module or function.
 const statusClasses = {
   pending: "bg-amber-100 text-amber-800",
   quoted: "bg-blue-100 text-blue-800",
@@ -16,33 +25,45 @@ const statusClasses = {
   converted: "bg-purple-100 text-purple-800",
 };
 
+// Declare statusLabel for use by the surrounding module or function.
 const statusLabel = (value) =>
   String(value || "pending")
     .replace(/_/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+// Define MyCustomTours; its parameters and body implement this operation.
 export default function MyCustomTours() {
+  // Declare { tenant } for use by the surrounding module or function.
   const { tenant } = useTenant();
+  // Declare { settings } for use by the surrounding module or function.
   const { settings } = useSettings();
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare { data, isLoading, isError, error } for use by the surrounding module or function.
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["my-custom-tour-requests"],
     queryFn: getMyCustomTourRequests,
   });
 
+  // Declare convertMutation for use by the surrounding module or function.
   const convertMutation = useMutation({
     mutationFn: convertCustomTourRequest,
     onSuccess: (result) => {
+      // Perform the side effect or state update expressed on the following line.
       queryClient.invalidateQueries({ queryKey: ["my-custom-tour-requests"] });
+      // Declare bookingId for use by the surrounding module or function.
       const bookingId = result?.booking?._id || result?.data?.booking?._id;
+      // Check the condition (bookingId) and run the matching branch.
       if (bookingId) {
         // Always take the customer to the real checkout screen. The checkout
         // page loads the quoted booking, shows the full cost/balance and
         // starts the M-Pesa STK push so the customer can enter their PIN.
+        // Perform the side effect or state update expressed on the following line.
         window.location.href = `/checkout/booking/${bookingId}`;
       }
     },
     onError: (mutationError) => {
+      // Perform the side effect or state update expressed on the following line.
       window.alert(
         mutationError?.response?.data?.message ||
           "Unable to proceed with this custom tour."
@@ -50,6 +71,7 @@ export default function MyCustomTours() {
     },
   });
 
+  // Declare requests for use by the surrounding module or function.
   const requests = Array.isArray(data)
     ? data
     : Array.isArray(data?.requests)
@@ -60,12 +82,17 @@ export default function MyCustomTours() {
           ? data.data.requests
           : [];
 
+  // Declare handleProceed for use by the surrounding module or function.
   const handleProceed = (request) => {
+    // Check the condition (!request?._id || convertMutation.isPending) and run the matching branch.
     if (!request?._id || convertMutation.isPending) return;
+    // Check the condition (!window.confirm("Proceed with this quoted custom tour and continue to ) and run the matching branch.
     if (!window.confirm("Proceed with this quoted custom tour and continue to secure checkout?")) return;
+    // Perform the side effect or state update expressed on the following line.
     convertMutation.mutate(request._id);
   };
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50">
       <MobileDashboardNav role="customer" title="My Custom Tours" />

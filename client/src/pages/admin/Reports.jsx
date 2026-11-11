@@ -1,42 +1,76 @@
+/**
+ * Purpose: Reports page-level UI component. Main declarations: money, number, listFrom, agentDisplayName, agentEmail.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { Activity, AlertCircle, BarChart3, CalendarDays, CheckCircle2, Clock3, RefreshCw, TrendingUp, Users } from "lucide-react";
+// Load ../../api/adminReportApi so this module can use its exported dependencies.
 import { getDailyReport, getTourReport, getAgentReport } from "../../api/adminReportApi";
 
+// Declare money for use by the surrounding module or function.
 const money = (value) => new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", maximumFractionDigits: 0 }).format(Number(value) || 0);
+// Declare number for use by the surrounding module or function.
 const number = (value) => new Intl.NumberFormat("en-KE").format(Number(value) || 0);
+// Declare listFrom for use by the surrounding module or function.
 const listFrom = (value, keys = []) => {
+  // Check the condition (Array.isArray(value)) and run the matching branch.
   if (Array.isArray(value)) return value;
+  // Repeat the enclosed work for each required iteration.
   for (const key of keys) if (Array.isArray(value?.[key])) return value[key];
+  // Return the collection assembled below to the caller.
   return [];
 };
 
+// Declare agentDisplayName for use by the surrounding module or function.
 const agentDisplayName = (agent) => agent?.name || agent?.user?.name || agent?.companyName || agent?.email || agent?.user?.email || "Unknown agent";
+// Declare agentEmail for use by the surrounding module or function.
 const agentEmail = (agent) => agent?.email || agent?.user?.email || "";
+// Declare agentPhone for use by the surrounding module or function.
 const agentPhone = (agent) => agent?.phone || agent?.user?.phone || "";
 
+// Declare StatCard for use by the surrounding module or function.
 const StatCard = ({ icon: Icon, label, value, detail, tone = "indigo" }) => {
+  // Declare tones for use by the surrounding module or function.
   const tones = { indigo: "bg-indigo-50 text-indigo-700 ring-indigo-100", sky: "bg-sky-50 text-sky-700 ring-sky-100", violet: "bg-violet-50 text-violet-700 ring-violet-100", emerald: "bg-emerald-50 text-emerald-700 ring-emerald-100" };
+  // Return the expression shown below to the caller.
   return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-2 text-3xl font-bold tracking-tight text-slate-950">{value}</p>{detail && <p className="mt-1 text-xs text-slate-500">{detail}</p>}</div><div className={`rounded-xl p-3 ring-1 ${tones[tone]}`}><Icon className="h-5 w-5" /></div></div></div>;
 };
 
+// Declare Section for use by the surrounding module or function.
 const Section = ({ icon: Icon, title, description, children }) => <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex items-start gap-3 border-b border-slate-100 px-5 py-4"><div className="rounded-lg bg-slate-100 p-2 text-indigo-700"><Icon className="h-5 w-5" /></div><div><h2 className="font-semibold text-slate-950">{title}</h2><p className="text-sm text-slate-500">{description}</p></div></div>{children}</section>;
+// Declare LoadingBlock for use by the surrounding module or function.
 const LoadingBlock = () => <div className="animate-pulse space-y-3 p-5"><div className="h-10 rounded-lg bg-slate-100" /><div className="h-10 rounded-lg bg-slate-100" /><div className="h-10 rounded-lg bg-slate-100" /></div>;
+// Declare ErrorBlock for use by the surrounding module or function.
 const ErrorBlock = ({ onRetry }) => <div className="flex flex-col items-center justify-center px-5 py-12 text-center"><div className="rounded-full bg-red-50 p-3 text-red-600"><AlertCircle className="h-6 w-6" /></div><p className="mt-3 font-semibold text-slate-900">Unable to load this report</p><p className="mt-1 max-w-md text-sm text-slate-500">The report service did not return usable data. Refresh and try again.</p><button type="button" onClick={onRetry} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-800"><RefreshCw className="h-4 w-4" />Retry</button></div>;
 
+// Define Reports; its parameters and body implement this operation.
 export default function Reports() {
+  // Declare dailyQuery for use by the surrounding module or function.
   const dailyQuery = useQuery({ queryKey: ["daily-report"], queryFn: getDailyReport, staleTime: 30_000, retry: 2, refetchOnWindowFocus: false });
+  // Declare toursQuery for use by the surrounding module or function.
   const toursQuery = useQuery({ queryKey: ["tour-report"], queryFn: getTourReport, staleTime: 30_000, retry: 2, refetchOnWindowFocus: false });
+  // Declare agentsQuery for use by the surrounding module or function.
   const agentsQuery = useQuery({ queryKey: ["agent-report"], queryFn: getAgentReport, staleTime: 30_000, retry: 2, refetchOnWindowFocus: false });
 
+  // Declare dailyBookings for use by the surrounding module or function.
   const dailyBookings = listFrom(dailyQuery.data, ["bookings", "data"]);
+  // Declare tours for use by the surrounding module or function.
   const tours = listFrom(toursQuery.data, ["data", "tours"]);
+  // Declare agents for use by the surrounding module or function.
   const agents = listFrom(agentsQuery.data, ["data", "agents"]);
+  // Declare metrics for use by the surrounding module or function.
   const metrics = useMemo(() => ({ revenue: tours.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0), bookings: tours.reduce((sum, item) => sum + (Number(item.totalBookings) || 0), 0) }), [tours]);
+  // Declare refreshAll for use by the surrounding module or function.
   const refreshAll = () => { dailyQuery.refetch(); toursQuery.refetch(); agentsQuery.refetch(); };
+  // Declare anyLoading for use by the surrounding module or function.
   const anyLoading = dailyQuery.isFetching || toursQuery.isFetching || agentsQuery.isFetching;
+  // Declare hasErrorWithoutData for use by the surrounding module or function.
   const hasErrorWithoutData = (query, items) => query.isError && !query.data && items.length === 0;
 
+  // Return the expression shown below to the caller.
   return <div className="min-h-full bg-slate-100 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6">
     <header className="overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 shadow-lg"><div className="flex flex-col gap-5 px-5 py-6 sm:px-7 sm:py-7 lg:flex-row lg:items-center lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-semibold text-sky-300"><BarChart3 className="h-4 w-4" />Administration / Reporting</div><h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">Booking Reports</h1><p className="mt-1 max-w-2xl text-sm text-slate-300 sm:text-base">Monitor booking activity, tour performance and agent contribution from one operational view.</p></div><button type="button" onClick={refreshAll} disabled={anyLoading} className="inline-flex w-fit items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${anyLoading ? "animate-spin" : ""}`} />Refresh reports</button></div></header>
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><StatCard icon={CalendarDays} label="Today's bookings" value={number(dailyQuery.data?.count ?? dailyBookings.length)} detail="Created today" /><StatCard icon={TrendingUp} label="Tour bookings" value={number(metrics.bookings)} detail={`${number(tours.length)} tours with activity`} tone="sky" /><StatCard icon={Users} label="Active agents" value={number(agents.length)} detail="Agents with report data" tone="violet" /><StatCard icon={CheckCircle2} label="Reported revenue" value={money(metrics.revenue)} detail="Across reported tour bookings" tone="emerald" /></div>

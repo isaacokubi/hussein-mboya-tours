@@ -1,3 +1,7 @@
+/**
+ * Purpose: Website Integration Key database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
 
 /**
@@ -6,6 +10,7 @@ import mongoose from "mongoose";
  * the hash is looked up before a tenant context exists, then the request is
  * switched into the key's tenant context by integrationAuth middleware.
  */
+// Declare websiteIntegrationKeySchema for use by the surrounding module or function.
 const websiteIntegrationKeySchema = new mongoose.Schema(
   {
     tenantId: {

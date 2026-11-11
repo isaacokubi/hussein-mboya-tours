@@ -1,37 +1,75 @@
+/**
+ * Purpose: Accounting Completion Center page-level UI component. Main declarations: money, finite, first, unwrap, metricValue.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { AlertCircle, CheckCircle2, CircleDollarSign, FileText, Landmark, LockKeyhole, Plus, RefreshCw, ShieldCheck, WalletCards, XCircle } from "lucide-react";
+// Load ../../../api/axios so this module can use its exported dependencies.
 import api from "../../../api/axios";
+// Declare money for use by the surrounding module or function.
 const money = (value) => { const n = Number(value); return Number.isFinite(n) ? `KES ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"; };
+// Declare finite for use by the surrounding module or function.
 const finite = (value) => Number.isFinite(Number(value));
+// Declare first for use by the surrounding module or function.
 const first = (...values) => values.find((v) => v !== null && v !== undefined && v !== "");
+// Declare unwrap for use by the surrounding module or function.
 const unwrap = (response) => response?.data ?? response;
+// Define metricValue; its parameters and body implement this operation.
 function metricValue(query, value) { if (query.isError) return "Unavailable"; if (query.isLoading) return "Loading…"; if (value === null || value === undefined || value === "" || !finite(value)) return "Unavailable"; return money(value); }
+// Define queryMessage; its parameters and body implement this operation.
 function queryMessage(query, label) { return query.error?.response?.data?.message || `${label} could not be loaded.`; }
+// Define AccountingCompletionCenter; its parameters and body implement this operation.
 export default function AccountingCompletionCenter() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient(); const currentYear = new Date().getFullYear();
+  // Declare [year, setYear] for use by the surrounding module or function.
   const [year, setYear] = useState(currentYear); const [period, setPeriod] = useState(`${currentYear}-${String(new Date().getMonth() + 1).padStart(2, "0")}`);
+  // Declare [asset, setAsset] for use by the surrounding module or function.
   const [asset, setAsset] = useState({ assetNumber: "", name: "", acquisitionDate: new Date().toISOString().slice(0, 10), acquisitionCost: "", residualValue: "0", usefulLifeMonths: "60" });
+  // Declare [budget, setBudget] for use by the surrounding module or function.
   const [budget, setBudget] = useState({ name: "", accountCode: "5200", fiscalYear: String(currentYear), month: "", amount: "" }); const [notice, setNotice] = useState("");
+  // Declare statements for use by the surrounding module or function.
   const statements = useQuery({ queryKey: ["accounting-statements", year], queryFn: async () => unwrap(await api.get(`/admin/finance/accounting/statements?from=${year}-01-01&to=${year}-12-31`)), retry: 1 });
+  // Declare ar for use by the surrounding module or function.
   const ar = useQuery({ queryKey: ["accounting-ar"], queryFn: async () => unwrap(await api.get("/admin/finance/accounting/ar-aging")), retry: 1 });
+  // Declare ap for use by the surrounding module or function.
   const ap = useQuery({ queryKey: ["accounting-ap"], queryFn: async () => unwrap(await api.get("/admin/finance/accounting/ap-aging")), retry: 1 });
+  // Declare cash for use by the surrounding module or function.
   const cash = useQuery({ queryKey: ["accounting-cash", year], queryFn: async () => unwrap(await api.get(`/admin/finance/accounting/cash-flow?from=${year}-01-01&to=${year}-12-31`)), retry: 1 });
+  // Declare assets for use by the surrounding module or function.
   const assets = useQuery({ queryKey: ["accounting-assets"], queryFn: async () => unwrap(await api.get("/admin/finance/accounting/assets")), retry: 1 });
+  // Declare budgets for use by the surrounding module or function.
   const budgets = useQuery({ queryKey: ["accounting-budgets", year], queryFn: async () => unwrap(await api.get(`/admin/finance/accounting/budgets?fiscalYear=${year}`)), retry: 1 });
+  // Declare variance for use by the surrounding module or function.
   const variance = useQuery({ queryKey: ["accounting-variance", year], queryFn: async () => unwrap(await api.get(`/admin/finance/accounting/budgets-vs-actual?fiscalYear=${year}`)), retry: 1 });
+  // Declare periods for use by the surrounding module or function.
   const periods = useQuery({ queryKey: ["accounting-periods"], queryFn: async () => unwrap(await api.get("/admin/finance/accounting/periods")), retry: 1 });
+  // Declare wht for use by the surrounding module or function.
   const wht = useQuery({ queryKey: ["accounting-wht"], queryFn: async () => unwrap(await api.get("/admin/finance/withholding-tax")), retry: 1 });
+  // Declare reconciliation for use by the surrounding module or function.
   const reconciliation = useQuery({ queryKey: ["accounting-reconciliation"], queryFn: async () => unwrap(await api.get("/admin/payments/reconciliation")), retry: 1 });
+  // Declare createAsset for use by the surrounding module or function.
   const createAsset = useMutation({ mutationFn: () => api.post("/admin/finance/accounting/assets", { ...asset, acquisitionCost: Number(asset.acquisitionCost), residualValue: Number(asset.residualValue), usefulLifeMonths: Number(asset.usefulLifeMonths) }), onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-assets"] }); setAsset({ ...asset, assetNumber: "", name: "", acquisitionCost: "" }); setNotice("Fixed asset registered successfully."); } });
+  // Declare createBudget for use by the surrounding module or function.
   const createBudget = useMutation({ mutationFn: () => api.post("/admin/finance/accounting/budgets", { ...budget, fiscalYear: Number(budget.fiscalYear), month: budget.month ? Number(budget.month) : null, amount: Number(budget.amount) }), onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-budgets", year] }); qc.invalidateQueries({ queryKey: ["accounting-variance", year] }); setBudget({ ...budget, name: "", amount: "" }); setNotice("Budget saved successfully."); } });
+  // Declare close for use by the surrounding module or function.
   const close = useMutation({ mutationFn: () => api.post(`/admin/finance/accounting/periods/${period}/close`, { note: "Closed from Accounting Control Center" }), onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-periods"] }); setNotice(`${period} closed successfully.`); } });
+  // Declare reopen for use by the surrounding module or function.
   const reopen = useMutation({ mutationFn: (p) => api.post(`/admin/finance/accounting/periods/${p}/reopen`, {}), onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounting-periods"] }); setNotice("Accounting period reopened and audit event recorded."); } });
+  // Declare summary for use by the surrounding module or function.
   const summary = useMemo(() => { const s = statements.data?.data || statements.data || {}; const pl = s.profitAndLoss || {}; const arData = ar.data?.data || ar.data || {}; const apData = ap.data?.data || ap.data || {}; const cashData = cash.data?.data || cash.data || {}; const w = wht.data?.totals || {}; return { revenue: first(pl.totalRevenue, s.totalRevenue), expenses: first(pl.totalExpenses, s.totalExpenses), ar: first(arData.totalOutstanding, arData.total, arData.outstanding), ap: first(apData.totalOutstanding, apData.total, apData.outstanding), cash: first(cashData.netMovement, cashData.netCashFlow, cashData.net, cashData.netCash), whtAccrued: first(w.accrued, w.accruedAmount, w.taxAmount), whtRemitted: first(w.remitted, w.remittedAmount), whtOutstanding: first(w.outstanding, w.balance, (Number(w.accrued ?? w.taxAmount) || 0) - (Number(w.remitted ?? w.remittedAmount) || 0)) }; }, [statements.data, ar.data, ap.data, cash.data, wht.data]);
+  // Declare allQueries for use by the surrounding module or function.
   const allQueries = [statements, ar, ap, cash, assets, budgets, variance, periods, wht, reconciliation]; const refreshAll = () => allQueries.forEach((q) => q.refetch());
+  // Declare assetsRows for use by the surrounding module or function.
   const assetsRows = assets.data?.data || []; const budgetRows = budgets.data?.data || []; const varianceRows = variance.data?.data?.rows || variance.data?.rows || []; const periodRows = periods.data?.data || []; const whtRows = wht.data?.data || []; const recSummary = reconciliation.data?.data?.summary || reconciliation.data?.summary || {};
+  // Declare assetValid for use by the surrounding module or function.
   const assetValid = asset.assetNumber.trim() && asset.name.trim() && finite(asset.acquisitionCost) && Number(asset.acquisitionCost) > 0 && finite(asset.residualValue) && Number(asset.residualValue) >= 0 && Number(asset.residualValue) <= Number(asset.acquisitionCost) && finite(asset.usefulLifeMonths) && Number(asset.usefulLifeMonths) > 0;
+  // Declare budgetValid for use by the surrounding module or function.
   const budgetValid = budget.name.trim() && budget.accountCode.trim() && finite(budget.fiscalYear) && finite(budget.amount) && Number(budget.amount) >= 0 && (!budget.month || (Number(budget.month) >= 1 && Number(budget.month) <= 12));
+  // Return the expression shown below to the caller.
   return <div className="min-h-full bg-slate-50 p-4 md:p-6 lg:p-8"><div className="mx-auto max-w-[1600px] space-y-6">
     <header className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"><div className="relative overflow-hidden bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-950 px-5 py-7 text-white md:px-8 md:py-8"><div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-400/10 blur-3xl" /><div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"><div className="flex gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15"><ShieldCheck size={25} /></div><div><p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-emerald-300">Production accounting</p><h1 className="mt-1 text-2xl font-black tracking-tight md:text-3xl">Complete Accounting Control Center</h1><p className="mt-2 max-w-4xl text-sm leading-6 text-slate-300">Tenant-scoped control surface for the GL, tax, subledgers, reconciliation, management accounting and period close.</p></div></div><button onClick={refreshAll} disabled={allQueries.some((q) => q.isFetching)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-bold hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"><RefreshCw size={16} className={allQueries.some((q) => q.isFetching) ? "animate-spin" : ""} /> Refresh controls</button></div></div><div className="flex flex-wrap items-end gap-3 border-t border-slate-100 p-5 md:p-6"><label className="text-xs font-extrabold text-slate-600">Reporting year<input type="number" min="2000" max="2100" value={year} onChange={(e) => { const y = Number(e.target.value); setYear(y); setBudget((b) => ({ ...b, fiscalYear: e.target.value })); }} className="mt-1 block w-32 rounded-xl border border-slate-300 bg-white p-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" /></label><NavButton href="/admin/finance/reports" icon={FileText}>Financial reports</NavButton><NavButton href="/admin/finance/reconciliation" icon={WalletCards}>Reconciliation</NavButton><NavButton href="/admin/finance/withholding-tax" icon={CircleDollarSign}>Withholding Tax</NavButton><NavButton href="/admin/finance/management" icon={Landmark}>Management accounting</NavButton></div></header>
     {notice && <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm"><span className="flex items-center gap-2 font-semibold"><CheckCircle2 size={17} /> {notice}</span><button onClick={() => setNotice("")}><XCircle size={17} /></button></div>}
@@ -45,13 +83,23 @@ export default function AccountingCompletionCenter() {
     <footer className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-xs text-slate-500 shadow-sm"><b className="text-slate-700">Reporting period:</b> {year}-01-01 — {year}-12-31 · Values are tenant-scoped. <span className="ml-1">Zero is shown only when the underlying control successfully reports zero qualifying activity; failed or structurally invalid controls show Unavailable.</span></footer>
   </div></div>;
 }
+// Define Kpi; its parameters and body implement this operation.
 function Kpi({ title, value, icon: Icon, query }) { const unavailable = query.isError || value === "Unavailable"; return <div className={`rounded-2xl border bg-white p-4 shadow-sm ${unavailable ? "border-red-200" : "border-slate-200"}`}><div className="flex items-center justify-between gap-2"><p className="text-xs font-extrabold uppercase tracking-wide text-slate-500">{title}</p><div className={`rounded-xl p-2 ${unavailable ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}><Icon size={17} /></div></div><p className={`mt-3 text-lg font-black ${unavailable ? "text-red-700" : "text-slate-950"}`}>{value}</p><p className={`mt-1 text-[11px] font-semibold ${unavailable ? "text-red-600" : "text-slate-400"}`}>{unavailable ? "Data unavailable" : query.isFetching ? "Refreshing…" : "Verified control value"}</p></div>; }
+// Define NavButton; its parameters and body implement this operation.
 function NavButton({ href, icon: Icon, children }) { return <a href={href} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"><Icon size={16} />{children}</a>; }
+// Define SectionTitle; its parameters and body implement this operation.
 function SectionTitle({ title, text }) { return <div className="mb-5"><h2 className="text-lg font-black text-slate-900">{title}</h2><p className="mt-1 text-sm leading-6 text-slate-500">{text}</p></div>; }
+// Define Field; its parameters and body implement this operation.
 function Field({ label, type = "text", value, onChange }) { return <label className="block text-xs font-extrabold text-slate-600">{label}<input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" /></label>; }
+// Define MiniMetric; its parameters and body implement this operation.
 function MiniMetric({ label, value }) { return <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-base font-black text-slate-900">{value}</p></div>; }
+// Define Status; its parameters and body implement this operation.
 function Status({ status }) { const s = String(status || "unknown").toLowerCase(); const cls = s === "closed" || s === "remitted" ? "bg-emerald-100 text-emerald-800" : s === "open" ? "bg-blue-100 text-blue-800" : s === "cancelled" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"; return <span className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide ${cls}`}>{String(status || "unknown").replace(/_/g, " ")}</span>; }
+// Define InlineError; its parameters and body implement this operation.
 function InlineError({ message }) { return <div className="mt-3 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-800"><AlertCircle size={16} className="mt-0.5 shrink-0" />{message}</div>; }
+// Define Loading; its parameters and body implement this operation.
 function Loading() { return <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">Loading accounting controls…</div>; }
+// Define Empty; its parameters and body implement this operation.
 function Empty({ text }) { return <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">{text}</div>; }
+// Define DataError; its parameters and body implement this operation.
 function DataError({ queries }) { const failed = queries.filter((q) => q.isError); if (!failed.length) return null; return <div className="rounded-2xl border border-red-200 bg-red-50 p-4"><p className="flex items-center gap-2 text-sm font-black text-red-900"><LockKeyhole size={17} /> One or more accounting controls are unavailable</p><p className="mt-1 text-xs leading-5 text-red-700">The affected controls are intentionally marked as unavailable instead of being converted to misleading KES 0.00 values.</p></div>; }

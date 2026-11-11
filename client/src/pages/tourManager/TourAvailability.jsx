@@ -1,16 +1,23 @@
+/**
+ * Purpose: Tour Availability page-level UI component. Main declarations: TourAvailability, save, AvailabilityCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/pages/tour-manager/TourAvailability.jsx
 
+// Load react so this module can use its exported dependencies.
 import {
   useState
 } from "react";
 
 
+// Load react-router-dom so this module can use its exported dependencies.
 import {
   useParams,
   useNavigate
 } from "react-router-dom";
 
 
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import {
   useQuery,
   useMutation,
@@ -18,11 +25,13 @@ import {
 } from "@tanstack/react-query";
 
 
+// Load react-toastify so this module can use its exported dependencies.
 import {
   toast
 } from "react-toastify";
 
 
+// Load ../../api/tourApi so this module can use its exported dependencies.
 import {
   getTourAvailability,
   updateTourAvailability
@@ -32,30 +41,36 @@ import {
 
 
 
+// Define TourAvailability; its parameters and body implement this operation.
 export default function TourAvailability(){
 
 
+  // Declare { id } for use by the surrounding module or function.
   const {
     id
   } = useParams();
 
 
 
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
 
 
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
 
 
 
 
 
+  // Declare [capacity,setCapacity] for use by the surrounding module or function.
   const [capacity,setCapacity] = useState("");
 
 
 
 
 
+  // Declare { data: availability = {}, isLoading } for use by the surrounding module or function.
   const {
     data: availability = {},
     isLoading
@@ -70,11 +85,13 @@ export default function TourAvailability(){
     queryFn: async()=>{
 
 
+      // Declare response for use by the surrounding module or function.
       const response =
         await getTourAvailability(id);
 
 
 
+      // Declare data for use by the surrounding module or function.
       const data =
         response.data?.data ||
         response.data?.availability ||
@@ -83,6 +100,7 @@ export default function TourAvailability(){
 
 
 
+      // Return the value of data to the caller.
       return data;
 
 
@@ -101,6 +119,7 @@ export default function TourAvailability(){
 
 
 
+  // Declare mutation for use by the surrounding module or function.
   const mutation = useMutation({
 
 
@@ -116,12 +135,14 @@ export default function TourAvailability(){
     onSuccess:()=>{
 
 
+      // Perform the side effect or state update expressed on the following line.
       toast.success(
         "Availability updated"
       );
 
 
 
+      // Perform the side effect or state update expressed on the following line.
       queryClient.invalidateQueries({
 
         queryKey:[
@@ -133,6 +154,7 @@ export default function TourAvailability(){
 
 
 
+      // Perform the side effect or state update expressed on the following line.
       navigate(
         "/tour-manager/tours"
       );
@@ -144,6 +166,7 @@ export default function TourAvailability(){
     onError:()=>{
 
 
+      // Perform the side effect or state update expressed on the following line.
       toast.error(
         "Update failed"
       );
@@ -163,9 +186,11 @@ export default function TourAvailability(){
 
 
 
+  // Declare save for use by the surrounding module or function.
   const save = ()=>{
 
 
+    // Perform the side effect or state update expressed on the following line.
     mutation.mutate({
 
       totalSlots:Number(capacity)
@@ -182,9 +207,11 @@ export default function TourAvailability(){
 
 
 
+  // Check the condition (isLoading) and run the matching branch.
   if(isLoading){
 
 
+    // Return the expression shown below to the caller.
     return (
 
       <div className="p-6">
@@ -203,6 +230,7 @@ export default function TourAvailability(){
 
 
 
+  // Return the expression shown below to the caller.
   return (
 
     <div
@@ -426,6 +454,7 @@ export default function TourAvailability(){
 
 
 
+// Define AvailabilityCard; its parameters and body implement this operation.
 function AvailabilityCard({
 
   title,
@@ -437,6 +466,7 @@ function AvailabilityCard({
 }){
 
 
+  // Return the expression shown below to the caller.
   return (
 
     <div

@@ -1,6 +1,12 @@
+/**
+ * Purpose: Unauthorized page-level UI component. Main declarations: Unauthorized.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Link } from "react-router-dom";
 
+// Define Unauthorized; its parameters and body implement this operation.
 export default function Unauthorized() {
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="max-w-lg w-full bg-white rounded-2xl shadow p-8 text-center">

@@ -1,6 +1,12 @@
+/**
+ * Purpose: Withholding Tax database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare withholdingTaxSchema for use by the surrounding module or function.
 const withholdingTaxSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   payee: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier", default: null, index: true },
@@ -24,7 +30,10 @@ const withholdingTaxSchema = new mongoose.Schema({
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
+// Perform the side effect or state update expressed on the following line.
 withholdingTaxSchema.index({ tenantId: 1, reference: 1 }, { unique: true });
+// Perform the side effect or state update expressed on the following line.
 withholdingTaxSchema.index({ tenantId: 1, taxPeriod: 1, status: 1 });
+// Perform the side effect or state update expressed on the following line.
 withholdingTaxSchema.plugin(tenantPlugin);
 export default mongoose.models.WithholdingTax || mongoose.model("WithholdingTax", withholdingTaxSchema);

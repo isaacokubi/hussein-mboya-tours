@@ -1,10 +1,20 @@
+/**
+ * Purpose: Reconciliation page-level UI component. Main declarations: money, number, Reconciliation, Metric, IssueCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { AlertTriangle, CheckCircle2, Clock3, Download, ExternalLink, FileWarning, RefreshCw, ShieldAlert, WalletCards, X } from "lucide-react";
+// Load ../../../api/admin/adminPaymentApi so this module can use its exported dependencies.
 import { getPaymentReconciliation, exportPaymentsCSV } from "../../../api/admin/adminPaymentApi";
 
+// Declare money for use by the surrounding module or function.
 const money = (value) => `KES ${Number(value || 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// Declare number for use by the surrounding module or function.
 const number = (value) => Number(value || 0).toLocaleString("en-KE");
+// Declare issueDefinitions for use by the surrounding module or function.
 const issueDefinitions = [
   ["bookingMismatches", "Booking mismatches", "Stored booking payment totals differ from payment records.", AlertTriangle],
   ["invoiceMismatches", "Invoice mismatches", "Invoice paid or balance values do not agree with reconciled payments.", FileWarning],
@@ -16,28 +26,47 @@ const issueDefinitions = [
   ["commissionAdjustments", "Commission adjustments", "Commission net values differ from refund-adjusted expectations.", AlertTriangle],
 ];
 
+// Define Reconciliation; its parameters and body implement this operation.
 export default function Reconciliation() {
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({ queryKey: ["payment-reconciliation"], queryFn: getPaymentReconciliation, refetchInterval: 60000, staleTime: 30000 });
+  // Declare [selectedException, setSelectedException] for use by the surrounding module or function.
   const [selectedException, setSelectedException] = useState(null);
+  // Declare dataSet for use by the surrounding module or function.
   const dataSet = query.data?.data || {};
+  // Declare summary for use by the surrounding module or function.
   const summary = dataSet.summary || {};
+  // Declare issueCount for use by the surrounding module or function.
   const issueCount = useMemo(() => issueDefinitions.reduce((sum, [key]) => sum + Number(summary[key] || 0), 0), [summary]);
+  // Declare generatedAt for use by the surrounding module or function.
   const generatedAt = dataSet.generatedAt ? new Date(dataSet.generatedAt) : null;
 
+  // Declare exceptionRows for use by the surrounding module or function.
   const exceptionRows = useMemo(() => {
+    // Declare rows for use by the surrounding module or function.
     const rows = [...(dataSet.mismatches || [])];
+    // Repeat the enclosed work for each required iteration.
     for (const row of dataSet.missingInvoices || []) rows.push({ ...row, type: "missing_invoice", recorded: "No invoice" });
+    // Repeat the enclosed work for each required iteration.
     for (const row of dataSet.overpayments || []) rows.push({ ...row, type: "overpayment", recorded: row.paidFromPayments });
+    // Repeat the enclosed work for each required iteration.
     for (const row of dataSet.commissionAdjustments || []) rows.push({ ...row, type: "commission_adjustment" });
+    // Repeat the enclosed work for each required iteration.
     for (const row of dataSet.missingReceipts || []) rows.push({ ...row, type: "missing_mpesa_receipt" });
+    // Repeat the enclosed work for each required iteration.
     for (const row of dataSet.duplicateReferences || []) rows.push({ ...row, type: "duplicate_reference" });
+    // Repeat the enclosed work for each required iteration.
     for (const row of dataSet.orphanPayments || []) rows.push({ ...row, type: "orphan_payment" });
+    // Return the value of rows to the caller.
     return rows;
   }, [dataSet]);
 
+  // Check the condition (query.isLoading) and run the matching branch.
   if (query.isLoading) return <div className="reconciliation-page"><div className="recon-loading"><RefreshCw className="animate-spin" size={22} /> Loading payment reconciliation…</div></div>;
+  // Check the condition (query.isError) and run the matching branch.
   if (query.isError) return <div className="reconciliation-page"><div className="recon-error"><ShieldAlert size={24} /><div><h2>Reconciliation unavailable</h2><p>{query.error?.response?.data?.message || "The reconciliation service could not be reached. No financial figures have been fabricated."}</p></div><button type="button" onClick={() => query.refetch()}><RefreshCw size={16} /> Retry</button></div></div>;
 
+  // Return the expression shown below to the caller.
   return <div className="reconciliation-page">
     <header className="recon-hero">
       <div><p className="recon-eyebrow">Finance · Controls</p><h1>Payment Reconciliation</h1><p>Compare recorded payments with bookings, invoices and commissions. Exceptions are surfaced for controlled review rather than silently corrected.</p></div>
@@ -53,18 +82,29 @@ export default function Reconciliation() {
   </div>;
 }
 
+// Define Metric; its parameters and body implement this operation.
 function Metric({ icon: Icon, label, value, tone = "", emphasis = false }) { return <article className={`recon-metric ${tone} ${emphasis ? "emphasis" : ""}`}><div className="metric-icon">{Icon && <Icon size={19} />}</div><div><span>{label}</span><strong>{value}</strong></div></article>; }
+// Define IssueCard; its parameters and body implement this operation.
 function IssueCard({ icon: Icon, title, description, value }) { const count = Number(value || 0); return <article className={`recon-issue ${count ? "is-danger" : "is-good"}`}><div className="issue-top"><div className="issue-icon"><Icon size={18} /></div><span className="recon-pill">{number(count)}</span></div><h3>{title}</h3><p>{description}</p></article>; }
+// Define ExceptionList; its parameters and body implement this operation.
 function ExceptionList({ title, rows = [], render, onOpen }) { return <div className="exception-list"><div className="recon-list-heading"><h3>{title}</h3><span>{number(rows?.length)} detected</span></div>{rows?.length ? <div className="exception-items">{rows.slice(0, 8).map((row, index) => <button type="button" className="exception-item" key={row.bookingId || row.paymentId || index} onClick={() => onOpen(row)}>{render(row)}<ExternalLink size={15} /></button>)}</div> : <EmptyState text="No exceptions detected." compact />}</div>; }
+// Define EmptyState; its parameters and body implement this operation.
 function EmptyState({ text, compact = false }) { return <div className={`recon-empty ${compact ? "compact" : ""}`}><CheckCircle2 size={18} /><span>{text}</span></div>; }
 
+// Define SourceDrawer; its parameters and body implement this operation.
 function SourceDrawer({ exception, payments, onClose }) {
+  // Declare relatedPayments for use by the surrounding module or function.
   const relatedPayments = useMemo(() => {
+    // Declare bookingId for use by the surrounding module or function.
     const bookingId = exception.bookingId ? String(exception.bookingId) : null;
+    // Declare paymentIds for use by the surrounding module or function.
     const paymentIds = new Set((exception.paymentIds || []).map(String));
+    // Return the result of payments.filter() to the caller.
     return payments.filter((payment) => (paymentIds.size && paymentIds.has(String(payment._id))) || (bookingId && String(payment.booking || "") === bookingId));
   }, [exception, payments]);
 
+  // Declare entries for use by the surrounding module or function.
   const entries = Object.entries(exception).filter(([key]) => !["source", "paymentIds"].includes(key));
+  // Return the expression shown below to the caller.
   return <div className="recon-drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><aside className="recon-source-drawer" role="dialog" aria-modal="true" aria-label="Reconciliation source data"><div className="recon-drawer-header"><div><p className="recon-kicker">Underlying record</p><h2>Exception source data</h2><span>Live records returned by the tenant-scoped reconciliation API.</span></div><button type="button" className="recon-icon-button" onClick={onClose} aria-label="Close source data"><X size={20} /></button></div><div className="recon-drawer-body"><div className="recon-source-banner"><AlertTriangle size={18} /><div><strong>{String(exception.type || "exception").replaceAll("_", " ")}</strong><span>Review the stored values below against the reconciliation expectation.</span></div></div><div className="recon-source-grid">{entries.map(([key, value]) => <div className="recon-source-field" key={key}><span>{key.replaceAll(/([A-Z])/g, " $1").replaceAll("_", " ").trim()}</span><strong>{typeof value === "object" ? JSON.stringify(value) : value === null || value === undefined || value === "" ? "—" : typeof value === "number" && /amount|paid|balance|commission/i.test(key) ? money(value) : String(value)}</strong></div>)}</div><div className="recon-source-section"><div className="recon-source-section-heading"><h3>Related payments</h3><span>{number(relatedPayments.length)} record{relatedPayments.length === 1 ? "" : "s"}</span></div>{relatedPayments.length ? <div className="recon-payment-records">{relatedPayments.map((payment) => <div className="recon-payment-record" key={payment._id}><div><strong>{payment._id}</strong><span>{payment.transactionReference || payment.mpesaReceiptNumber || payment.transactionId || "No provider reference"}</span></div><div><strong>{money(payment.amount)}</strong><span>{payment.status || "unknown"}</span></div></div>)}</div> : <EmptyState text="No linked payment record was returned for this exception." compact />}</div></div><div className="recon-drawer-footer"><span>Read-only inspection. Use the appropriate booking, payment, invoice or commission workflow to make corrections.</span><button type="button" onClick={onClose}>Close</button></div></aside></div>;
 }

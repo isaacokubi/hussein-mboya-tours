@@ -1,5 +1,10 @@
+/**
+ * Purpose: agent Booking Api client application module. Main declarations: createAgentBooking, getAgentBookings, getAgentBooking, updateBookingStatus, cancelAgentBooking.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/services/agentBookingService.js
 
+// Load ./axios so this module can use its exported dependencies.
 import api from "./axios";
 
 /*
@@ -8,12 +13,15 @@ import api from "./axios";
 |--------------------------------------------------------------------------
 */
 
+// Declare createAgentBooking for use by the surrounding module or function.
 export const createAgentBooking = async (bookingData) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.post(
     "/agents/bookings",
     bookingData
   );
 
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -23,7 +31,9 @@ export const createAgentBooking = async (bookingData) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare getAgentBookings for use by the surrounding module or function.
 export const getAgentBookings = async (params = {}) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.get(
     "/agents/bookings",
     {
@@ -31,6 +41,7 @@ export const getAgentBookings = async (params = {}) => {
     }
   );
 
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -40,11 +51,14 @@ export const getAgentBookings = async (params = {}) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare getAgentBooking for use by the surrounding module or function.
 export const getAgentBooking = async (id) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.get(
     `/agents/bookings/${id}`
   );
 
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -54,10 +68,12 @@ export const getAgentBooking = async (id) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare updateBookingStatus for use by the surrounding module or function.
 export const updateBookingStatus = async (
   id,
   status
 ) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.patch(
     `/agents/bookings/${id}/status`,
     {
@@ -65,6 +81,7 @@ export const updateBookingStatus = async (
     }
   );
 
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -74,10 +91,13 @@ export const updateBookingStatus = async (
 |--------------------------------------------------------------------------
 */
 
+// Declare cancelAgentBooking for use by the surrounding module or function.
 export const cancelAgentBooking = async (id) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.delete(
     `/agents/bookings/${id}`
   );
 
+  // Return the value of data to the caller.
   return data;
 };

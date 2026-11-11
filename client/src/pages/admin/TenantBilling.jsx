@@ -1,5 +1,11 @@
+/**
+ * Purpose: Tenant Billing page-level UI component. Main declarations: money, safeDate, TenantBilling, LoadingState, Summary.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect, useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   AlertCircle,
   CheckCircle2,
@@ -16,13 +22,16 @@ import {
   WalletCards,
   XCircle,
 } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/tenantSubscriptionApi so this module can use its exported dependencies.
 import {
   getTenantSubscription,
   startTenantSubscriptionPayment,
   getTenantSubscriptionPaymentStatus,
 } from "../../api/tenantSubscriptionApi";
 
+// Declare labels for use by the surrounding module or function.
 const labels = {
   starter: "Starter",
   professional: "Professional",
@@ -30,6 +39,7 @@ const labels = {
   enterprise: "Enterprise",
 };
 
+// Declare descriptions for use by the surrounding module or function.
 const descriptions = {
   starter: "Essential tools for a growing travel business.",
   professional: "Advanced operations, finance and customer management.",
@@ -37,6 +47,7 @@ const descriptions = {
   enterprise: "Enterprise-scale workspace and commercial operations.",
 };
 
+// Declare statusStyles for use by the surrounding module or function.
 const statusStyles = {
   active: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   trial: "bg-blue-50 text-blue-700 ring-blue-200",
@@ -45,6 +56,7 @@ const statusStyles = {
   expired: "bg-red-50 text-red-700 ring-red-200",
 };
 
+// Declare paymentStyles for use by the surrounding module or function.
 const paymentStyles = {
   completed: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   failed: "bg-red-50 text-red-700 ring-red-200",
@@ -52,97 +64,151 @@ const paymentStyles = {
   pending: "bg-amber-50 text-amber-700 ring-amber-200",
 };
 
+// Declare money for use by the surrounding module or function.
 const money = (value) => `KES ${Number(value || 0).toLocaleString("en-KE")}`;
+// Declare safeDate for use by the surrounding module or function.
 const safeDate = (value, withTime = false) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "—";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Check the condition (Number.isNaN(date.getTime())) and run the matching branch.
   if (Number.isNaN(date.getTime())) return "—";
+  // Return the expression shown below to the caller.
   return withTime
     ? date.toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })
     : date.toLocaleDateString("en-KE", { dateStyle: "medium" });
 };
 
+// Define TenantBilling; its parameters and body implement this operation.
 export default function TenantBilling() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [phone, setPhone] for use by the surrounding module or function.
   const [phone, setPhone] = useState("");
+  // Declare [selectedPlan, setSelectedPlan] for use by the surrounding module or function.
   const [selectedPlan, setSelectedPlan] = useState("");
+  // Declare [checkoutRequestId, setCheckoutRequestId] for use by the surrounding module or function.
   const [checkoutRequestId, setCheckoutRequestId] = useState("");
 
+  // Declare subscriptionQuery for use by the surrounding module or function.
   const subscriptionQuery = useQuery({
     queryKey: ["tenant-subscription"],
     queryFn: getTenantSubscription,
     refetchInterval: 30000,
   });
 
+  // Declare paymentQuery for use by the surrounding module or function.
   const paymentQuery = useQuery({
     queryKey: ["tenant-subscription-payment", checkoutRequestId],
     queryFn: () => getTenantSubscriptionPaymentStatus(checkoutRequestId),
     enabled: Boolean(checkoutRequestId),
     refetchInterval: (query) => {
+      // Declare status for use by the surrounding module or function.
       const status = String(query.state.data?.payment?.status || "").toLowerCase();
+      // Return the expression shown below to the caller.
       return ["completed", "failed", "cancelled"].includes(status) ? false : 5000;
     },
   });
 
+  // Declare payMutation for use by the surrounding module or function.
   const payMutation = useMutation({
     mutationFn: startTenantSubscriptionPayment,
     onSuccess: (response) => {
+      // Declare id for use by the surrounding module or function.
       const id = response?.payment?.checkoutRequestID || response?.payment?.checkoutRequestId;
+      // Check the condition (id) and run the matching branch.
       if (id) setCheckoutRequestId(id);
+      // Perform the side effect or state update expressed on the following line.
       toast.success(response?.message || "M-Pesa payment request sent.");
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["tenant-subscription"] });
     },
     onError: (error) => {
+      // Perform the side effect or state update expressed on the following line.
       toast.error(error?.response?.data?.message || error?.message || "Unable to start subscription payment.");
     },
   });
 
+  // Declare data for use by the surrounding module or function.
   const data = subscriptionQuery.data || {};
+  // Declare tenant for use by the surrounding module or function.
   const tenant = data.tenant || {};
+  // Declare currentPlan for use by the surrounding module or function.
   const currentPlan = String(data.plan || tenant.subscription?.plan || "starter").toLowerCase();
+  // Declare plan for use by the surrounding module or function.
   const plan = selectedPlan || currentPlan;
+  // Declare planPrices for use by the surrounding module or function.
   const planPrices = data.planPrices && typeof data.planPrices === "object" ? data.planPrices : {};
+  // Declare amount for use by the surrounding module or function.
   const amount = Number(planPrices[plan] || (plan === currentPlan ? data.amountDue : 0) || 0);
+  // Declare accountStatus for use by the surrounding module or function.
   const accountStatus = String(tenant.status || data.subscription?.status || "trial").toLowerCase();
+  // Declare isTrial for use by the surrounding module or function.
   const isTrial = accountStatus === "trial" || accountStatus === "trialing";
+  // Declare trialEnds for use by the surrounding module or function.
   const trialEnds = tenant.subscription?.trialEndsAt || data.subscription?.trialEndsAt;
+  // Declare renewsAt for use by the surrounding module or function.
   const renewsAt = tenant.subscription?.renewsAt || data.subscription?.currentPeriodEndsAt;
+  // Declare payments for use by the surrounding module or function.
   const payments = Array.isArray(data.payments) ? data.payments : [];
+  // Declare pendingPayment for use by the surrounding module or function.
   const pendingPayment = paymentQuery.data?.payment;
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Check the condition (!selectedPlan && currentPlan) and run the matching branch.
     if (!selectedPlan && currentPlan) setSelectedPlan(currentPlan);
   }, [currentPlan, selectedPlan]);
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Declare status for use by the surrounding module or function.
     const status = String(pendingPayment?.status || "").toLowerCase();
+    // Check the condition (status === "completed") and run the matching branch.
     if (status === "completed") {
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Subscription payment confirmed. Your workspace is active.");
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["tenant-subscription"] });
+      // Perform the side effect or state update expressed on the following line.
       setCheckoutRequestId("");
     } else if (status === "failed" || status === "cancelled") {
+      // Perform the side effect or state update expressed on the following line.
       toast.error(pendingPayment.failureReason || `Subscription payment ${status}.`);
+      // Perform the side effect or state update expressed on the following line.
       setCheckoutRequestId("");
     }
   }, [pendingPayment?.status, pendingPayment?.failureReason, qc]);
 
+  // Declare plans for use by the surrounding module or function.
   const plans = useMemo(
     () => Object.keys(labels).map((key) => ({ key, name: labels[key], price: Number(planPrices[key] || 0) })),
     [planPrices]
   );
 
+  // Declare normalizedPhone for use by the surrounding module or function.
   const normalizedPhone = phone.trim().replace(/\s+/g, "").replace(/^\+/, "");
+  // Declare validKenyanPhone for use by the surrounding module or function.
   const validKenyanPhone = /^(?:0[17]\d{8}|254[17]\d{8})$/.test(normalizedPhone);
+  // Declare priceConfigured for use by the surrounding module or function.
   const priceConfigured = amount > 0;
+  // Declare canPay for use by the surrounding module or function.
   const canPay = priceConfigured && validKenyanPhone && !payMutation.isPending && !checkoutRequestId;
+  // Declare statusClass for use by the surrounding module or function.
   const statusClass = statusStyles[accountStatus] || "bg-slate-50 text-slate-700 ring-slate-200";
+  // Declare latestPayment for use by the surrounding module or function.
   const latestPayment = payments[0];
 
+  // Check the condition (subscriptionQuery.isLoading) and run the matching branch.
   if (subscriptionQuery.isLoading) {
+    // Return the expression shown below to the caller.
     return <LoadingState />;
   }
 
+  // Check the condition (subscriptionQuery.isError) and run the matching branch.
   if (subscriptionQuery.isError) {
+    // Return the expression shown below to the caller.
     return (
       <div className="rounded-3xl border border-red-200 bg-red-50 p-6 shadow-sm">
         <div className="flex items-start gap-3 text-red-800">
@@ -159,6 +225,7 @@ export default function TenantBilling() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <main className="admin-control-center space-y-6">
       <header className="admin-dashboard-header rounded-3xl border border-emerald-900/10 bg-white p-6 shadow-sm md:p-8">
@@ -247,14 +314,20 @@ export default function TenantBilling() {
   );
 }
 
+// Define LoadingState; its parameters and body implement this operation.
 function LoadingState() {
+  // Return the expression shown below to the caller.
   return <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm"><div className="flex items-center gap-3 text-slate-600"><RefreshCw size={18} className="animate-spin" /> Loading subscription and billing information...</div></div>;
 }
 
+// Define Summary; its parameters and body implement this operation.
 function Summary({ icon, label, value, detail }) {
+  // Return the expression shown below to the caller.
   return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-700">{icon}</div><p className="text-xs font-black uppercase tracking-wide text-slate-500">{label}</p></div><p className="mt-4 text-xl font-black text-slate-950">{value}</p><p className="mt-1 text-xs text-slate-500">{detail}</p></article>;
 }
 
+// Define InfoCard; its parameters and body implement this operation.
 function InfoCard({ icon, title, children }) {
+  // Return the expression shown below to the caller.
   return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-2 font-black text-slate-950">{icon}<span>{title}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{children}</p></article>;
 }

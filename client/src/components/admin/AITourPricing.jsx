@@ -1,8 +1,13 @@
+/**
+ * Purpose: AITour Pricing reusable UI component. Main declarations: AITourPricing.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 export default function AITourPricing({
 data=[]
 }){
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="bg-white rounded-xl shadow p-6">

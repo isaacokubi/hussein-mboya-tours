@@ -1,81 +1,137 @@
+/**
+ * Purpose: Admin Settings page-level UI component. Main declarations: AdminSettings, createConnector, copyText, update, section.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useSettings } from "../../context/SettingsContext";
+// Load react so this module can use its exported dependencies.
 import { useEffect, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { Building2, Globe2, Palette, Phone, Save, ShieldCheck, WalletCards, LayoutDashboard, Bell, Search, Users, CreditCard, UserCircle, Lock, PlugZap, Copy, Trash2 } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/settingsApi so this module can use its exported dependencies.
 import { getSettings, updateSettings } from "../../api/settingsApi";
+// Load ../../components/admin/TenantHeroManager so this module can use its exported dependencies.
 import TenantHeroManager from "../../components/admin/TenantHeroManager";
+// Load ../../api/integrationApi so this module can use its exported dependencies.
 import { listWebsiteIntegrations, createWebsiteIntegration, revokeWebsiteIntegration } from "../../api/integrationApi";
 
+// Declare SECTIONS for use by the surrounding module or function.
 const SECTIONS = { stats: true, tours: true, destinations: true, experiences: true, services: true, testimonials: true, gallery: true, whyChooseUs: true, newsletter: true };
+// Declare THEME for use by the surrounding module or function.
 const THEME = { primaryColor: "#047857", secondaryColor: "#064e3b", accentColor: "#10b981", backgroundColor: "#f8fafc", surfaceColor: "#ffffff", textColor: "#0f172a", fontFamily: "Inter", borderRadius: "xl", buttonStyle: "rounded", heroOverlayOpacity: 50 };
+// Declare DEFAULTS for use by the surrounding module or function.
 const DEFAULTS = { companyName: "", websiteUrl: "", companyLogo: "", address: "", city: "Nairobi", country: "Kenya", supportPhone: "", supportEmail: "", currency: "KES", currencySymbol: "KSh", timezone: "Africa/Nairobi", taxRate: 0, bookingDepositPercentage: 30, defaultCommissionRate: 10, maintenanceMode: false, allowRegistrations: true, allowAgentRegistrations: true, requireEmailVerification: true, requirePhoneVerification: false, enableMpesa: true, enableStripe: false, enablePaypal: false, enableBankTransfer: false, enableCash: false, cashReceiptRequired: false, bankName: "", bankAccountName: "", bankAccountNumber: "", bankBranch: "", bankSwiftCode: "", bankInstructions: "", bankReferenceInstructions: "", cashInstructions: "", cashCollectionLocation: "", emailFromName: "", emailFromAddress: "", facebook: "", instagram: "", twitter: "", youtube: "", seoTitle: "", seoDescription: "", seoKeywords: [], bookingNotifications: true, paymentNotifications: true, ...THEME, homepageSections: SECTIONS };
 
+// Define AdminSettings; its parameters and body implement this operation.
 export default function AdminSettings() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare { settings: globalSettings = {}, updateSettings: updatePublicSettings } for use by the surrounding module or function.
   const { settings: globalSettings = {}, updateSettings: updatePublicSettings } = useSettings();
+  // Declare [settings, setSettings] for use by the surrounding module or function.
   const [settings, setSettings] = useState(DEFAULTS);
+  // Declare [tenantProfile, setTenantProfile] for use by the surrounding module or function.
   const [tenantProfile, setTenantProfile] = useState(null);
+  // Declare [logoFile, setLogoFile] for use by the surrounding module or function.
   const [logoFile, setLogoFile] = useState(null);
+  // Declare { data, isLoading, isError, refetch } for use by the surrounding module or function.
   const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["admin-settings"], queryFn: getSettings });
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Declare incoming for use by the surrounding module or function.
     const incoming = data?.data || data?.settings;
+    // Declare profile for use by the surrounding module or function.
     const profile = data?.tenantProfile || incoming?.tenantProfile;
+    // Check the condition (profile) and run the matching branch.
     if (profile) setTenantProfile(profile);
+    // Check the condition (incoming) and run the matching branch.
     if (incoming) setSettings(s => ({ ...s, ...incoming, homepageSections: { ...SECTIONS, ...(incoming.homepageSections || {}) } }));
   }, [data]);
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Check the condition (globalSettings && Object.keys(globalSettings).length) and run the matching branch.
     if (globalSettings && Object.keys(globalSettings).length) setSettings(s => ({ ...s, ...globalSettings, homepageSections: { ...SECTIONS, ...(globalSettings.homepageSections || {}) } }));
   }, [globalSettings]);
 
+  // Declare [integrationName, setIntegrationName] for use by the surrounding module or function.
   const [integrationName, setIntegrationName] = useState("Existing Website");
+  // Declare [integrationOrigins, setIntegrationOrigins] for use by the surrounding module or function.
   const [integrationOrigins, setIntegrationOrigins] = useState("");
+  // Declare [newIntegrationSecret, setNewIntegrationSecret] for use by the surrounding module or function.
   const [newIntegrationSecret, setNewIntegrationSecret] = useState("");
+  // Declare integrationsQuery for use by the surrounding module or function.
   const integrationsQuery = useQuery({ queryKey: ["website-integrations"], queryFn: listWebsiteIntegrations });
+  // Declare integrationCreate for use by the surrounding module or function.
   const integrationCreate = useMutation({
     mutationFn: createWebsiteIntegration,
     onSuccess: (r) => {
+      // Perform the side effect or state update expressed on the following line.
       setNewIntegrationSecret(JSON.stringify({ secretApiKey: r?.key, publicSiteKey: r?.siteKey }, null, 2));
+      // Perform the side effect or state update expressed on the following line.
       integrationsQuery.refetch();
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Website connector created. Copy the keys now; the secret is shown only once.");
     },
     onError: (e) => toast.error(e?.response?.data?.message || "Unable to create website connector."),
   });
+  // Declare integrationRevoke for use by the surrounding module or function.
   const integrationRevoke = useMutation({
     mutationFn: revokeWebsiteIntegration,
     onSuccess: () => { integrationsQuery.refetch(); toast.success("Website connector revoked."); },
     onError: (e) => toast.error(e?.response?.data?.message || "Unable to revoke connector."),
   });
+  // Declare createConnector for use by the surrounding module or function.
   const createConnector = () => integrationCreate.mutate({ name: integrationName, environment: "live", allowedOrigins: integrationOrigins.split(/\s*,\s*|\n/).map(v => v.trim()).filter(Boolean), permissions: ["booking:create", "customer:create", "tour:read"] });
+  // Declare copyText for use by the surrounding module or function.
   const copyText = async (text) => { try { await navigator.clipboard.writeText(text); toast.success("Copied to clipboard."); } catch { toast.error("Copy failed. Copy it manually."); } };
 
+  // Declare mutation for use by the surrounding module or function.
   const mutation = useMutation({
     mutationFn: updateSettings,
     onSuccess: async r => {
+      // Declare saved for use by the surrounding module or function.
       const saved = r?.data || r?.settings;
+      // Check the condition (saved) and run the matching branch.
       if (saved) {
+        // Perform the side effect or state update expressed on the following line.
         setSettings(s => ({ ...s, ...saved }));
+        // Check the condition (saved.tenantProfile) and run the matching branch.
         if (saved.tenantProfile) setTenantProfile(saved.tenantProfile);
+        // Perform the side effect or state update expressed on the following line.
         updatePublicSettings(saved);
       }
+      // Check the condition (r?.tenantProfile) and run the matching branch.
       if (r?.tenantProfile) setTenantProfile(r.tenantProfile);
+      // Perform the side effect or state update expressed on the following line.
       setLogoFile(null);
+      // Perform the side effect or state update expressed on the following line.
       await qc.invalidateQueries({ queryKey: ["admin-settings"] });
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Tenant settings saved and applied to the public site.");
     },
     onError: e => toast.error(e?.response?.data?.message || "Failed to save tenant settings.")
   });
 
+  // Declare update for use by the surrounding module or function.
   const update = (key, value) => setSettings(s => ({ ...s, [key]: value }));
+  // Declare section for use by the surrounding module or function.
   const section = (key, value) => setSettings(s => ({ ...s, homepageSections: { ...(s.homepageSections || {}), [key]: value } }));
+  // Declare save for use by the surrounding module or function.
   const save = e => { e.preventDefault(); mutation.mutate({ ...settings, logoFile }); };
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <div className="p-8">Loading tenant settings...</div>;
+  // Check the condition (isError) and run the matching branch.
   if (isError) return <div className="p-8"><p className="text-red-600">Failed to load tenant settings.</p><button type="button" onClick={() => refetch()} className="mt-3 rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white">Retry</button></div>;
 
+  // Declare planLabel for use by the surrounding module or function.
   const planLabel = { starter: "Starter", professional: "Professional", business: "Business", enterprise: "Enterprise" }[tenantProfile?.subscriptionPlan] || tenantProfile?.subscriptionPlan || "—";
 
+  // Return the expression shown below to the caller.
   return <div className="min-h-screen bg-slate-50 p-4 md:p-6"><div className="mx-auto max-w-7xl">
     <header className="mb-6 rounded-3xl bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 p-6 text-white shadow-xl"><p className="text-sm font-semibold uppercase tracking-widest text-emerald-300">Tenant Administration</p><h1 className="mt-2 text-3xl font-bold">{settings.companyName || tenantProfile?.companyName || "Company"} Settings</h1><p className="mt-2 text-slate-300">Tenant-owned company settings are editable below. Subscription, seat capacity, slug and tenant status remain controlled by the platform owner.</p></header>
     <form onSubmit={save} className="space-y-6">
@@ -124,8 +180,13 @@ export default function AdminSettings() {
       <div className="sticky bottom-4 flex justify-end"><button type="submit" disabled={mutation.isPending} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-6 py-3 font-bold text-white shadow-lg"><Save size={18}/>{mutation.isPending ? "Saving..." : "Save tenant settings"}</button></div>
     </form></div></div>;
 }
+// Define Section; its parameters and body implement this operation.
 function Section({icon,title,children}) { return <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:p-7"><div className="mb-5 flex items-center gap-3"><span className="rounded-xl bg-emerald-50 p-2 text-emerald-700">{icon}</span><h2 className="text-xl font-bold">{title}</h2></div>{children}</section>; }
+// Define Field; its parameters and body implement this operation.
 function Field({label,children}) { return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span>{children}</label>; }
+// Define ReadOnlyField; its parameters and body implement this operation.
 function ReadOnlyField({label,value,hint}) { return <div><span className="mb-2 flex items-center gap-1 text-sm font-semibold text-slate-700"><Lock size={13}/>{label}</span><div className="min-h-11 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800">{value || "—"}</div>{hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}</div>; }
+// Define InfoCard; its parameters and body implement this operation.
 function InfoCard({icon,title,value,text}) { return <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="flex items-center gap-2 text-sm font-bold text-slate-700">{icon}{title}</div><div className="mt-1 text-xl font-bold text-slate-900">{value}</div><p className="mt-1 text-sm text-slate-500">{text}</p></div>; }
+// Define Toggle; its parameters and body implement this operation.
 function Toggle({label,value,onChange}) { return <label className="flex cursor-pointer items-center justify-between rounded-xl border p-4"><span className="font-medium capitalize">{label}</span><input type="checkbox" checked={Boolean(value)} onChange={e=>onChange(e.target.checked)} className="h-5 w-5"/></label>; }

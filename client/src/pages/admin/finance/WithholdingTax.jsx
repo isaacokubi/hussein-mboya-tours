@@ -1,11 +1,21 @@
+/**
+ * Purpose: Withholding Tax page-level UI component. Main declarations: money, display, initialForm, WithholdingTax, metricMoney.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { AlertCircle, CheckCircle2, ExternalLink, Eye, FileText, LockKeyhole, Percent, Plus, RefreshCw, ShieldCheck, X } from "lucide-react";
+// Load ../../../api/axios so this module can use its exported dependencies.
 import api from "../../../api/axios";
 
+// Declare money for use by the surrounding module or function.
 const money = (n) => `KES ${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// Declare display for use by the surrounding module or function.
 const display = (value, fallback = "Not provided") => value === null || value === undefined || value === "" ? fallback : String(value);
 
+// Declare initialForm for use by the surrounding module or function.
 const initialForm = () => ({
   payeeName: "",
   payeePin: "",
@@ -16,18 +26,25 @@ const initialForm = () => ({
   sourceType: "supplier_payment",
 });
 
+// Define WithholdingTax; its parameters and body implement this operation.
 export default function WithholdingTax() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [selected, setSelected] for use by the surrounding module or function.
   const [selected, setSelected] = useState(null);
+  // Declare [remitRef, setRemitRef] for use by the surrounding module or function.
   const [remitRef, setRemitRef] = useState({});
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState(initialForm);
 
+  // Declare q for use by the surrounding module or function.
   const q = useQuery({
     queryKey: ["wht"],
     queryFn: async () => (await api.get("/admin/finance/withholding-tax")).data,
     retry: false,
   });
 
+  // Declare create for use by the surrounding module or function.
   const create = useMutation({
     mutationFn: () => api.post("/admin/finance/withholding-tax", {
       ...form,
@@ -36,30 +53,46 @@ export default function WithholdingTax() {
       rate: Number(form.rate),
     }),
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["wht"] });
+      // Perform the side effect or state update expressed on the following line.
       setForm(initialForm());
     },
   });
 
+  // Declare remit for use by the surrounding module or function.
   const remit = useMutation({
     mutationFn: ({ id, reference }) => api.post(`/admin/finance/withholding-tax/${id}/remit`, { paymentReference: reference }),
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["wht"] });
+      // Perform the side effect or state update expressed on the following line.
       setRemitRef({});
     },
   });
 
+  // Declare rows for use by the surrounding module or function.
   const rows = q.data?.data || [];
+  // Declare totals for use by the surrounding module or function.
   const totals = q.data?.totals || {};
+  // Declare statusCode for use by the surrounding module or function.
   const statusCode = q.error?.response?.status;
+  // Declare errorData for use by the surrounding module or function.
   const errorData = q.error?.response?.data || {};
+  // Declare isLocked for use by the surrounding module or function.
   const isLocked = statusCode === 403 && errorData.code === "PLAN_FEATURE_LOCKED";
+  // Declare currentPlan for use by the surrounding module or function.
   const currentPlan = String(errorData.plan || "professional").replace(/_/g, " ");
+  // Declare errorMessage for use by the surrounding module or function.
   const errorMessage = errorData.message || "Unable to load withholding-tax records.";
+  // Declare canSubmit for use by the surrounding module or function.
   const canSubmit = !isLocked && !create.isPending && Number(form.baseAmount) > 0 && Number(form.rate) > 0 && Number(form.rate) <= 100 && form.payeeName.trim() && form.reference.trim() && /^\d{4}-(0[1-9]|1[0-2])$/.test(form.period);
+  // Declare metricValue for use by the surrounding module or function.
   const metricValue = q.isError ? "—" : rows.length;
+  // Declare metricMoney for use by the surrounding module or function.
   const metricMoney = (value) => q.isError ? "—" : money(value);
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-full bg-slate-50 p-4 md:p-6 lg:p-8">
       <div className="mx-auto max-w-[1600px] space-y-6">
@@ -145,17 +178,28 @@ export default function WithholdingTax() {
   );
 }
 
+// Define Field; its parameters and body implement this operation.
 function Field({ label, required, type = "text", value, onChange, placeholder, min, max, step, disabled = false }) {
+  // Return the expression shown below to the caller.
   return <label className={`block text-xs font-extrabold ${disabled ? "text-slate-400" : "text-slate-600"}`}>{label}{required && <span className="ml-1 text-emerald-700">*</span>}<input disabled={disabled} type={type} value={value} min={min} max={max} step={step} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100/70 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" /></label>;
 }
+// Define Metric; its parameters and body implement this operation.
 function Metric({ icon: Icon, title, value, hint }) { return <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5"><div className="flex items-center justify-between"><span className="text-sm font-bold text-slate-600">{title}</span><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm ring-1 ring-slate-200"><Icon size={17} /></span></div><p className="mt-3 text-2xl font-black tracking-tight text-slate-950">{value}</p><p className="mt-1 text-xs text-slate-500">{hint}</p></div>; }
+// Define Status; its parameters and body implement this operation.
 function Status({ status }) { const styles = status === "remitted" ? "bg-emerald-100 text-emerald-800 ring-emerald-200" : status === "cancelled" ? "bg-slate-100 text-slate-600 ring-slate-200" : "bg-amber-100 text-amber-800 ring-amber-200"; return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-extrabold capitalize ring-1 ${styles}`}>{display(status)}</span>; }
+// Define InlineError; its parameters and body implement this operation.
 function InlineError({ message }) { return <div className="mt-3 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-800"><AlertCircle size={15} /> {message}</div>; }
+// Define LoadingState; its parameters and body implement this operation.
 function LoadingState() { return <div className="p-12 text-center"><RefreshCw size={22} className="mx-auto animate-spin text-emerald-700" /><p className="mt-3 text-sm font-bold text-slate-700">Loading withholding-tax records…</p><p className="mt-1 text-xs text-slate-500">Checking the tenant finance ledger.</p></div>; }
+// Define RestrictedRegister; its parameters and body implement this operation.
 function RestrictedRegister() { return <div className="p-12 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400"><LockKeyhole size={21} /></div><p className="mt-4 font-bold text-slate-700">Register unavailable on the current plan</p><p className="mx-auto mt-1 max-w-lg text-sm leading-6 text-slate-500">Upgrade the workspace subscription to Business or Enterprise to access WHT records and remittance workflows.</p></div>; }
+// Define EmptyState; its parameters and body implement this operation.
 function EmptyState() { return <tr><td colSpan="7" className="p-12 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400"><FileText size={22} /></div><p className="mt-4 font-bold text-slate-700">No withholding-tax records yet</p><p className="mt-1 text-sm text-slate-500">Recorded WHT entries will appear here with their actual stored values.</p></td></tr>; }
 
+// Define SourceDrawer; its parameters and body implement this operation.
 function SourceDrawer({ record, onClose }) {
+  // Return the expression shown below to the caller.
   return <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-label="Withholding tax source details" onMouseDown={(e) => e.target === e.currentTarget && onClose()}><aside className="h-full w-full max-w-xl overflow-y-auto bg-white p-5 shadow-2xl md:p-7"><div className="flex items-start justify-between border-b border-slate-200 pb-5"><div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-700">Tax control · Source data</p><h2 className="mt-1 text-2xl font-black text-slate-950">{display(record.reference)}</h2><p className="mt-1 text-sm text-slate-500">Read-only inspection of the stored withholding-tax record.</p></div><button type="button" onClick={onClose} className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900" aria-label="Close"><X size={20} /></button></div><div className="mt-5 grid gap-3 sm:grid-cols-2"><Detail label="Record ID" value={record._id} /><Detail label="Tenant ID" value={record.tenantId} /><Detail label="Payee" value={record.payeeName} /><Detail label="Payee PIN" value={record.payeePin} /><Detail label="Period" value={record.taxPeriod || record.period} /><Detail label="Reference" value={record.reference} /><Detail label="Source type" value={record.source?.type || record.sourceType} /><Detail label="Source ID" value={record.source?.id || record.sourceId} /><Detail label="Source reference" value={record.source?.reference} /><Detail label="Taxable base" value={money(record.baseAmount)} /><Detail label="Rate" value={`${display(record.rate, "0")}%`} /><Detail label="Tax amount" value={money(record.taxAmount)} /><Detail label="Status" value={record.status} /><Detail label="Payment reference" value={record.paymentReference || record.source?.paymentReference} /><Detail label="Certificate number" value={record.certificateNumber || record.source?.certificateNumber} /><Detail label="Remitted at" value={record.remittedAt ? new Date(record.remittedAt).toLocaleString() : "Not remitted"} /><Detail label="Created" value={record.createdAt ? new Date(record.createdAt).toLocaleString() : "Not available"} /></div><div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>Audit note:</strong> Values shown here come from the tenant-scoped WHT API. No KRA, payment or certificate reference is invented, and this view does not modify the record.</div><div className="mt-5"><a href={record.sourceId ? `/admin/finance/transactions?sourceId=${encodeURIComponent(record.sourceId)}` : "/admin/finance/transactions"} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800">Open related finance transactions <ExternalLink size={15} /></a></div></aside></div>;
 }
+// Define Detail; its parameters and body implement this operation.
 function Detail({ label, value }) { return <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">{label}</p><p className="mt-1 break-all text-sm font-semibold text-slate-900">{display(value)}</p></div>; }

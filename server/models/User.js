@@ -1,10 +1,19 @@
+/**
+ * Purpose: User database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load bcryptjs so this module can use its exported dependencies.
 import bcrypt from "bcryptjs";
+// Load crypto so this module can use its exported dependencies.
 import crypto from "crypto";
 
+// Declare BCRYPT_HASH_PATTERN for use by the surrounding module or function.
 const BCRYPT_HASH_PATTERN = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
 
+// Declare userSchema for use by the surrounding module or function.
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -60,7 +69,9 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Perform the side effect or state update expressed on the following line.
 userSchema.index({ tenantId: 1, role: 1 });
+// Perform the side effect or state update expressed on the following line.
 userSchema.index(
   { tenantId: 1, email: 1 },
   {
@@ -70,56 +81,83 @@ userSchema.index(
   }
 );
 
+// Perform the side effect or state update expressed on the following line.
 userSchema.pre("save", async function (next) {
+  // Check the condition (!this.isModified("password")) and run the matching branch.
   if (!this.isModified("password")) return next();
 
   // Never hash an already-hashed password. This protects registration,
   // password-reset and administrative password updates from accidental
   // double hashing while keeping plaintext passwords out of MongoDB.
+  // Check the condition (BCRYPT_HASH_PATTERN.test(String(this.password || ""))) and run the matching branch.
   if (BCRYPT_HASH_PATTERN.test(String(this.password || ""))) return next();
 
+  // Declare salt for use by the surrounding module or function.
   const salt = await bcrypt.genSalt(10);
+  // Perform the side effect or state update expressed on the following line.
   this.password = await bcrypt.hash(String(this.password), salt);
+  // Perform the side effect or state update expressed on the following line.
   next();
 });
 
+// Perform the side effect or state update expressed on the following line.
 userSchema.pre("save", function (next) {
+  // Check the condition (!this.referralCode) and run the matching branch.
   if (!this.referralCode) {
+    // Perform the side effect or state update expressed on the following line.
     this.referralCode = crypto.randomBytes(4).toString("hex").toUpperCase();
   }
+  // Perform the side effect or state update expressed on the following line.
   next();
 });
 
+// Perform the side effect or state update expressed on the following line.
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  // Declare candidate for use by the surrounding module or function.
   const candidate = String(enteredPassword ?? "");
+  // Declare storedHash for use by the surrounding module or function.
   const storedHash = String(this.password || "");
+  // Check the condition (!candidate || !storedHash) and run the matching branch.
   if (!candidate || !storedHash) return false;
 
+  // Check the condition (BCRYPT_HASH_PATTERN.test(storedHash)) and run the matching branch.
   if (BCRYPT_HASH_PATTERN.test(storedHash)) {
+    // Return the result of bcrypt.compare() to the caller.
     return bcrypt.compare(candidate, storedHash);
   }
 
   // One-time compatibility path for legacy accounts whose password was stored
   // before bcrypt hashing was enforced. A successful legacy login immediately
   // rehashes the password through the save hook, so plaintext is not retained.
+  // Check the condition (storedHash === candidate) and run the matching branch.
   if (storedHash === candidate) {
+    // Perform the side effect or state update expressed on the following line.
     this.password = candidate;
+    // Perform the side effect or state update expressed on the following line.
     await this.save({ validateBeforeSave: false });
+    // Return the expression shown below to the caller.
     return true;
   }
 
+  // Return the expression shown below to the caller.
   return false;
 };
 
+// Perform the side effect or state update expressed on the following line.
 userSchema.virtual("isActive").get(function () {
+  // Return the expression shown below to the caller.
   return this.status === "active";
 });
 
+// Perform the side effect or state update expressed on the following line.
 userSchema.virtual("isLocked").get(function () {
+  // Return the expression shown below to the caller.
   return this.lockUntil && this.lockUntil > Date.now();
 });
 
+// Declare tenantUserSchema for use by the surrounding module or function.
 const tenantUserSchema = userSchema.plugin(tenantPlugin);
+// Declare User for use by the surrounding module or function.
 const User = mongoose.models.User || mongoose.model("User", tenantUserSchema);
 
 export default User;

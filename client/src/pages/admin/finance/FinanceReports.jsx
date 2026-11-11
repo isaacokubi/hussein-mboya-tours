@@ -1,21 +1,35 @@
+/**
+ * Purpose: Finance Reports page-level UI component. Main declarations: isFiniteNumber, numericValue, money, Card, Rows.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { RefreshCw, ShieldCheck, AlertTriangle, FileBarChart2, Wallet, ReceiptText } from "lucide-react";
+// Load ../../../api/financeApi so this module can use its exported dependencies.
 import { getReports, getFinancialStatements, getArAging, getApAging, getCashFlow, reconcileOperationalAccounting } from "../../../api/financeApi";
 
+// Declare isFiniteNumber for use by the surrounding module or function.
 const isFiniteNumber = (value) => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
+// Declare numericValue for use by the surrounding module or function.
 const numericValue = (value) => (isFiniteNumber(value) ? Number(value) : null);
+// Declare money for use by the surrounding module or function.
 const money = (value) => {
+  // Declare number for use by the surrounding module or function.
   const number = numericValue(value);
+  // Return the expression shown below to the caller.
   return number === null ? "Unavailable" : `KES ${number.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
+// Declare statusTone for use by the surrounding module or function.
 const statusTone = {
   reconciled: "border-emerald-200 bg-emerald-50 text-emerald-800",
   review_required: "border-amber-200 bg-amber-50 text-amber-800",
   unavailable: "border-slate-200 bg-slate-100 text-slate-700",
 };
 
+// Declare Card for use by the surrounding module or function.
 const Card = ({ title, value, hint, icon: Icon = Wallet }) => (
   <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <div className="flex items-start justify-between gap-3"><div><p className="text-sm font-medium text-slate-500">{title}</p><p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{value}</p></div><span className="rounded-xl bg-emerald-50 p-2.5 text-emerald-700"><Icon size={20} /></span></div>
@@ -23,43 +37,72 @@ const Card = ({ title, value, hint, icon: Icon = Wallet }) => (
   </div>
 );
 
+// Declare Rows for use by the surrounding module or function.
 const Rows = ({ rows = [], empty = "No posted activity in this period" }) => {
+  // Declare safeRows for use by the surrounding module or function.
   const safeRows = Array.isArray(rows) ? rows : [];
+  // Return the expression shown below to the caller.
   return <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="bg-slate-50"><tr><th className="p-3 text-left">Code</th><th className="p-3 text-left">Account</th><th className="p-3 text-right">Amount</th></tr></thead><tbody>{safeRows.length ? safeRows.map((row, index) => <tr key={`${row.code || "account"}-${row.name || index}`} className="border-t border-slate-100 hover:bg-slate-50/70"><td className="p-3 font-mono text-xs text-slate-500">{row.code || "Unavailable"}</td><td className="p-3 text-slate-800">{row.name || "Unavailable"}</td><td className="p-3 text-right font-semibold text-slate-900">{money(row.amount)}</td></tr>) : <tr><td colSpan="3" className="p-7 text-center text-slate-500">{empty}</td></tr>}</tbody></table></div>;
 };
 
+// Declare Aging for use by the surrounding module or function.
 const Aging = ({ buckets }) => {
+  // Declare safe for use by the surrounding module or function.
   const safe = buckets && typeof buckets === "object" ? buckets : {};
+  // Return the expression shown below to the caller.
   return <div className="grid grid-cols-2 gap-3 md:grid-cols-5">{[["Current", "current"], ["1–30 days", "1_30"], ["31–60 days", "31_60"], ["61–90 days", "61_90"], ["90+ days", "90_plus"]].map(([label, key]) => <div key={key} className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-medium text-slate-500">{label}</p><p className="mt-1 font-semibold text-slate-900">{money(safe[key])}</p></div>)}</div>;
 };
 
+// Define ReconciliationCard; its parameters and body implement this operation.
 function ReconciliationCard({ title, item }) {
 
+  // Check the condition (!item) and run the matching branch.
   if (!item) return null;
+  // Declare tone for use by the surrounding module or function.
   const tone = statusTone[item.status] || statusTone.unavailable;
+  // Declare label for use by the surrounding module or function.
   const label = item.status === "reconciled" ? "Reconciled" : item.status === "review_required" ? "Review required" : "Unavailable";
+  // Return the expression shown below to the caller.
   return <div className={`rounded-2xl border p-4 ${tone}`}><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">{title}</h3><span className="rounded-full border px-2.5 py-1 text-xs font-semibold">{label}</span></div><div className="mt-4 grid gap-3 text-sm md:grid-cols-3"><div><p className="text-xs opacity-70">Control account {item.controlAccount}</p><p className="mt-1 font-semibold">{money(item.controlBalance)}</p></div><div><p className="text-xs opacity-70">Operational outstanding</p><p className="mt-1 font-semibold">{money(item.operationalOutstanding)}</p></div><div><p className="text-xs opacity-70">Variance</p><p className="mt-1 font-semibold">{money(item.variance)}</p></div></div>{item.status === "review_required" && <p className="mt-3 text-xs font-medium">The operational balance does not agree with the posted control account. Reconciliation will post missing invoices/payments and reverse known duplicate operational postings idempotently; it never edits the control balance directly.</p>}</div>;
 }
 
+// Define FinanceReports; its parameters and body implement this operation.
 export default function FinanceReports() {
+  // Declare [from, setFrom] for use by the surrounding module or function.
   const [from, setFrom] = useState("");
+  // Declare [to, setTo] for use by the surrounding module or function.
   const [to, setTo] = useState("");
+  // Declare [reconcileMessage, setReconcileMessage] for use by the surrounding module or function.
   const [reconcileMessage, setReconcileMessage] = useState("");
+  // Declare [showDemoData, setShowDemoData] for use by the surrounding module or function.
   const [showDemoData, setShowDemoData] = useState(true);
+  // Declare params for use by the surrounding module or function.
   const params = useMemo(() => ({ ...(from ? { from } : {}), ...(to ? { to } : {}) }), [from, to]);
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare statements for use by the surrounding module or function.
   const statements = useQuery({ queryKey: ["financialStatements", params], queryFn: () => getFinancialStatements(params), retry: 1 });
+  // Declare ar for use by the surrounding module or function.
   const ar = useQuery({ queryKey: ["arAging", params], queryFn: () => getArAging(params), retry: 1 });
+  // Declare ap for use by the surrounding module or function.
   const ap = useQuery({ queryKey: ["apAging", params], queryFn: () => getApAging(params), retry: 1 });
+  // Declare cash for use by the surrounding module or function.
   const cash = useQuery({ queryKey: ["cashFlow", params], queryFn: () => getCashFlow(params), retry: 1 });
+  // Declare reports for use by the surrounding module or function.
   const reports = useQuery({ queryKey: ["financeReports", params], queryFn: () => getReports(params), retry: 1 });
+  // Declare reconcile for use by the surrounding module or function.
   const reconcile = useMutation({
     mutationFn: reconcileOperationalAccounting,
     onSuccess: async (result) => {
+      // Declare summary for use by the surrounding module or function.
       const summary = result?.summary || {};
+      // Declare posted for use by the surrounding module or function.
       const posted = Object.values(summary.posted || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+      // Declare errors for use by the surrounding module or function.
       const errors = Array.isArray(summary.errors) ? summary.errors.length : 0;
+      // Perform the side effect or state update expressed on the following line.
       setReconcileMessage(errors ? `Reconciliation completed with ${errors} posting error${errors === 1 ? "" : "s"}. Review the accounting reconciliation results.` : `Operational accounting synchronized. ${posted} missing posting${posted === 1 ? " was" : "s were"} created or repaired.`);
+      // Perform the side effect or state update expressed on the following line.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["financialStatements"] }),
         queryClient.invalidateQueries({ queryKey: ["arAging"] }),
@@ -70,36 +113,61 @@ export default function FinanceReports() {
     },
     onError: (error) => setReconcileMessage(error?.response?.data?.message || error?.message || "Operational accounting reconciliation failed."),
   });
+  // Declare refresh for use by the surrounding module or function.
   const refresh = () => Promise.all([statements.refetch(), ar.refetch(), ap.refetch(), cash.refetch(), reports.refetch()]);
 
+  // Declare data for use by the surrounding module or function.
   const data = statements.data?.data || {};
+  // Declare pnl for use by the surrounding module or function.
   const pnl = data.profitAndLoss || {};
+  // Declare bs for use by the surrounding module or function.
   const bs = data.balanceSheet || {};
+  // Declare cashData for use by the surrounding module or function.
   const cashData = cash.data?.data || {};
+  // Declare visibleMovements for use by the surrounding module or function.
   const visibleMovements = useMemo(() => {
+    // Declare movements for use by the surrounding module or function.
     const movements = Array.isArray(cashData.movements) ? cashData.movements : [];
+    // Return the result of movements.filter() to the caller.
     return movements.filter((m) => showDemoData || !/DEMO|TEST/i.test(`${m.reference || ""} ${m.description || ""}`));
   }, [cashData.movements, showDemoData]);
+  // Declare arData for use by the surrounding module or function.
   const arData = ar.data?.data || {};
+  // Declare apData for use by the surrounding module or function.
   const apData = ap.data?.data || {};
+  // Declare monthly for use by the surrounding module or function.
   const monthly = reports.data?.monthlyRevenue || reports.data?.data?.monthlyRevenue || [];
+  // Declare findAccount for use by the surrounding module or function.
   const findAccount = (rows, code) => (Array.isArray(rows) ? rows : []).find((row) => String(row.code) === String(code));
+  // Declare arControl for use by the surrounding module or function.
   const arControl = findAccount(bs.assets, "1100");
+  // Declare apControl for use by the surrounding module or function.
   const apControl = findAccount(bs.liabilities, "2000");
+  // Declare arOutstanding for use by the surrounding module or function.
   const arOutstanding = ar.isSuccess ? numericValue(arData.totalOutstanding) : null;
+  // Declare apOutstanding for use by the surrounding module or function.
   const apOutstanding = ap.isSuccess ? numericValue(apData.totalOutstanding) : null;
+  // Declare arControlBalance for use by the surrounding module or function.
   const arControlBalance = arControl ? numericValue(arControl.amount) : null;
+  // Declare apControlBalance for use by the surrounding module or function.
   const apControlBalance = apControl ? numericValue(apControl.amount) : null;
+  // Declare reconciliation for use by the surrounding module or function.
   const reconciliation = {
     accountsReceivable: { controlAccount: "1100", controlBalance: arControlBalance, operationalOutstanding: arOutstanding, variance: arControlBalance !== null && arOutstanding !== null ? arControlBalance - arOutstanding : null, status: arControlBalance === null || arOutstanding === null ? "unavailable" : Math.abs(arControlBalance - arOutstanding) <= 0.01 ? "reconciled" : "review_required" },
     accountsPayable: { controlAccount: "2000", controlBalance: apControlBalance, operationalOutstanding: apOutstanding, variance: apControlBalance !== null && apOutstanding !== null ? apControlBalance - apOutstanding : null, status: apControlBalance === null || apOutstanding === null ? "unavailable" : Math.abs(apControlBalance - apOutstanding) <= 0.01 ? "reconciled" : "review_required" },
   };
+  // Declare loading for use by the surrounding module or function.
   const loading = statements.isLoading || ar.isLoading || ap.isLoading || cash.isLoading || reports.isLoading;
+  // Declare error for use by the surrounding module or function.
   const error = statements.isError || ar.isError || ap.isError || cash.isError || reports.isError;
+  // Declare hasReview for use by the surrounding module or function.
   const hasReview = reconciliation.accountsReceivable.status === "review_required" || reconciliation.accountsPayable.status === "review_required" || bs.balanced === false;
+  // Declare balanceStatus for use by the surrounding module or function.
   const balanceStatus = bs.balanced === true ? "Balanced within KES 0.01 tolerance" : bs.balanced === false ? "Out of balance — investigate before close" : "Balance status unavailable";
+  // Declare periodLabel for use by the surrounding module or function.
   const periodLabel = data.period?.from || data.period?.to ? `${data.period?.from || "start"} to ${data.period?.to || "present"}` : "Current posted accounting activity";
 
+  // Return the expression shown below to the caller.
   return <div className="min-h-full space-y-6 bg-slate-50 p-4 md:p-6">
     <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6 text-white shadow-lg"><div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end"><div><div className="mb-3 flex items-center gap-2 text-emerald-300"><FileBarChart2 size={18} /><span className="text-sm font-semibold">Finance · Reporting</span></div><h1 className="text-3xl font-bold tracking-tight">Financial Reports</h1><p className="mt-2 max-w-3xl text-sm text-slate-300">Production P&amp;L, balance sheet, cash flow, receivables and supplier liabilities using tenant-scoped posted accounting activity.</p><p className="mt-3 text-xs font-medium text-slate-400">Report basis: posted journals · {periodLabel}</p></div><div className="flex flex-wrap items-end gap-2"><label className="text-xs font-medium text-slate-300">From<input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="mt-1 block rounded-lg border border-slate-600 bg-white p-2 text-sm text-slate-900" /></label><label className="text-xs font-medium text-slate-300">To<input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="mt-1 block rounded-lg border border-slate-600 bg-white p-2 text-sm text-slate-900" /></label><button onClick={() => { setFrom(""); setTo(""); }} className="rounded-lg border border-slate-600 bg-white/10 px-3 py-2 text-sm font-medium text-white hover:bg-white/20">Clear</button><button onClick={refresh} disabled={loading} className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"><RefreshCw size={16} className={loading ? "animate-spin" : ""} />Refresh</button></div></div><div className="mt-5 flex flex-wrap gap-2 text-xs"><span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5">Tenant scoped</span><span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5">Posted journals</span><span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5">Control reconciliation</span><span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5">Missing data ≠ zero</span><label className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5"><input type="checkbox" checked={showDemoData} onChange={(e) => setShowDemoData(e.target.checked)} />Include test/demo activity</label></div></div>
     {loading && <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">Loading accounting reports…</div>}

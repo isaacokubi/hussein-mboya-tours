@@ -1,3 +1,7 @@
+/**
+ * Purpose: payment Lifecycle Service business-logic service. Main declarations: normalizePaymentMethod, getRequesterRole, isStaffUser, userOwnsBooking, canAccessBooking.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 /*
 |--------------------------------------------------------------------------
@@ -12,14 +16,21 @@ import { mergeTenantFilter, requireTenantId } from "../tenancy/context.js";
 |--------------------------------------------------------------------------
 */
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ./emailService.js so this module can use its exported dependencies.
 import { sendPaymentConfirmationEmail, sendBookingStatusEmail, sendEmailBestEffort } from "./emailService.js";
 
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../models/Payment.js so this module can use its exported dependencies.
 import Payment from "../models/Payment.js";
+// Load ../models/Commission.js so this module can use its exported dependencies.
 import Commission from "../models/Commission.js";
+// Load ./operationalAccountingService.js so this module can use its exported dependencies.
 import { postPaymentToLedger, postPaymentRefundToLedger } from "./operationalAccountingService.js";
 
+// Load ../constants/bookingConstants.js so this module can use its exported dependencies.
 import {
   BOOKING_PAYMENT_STATUSES,
   PAYMENT_STATUSES,
@@ -33,15 +44,19 @@ import {
 |--------------------------------------------------------------------------
 */
 
+// Declare normalizePaymentMethod for use by the surrounding module or function.
 export const normalizePaymentMethod = (method) => {
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
 
+  // Declare value for use by the surrounding module or function.
   const value =
     String(method || "")
       .trim()
       .toUpperCase()
       .replace(/[\s-]+/g, "_");
 
+  // Declare aliases for use by the surrounding module or function.
   const aliases = {
     MPESA: PAYMENT_METHODS.MPESA,
     M_PESA: PAYMENT_METHODS.MPESA,
@@ -56,6 +71,7 @@ export const normalizePaymentMethod = (method) => {
     CASH: PAYMENT_METHODS.CASH,
   };
 
+  // Return the expression shown below to the caller.
   return aliases[value] || null;
 };
 
@@ -66,8 +82,10 @@ export const normalizePaymentMethod = (method) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare getRequesterRole for use by the surrounding module or function.
 export const getRequesterRole = (user) => {
 
+  // Return the result of String(     user?.roleId?.name ||     user?.role ||     user?.legacyRole ||     ""   )     .trim()     .toLowerCase()     .replace() to the caller.
   return String(
     user?.roleId?.name ||
     user?.role ||
@@ -86,10 +104,13 @@ export const getRequesterRole = (user) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare isStaffUser for use by the surrounding module or function.
 export const isStaffUser = (user) => {
 
+  // Declare role for use by the surrounding module or function.
   const role = getRequesterRole(user);
 
+  // Return the result of [     "admin",     "super_admin",     "administrator",     "manager",     "tourmanager",     "guide",     "tourguide",     "agent",     "travelagent",   ].includes() to the caller.
   return [
     "admin",
     "super_admin",
@@ -110,21 +131,28 @@ export const isStaffUser = (user) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare userOwnsBooking for use by the surrounding module or function.
 export const userOwnsBooking = (booking, user) => {
 
+  // Check the condition (!booking || !user?._id) and run the matching branch.
   if (!booking || !user?._id) {
+    // Return the expression shown below to the caller.
     return false;
   }
 
+  // Declare userId for use by the surrounding module or function.
   const userId =
     user._id.toString();
 
+  // Declare bookingUserId for use by the surrounding module or function.
   const bookingUserId =
     booking.user?.toString();
 
+  // Declare bookingCustomerId for use by the surrounding module or function.
   const bookingCustomerId =
     booking.customer?.toString();
 
+  // Declare snapshotEmail for use by the surrounding module or function.
   const snapshotEmail =
     String(
       booking.customerSnapshot?.email || ""
@@ -132,11 +160,13 @@ export const userOwnsBooking = (booking, user) => {
       .trim()
       .toLowerCase();
 
+  // Declare userEmail for use by the surrounding module or function.
   const userEmail =
     String(user.email || "")
       .trim()
       .toLowerCase();
 
+  // Return the expression shown below to the caller.
   return (
     bookingUserId === userId ||
     bookingCustomerId === userId ||
@@ -155,12 +185,16 @@ export const userOwnsBooking = (booking, user) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare canAccessBooking for use by the surrounding module or function.
 export const canAccessBooking = (booking, user) => {
 
+  // Check the condition (!booking || !user) and run the matching branch.
   if (!booking || !user) {
+    // Return the expression shown below to the caller.
     return false;
   }
 
+  // Return the expression shown below to the caller.
   return (
     isStaffUser(user) ||
     userOwnsBooking(booking, user)
@@ -177,22 +211,31 @@ export const canAccessBooking = (booking, user) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare getPayableBookingAmount for use by the surrounding module or function.
 export const getPayableBookingAmount = (booking) => {
 
+  // Check the condition (!booking) and run the matching branch.
   if (!booking) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error("Booking is required.");
   }
 
+  // Declare totalAmount for use by the surrounding module or function.
   const totalAmount =
     Number(booking.totalAmount || 0);
 
+  // Declare balanceAmount for use by the surrounding module or function.
   const balanceAmount =
     Number(booking.balanceAmount || 0);
 
+  // Declare depositDue for use by the surrounding module or function.
   const depositDue = Number(booking.depositAmount || 0);
+  // Declare amountPaid for use by the surrounding module or function.
   const amountPaid = Number(booking.amountPaid || 0);
 
+  // Check the condition (totalAmount <= 0) and run the matching branch.
   if (totalAmount <= 0) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error("Booking has an invalid total amount.");
   }
 
@@ -201,14 +244,19 @@ export const getPayableBookingAmount = (booking) => {
    * Otherwise pay the configured deposit/total.
    */
 
+  // Check the condition (balanceAmount > 0 && amountPaid > 0) and run the matching branch.
   if (balanceAmount > 0 && amountPaid > 0) {
+    // Return the result of Math.round() to the caller.
     return Math.round(balanceAmount);
   }
 
+  // Check the condition (amountPaid === 0 && depositDue > 0) and run the matching branch.
   if (amountPaid === 0 && depositDue > 0) {
+    // Return the result of Math.round() to the caller.
     return Math.round(Math.min(depositDue, totalAmount));
   }
 
+  // Return the result of Math.round() to the caller.
   return Math.round(totalAmount);
 };
 
@@ -219,14 +267,18 @@ export const getPayableBookingAmount = (booking) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare validatePaymentStatus for use by the surrounding module or function.
 export const validatePaymentStatus = (status) => {
 
+  // Check the condition (!PAYMENT_STATUSES.includes(status)) and run the matching branch.
   if (!PAYMENT_STATUSES.includes(status)) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error(
       `Invalid payment transaction status: ${status}`
     );
   }
 
+  // Return the expression shown below to the caller.
   return true;
 };
 
@@ -237,14 +289,18 @@ export const validatePaymentStatus = (status) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare validateBookingPaymentStatus for use by the surrounding module or function.
 export const validateBookingPaymentStatus = (status) => {
 
+  // Check the condition (!BOOKING_PAYMENT_STATUSES.includes(status)) and run the matching branch.
   if (!BOOKING_PAYMENT_STATUSES.includes(status)) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error(
       `Invalid booking payment status: ${status}`
     );
   }
 
+  // Return the expression shown below to the caller.
   return true;
 };
 
@@ -255,10 +311,12 @@ export const validateBookingPaymentStatus = (status) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare findPendingBookingPayment for use by the surrounding module or function.
 export const findPendingBookingPayment = async (
   bookingId
 ) => {
 
+  // Return the result of Payment.findOne(     mergeTenantFilter({       booking: bookingId,       status: {         $in: [           "pending",           "processing",         ],       },     })   ).sort() to the caller.
   return Payment.findOne(
     mergeTenantFilter({
       booking: bookingId,
@@ -285,6 +343,7 @@ export const findPendingBookingPayment = async (
 |--------------------------------------------------------------------------
 */
 
+// Declare failBookingPayment for use by the surrounding module or function.
 export const failBookingPayment = async ({
   payment,
   booking,
@@ -292,40 +351,52 @@ export const failBookingPayment = async ({
   paymentData = {},
 }) => {
 
+  // Check the condition (!payment || !booking) and run the matching branch.
   if (!payment || !booking) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error(
       "Payment and booking are required."
     );
   }
 
+  // Declare session for use by the surrounding module or function.
   const session =
     await mongoose.startSession();
 
+  // Run this operation with a dedicated error-handling path for failures.
   try {
 
+    // Declare result for use by the surrounding module or function.
     let result;
 
+    // Perform the side effect or state update expressed on the following line.
     await session.withTransaction(async () => {
 
+      // Declare paymentDoc for use by the surrounding module or function.
       const paymentDoc =
         await Payment.findOne({
           _id: payment._id,
           tenantId: payment.tenantId,
         }).session(session);
 
+      // Declare bookingDoc for use by the surrounding module or function.
       const bookingDoc =
         await Booking.findOne({
           _id: booking._id,
           tenantId: payment.tenantId,
         }).session(session);
 
+      // Check the condition (!paymentDoc) and run the matching branch.
       if (!paymentDoc) {
+        // Stop the current operation by raising a new Error instance.
         throw new Error(
           "Payment not found."
         );
       }
 
+      // Check the condition (!bookingDoc) and run the matching branch.
       if (!bookingDoc) {
+        // Stop the current operation by raising a new Error instance.
         throw new Error(
           "Booking not found."
         );
@@ -337,16 +408,19 @@ export const failBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (paymentDoc.status === "completed" || bookingDoc.paymentStatus === "pai) and run the matching branch.
       if (
         paymentDoc.status === "completed" ||
         bookingDoc.paymentStatus === "paid"
       ) {
+        // Perform the side effect or state update expressed on the following line.
         result = {
           payment: paymentDoc,
           booking: bookingDoc,
           alreadyCompleted: true,
         };
 
+        // Return the result to the caller.
         return;
       }
 
@@ -356,32 +430,42 @@ export const failBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Perform the side effect or state update expressed on the following line.
       paymentDoc.status =
         "failed";
 
+      // Perform the side effect or state update expressed on the following line.
       paymentDoc.failureReason =
         failureReason ||
         paymentDoc.failureReason ||
         "M-Pesa payment failed.";
 
+      // Check the condition (paymentData.callbackResponse) and run the matching branch.
       if (paymentData.callbackResponse) {
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.callbackResponse =
           paymentData.callbackResponse;
       }
 
+      // Check the condition (paymentData.checkoutRequestID) and run the matching branch.
       if (paymentData.checkoutRequestID) {
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.checkoutRequestID =
           paymentData.checkoutRequestID;
       }
 
+      // Check the condition (paymentData.merchantRequestID) and run the matching branch.
       if (paymentData.merchantRequestID) {
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.merchantRequestID =
           paymentData.merchantRequestID;
       }
 
+      // Perform the side effect or state update expressed on the following line.
       paymentDoc.failedAt =
         new Date();
 
+      // Perform the side effect or state update expressed on the following line.
       await paymentDoc.save({
         session,
       });
@@ -392,33 +476,41 @@ export const failBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (bookingDoc.paymentStatus !== "paid") and run the matching branch.
       if (
         bookingDoc.paymentStatus !== "paid"
       ) {
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.paymentStatus =
           "failed";
 
+        // Check the condition (bookingDoc.status !== "completed" && bookingDoc.status !== "cancelled") and run the matching branch.
         if (
           bookingDoc.status !== "completed" &&
           bookingDoc.status !== "cancelled" &&
           bookingDoc.status !== "refunded"
         ) {
+          // Perform the side effect or state update expressed on the following line.
           bookingDoc.status =
             "cancelled";
 
+          // Perform the side effect or state update expressed on the following line.
           bookingDoc.cancellationReason =
             bookingDoc.cancellationReason ||
             "M-Pesa payment failed.";
 
+          // Perform the side effect or state update expressed on the following line.
           bookingDoc.cancelledAt =
             bookingDoc.cancelledAt || new Date();
         }
       }
 
+      // Perform the side effect or state update expressed on the following line.
       await bookingDoc.save({
         session,
       });
 
+      // Perform the side effect or state update expressed on the following line.
       result = {
         payment: paymentDoc,
         booking: bookingDoc,
@@ -426,10 +518,12 @@ export const failBookingPayment = async ({
       };
     });
 
+    // Return the value of result to the caller.
     return result;
 
   } finally {
 
+    // Perform the side effect or state update expressed on the following line.
     await session.endSession();
 
   }
@@ -446,25 +540,32 @@ export const failBookingPayment = async ({
 |--------------------------------------------------------------------------
 */
 
+// Declare completeBookingPayment for use by the surrounding module or function.
 export const completeBookingPayment = async ({
   payment,
   booking,
   paymentData = {},
 }) => {
 
+  // Check the condition (!payment || !booking) and run the matching branch.
   if (!payment || !booking) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error(
       "Payment and booking are required."
     );
   }
 
+  // Declare session for use by the surrounding module or function.
   const session =
     await mongoose.startSession();
 
+  // Run this operation with a dedicated error-handling path for failures.
   try {
 
+    // Declare result for use by the surrounding module or function.
     let result;
 
+    // Perform the side effect or state update expressed on the following line.
     await session.withTransaction(async () => {
 
       /*
@@ -473,25 +574,31 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Declare paymentDoc for use by the surrounding module or function.
       const paymentDoc =
         await Payment.findOne({
           _id: payment._id,
           tenantId: payment.tenantId,
         }).session(session);
 
+      // Declare bookingDoc for use by the surrounding module or function.
       const bookingDoc =
         await Booking.findOne({
           _id: booking._id,
           tenantId: payment.tenantId,
         }).session(session);
 
+      // Check the condition (!paymentDoc) and run the matching branch.
       if (!paymentDoc) {
+        // Stop the current operation by raising a new Error instance.
         throw new Error(
           "Payment not found."
         );
       }
 
+      // Check the condition (!bookingDoc) and run the matching branch.
       if (!bookingDoc) {
+        // Stop the current operation by raising a new Error instance.
         throw new Error(
           "Booking not found."
         );
@@ -507,17 +614,20 @@ export const completeBookingPayment = async ({
       |
       */
 
+      // Check the condition (paymentDoc.status === "completed" || bookingDoc.paymentStatus === "pai) and run the matching branch.
       if (
         paymentDoc.status === "completed" ||
         bookingDoc.paymentStatus === "paid"
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         result = {
           payment: paymentDoc,
           booking: bookingDoc,
           alreadyCompleted: true,
         };
 
+        // Return the result to the caller.
         return;
       }
 
@@ -528,6 +638,7 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Declare canonicalPaymentMethod for use by the surrounding module or function.
       const canonicalPaymentMethod =
         normalizePaymentMethod(
           paymentData.paymentMethod ||
@@ -547,6 +658,7 @@ export const completeBookingPayment = async ({
       |
       */
 
+      // Declare paymentAmount for use by the surrounding module or function.
       const paymentAmount =
         Number(
           paymentData.amount ??
@@ -554,10 +666,12 @@ export const completeBookingPayment = async ({
           0
         );
 
+      // Check the condition (!Number.isFinite(paymentAmount) || paymentAmount <= 0) and run the matching branch.
       if (
         !Number.isFinite(paymentAmount) ||
         paymentAmount <= 0
       ) {
+        // Stop the current operation by raising a new Error instance.
         throw new Error(
           "Completed payment has an invalid amount."
         );
@@ -570,15 +684,18 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Declare totalAmount for use by the surrounding module or function.
       const totalAmount =
         Number(
           bookingDoc.totalAmount || 0
         );
 
+      // Check the condition (!Number.isFinite(totalAmount) || totalAmount <= 0) and run the matching branch.
       if (
         !Number.isFinite(totalAmount) ||
         totalAmount <= 0
       ) {
+        // Stop the current operation by raising a new Error instance.
         throw new Error(
           "Booking has an invalid total amount."
         );
@@ -591,13 +708,16 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Perform the side effect or state update expressed on the following line.
       paymentDoc.status =
         "completed";
 
+      // Perform the side effect or state update expressed on the following line.
       paymentDoc.paidAt =
         paymentDoc.paidAt ||
         new Date();
 
+      // Perform the side effect or state update expressed on the following line.
       paymentDoc.amount =
         paymentAmount;
 
@@ -611,16 +731,22 @@ export const completeBookingPayment = async ({
       | verification must not be able to inflate depositAmount.
       |--------------------------------------------------------------------------
       */
+      // Declare currentPaidAmount for use by the surrounding module or function.
       const currentPaidAmount = Number(bookingDoc.amountPaid || 0);
+      // Declare remainingDue for use by the surrounding module or function.
       const remainingDue = Math.max(0, totalAmount - currentPaidAmount);
 
+      // Check the condition (paymentAmount > remainingDue) and run the matching branch.
       if (paymentAmount > remainingDue) {
+        // Stop the current operation by raising a new Error instance.
         throw new Error(
           `Payment amount ${paymentAmount} exceeds remaining booking balance ${remainingDue}.`
         );
       }
 
+      // Check the condition (paymentAmount <= 0 || remainingDue <= 0) and run the matching branch.
       if (paymentAmount <= 0 || remainingDue <= 0) {
+        // Stop the current operation by raising a new Error instance.
         throw new Error("No amount remains due for this booking.");
       }
 
@@ -630,8 +756,10 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (canonicalPaymentMethod) and run the matching branch.
       if (canonicalPaymentMethod) {
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.paymentMethod =
           canonicalPaymentMethod;
       }
@@ -643,10 +771,12 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (paymentData.phoneNumber) and run the matching branch.
       if (
         paymentData.phoneNumber
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.phoneNumber =
           String(
             paymentData.phoneNumber
@@ -660,18 +790,22 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (paymentData.mpesaReceiptNumber) and run the matching branch.
       if (
         paymentData.mpesaReceiptNumber
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.mpesaReceiptNumber =
           String(
             paymentData.mpesaReceiptNumber
           ).trim();
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.transactionId =
           paymentData.mpesaReceiptNumber;
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.transactionReference =
           paymentData.mpesaReceiptNumber;
       }
@@ -683,18 +817,23 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (paymentData.transactionId) and run the matching branch.
       if (
         paymentData.transactionId
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.transactionId =
           String(
             paymentData.transactionId
           ).trim();
       }
 
+      // Check the condition (paymentData.providerOrderId) and run the matching branch.
       if (paymentData.providerOrderId) paymentDoc.providerOrderId = String(paymentData.providerOrderId).trim();
+      // Check the condition (paymentData.providerCaptureId) and run the matching branch.
       if (paymentData.providerCaptureId) paymentDoc.providerCaptureId = String(paymentData.providerCaptureId).trim();
+      // Check the condition (paymentData.providerEnvironment) and run the matching branch.
       if (paymentData.providerEnvironment) paymentDoc.providerEnvironment = String(paymentData.providerEnvironment).trim();
 
 
@@ -704,10 +843,12 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (paymentData.paymentReference) and run the matching branch.
       if (
         paymentData.paymentReference
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.transactionReference =
           String(
             paymentData.paymentReference
@@ -721,18 +862,22 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (paymentData.merchantRequestID) and run the matching branch.
       if (
         paymentData.merchantRequestID
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.merchantRequestID =
           paymentData.merchantRequestID;
       }
 
+      // Check the condition (paymentData.checkoutRequestID) and run the matching branch.
       if (
         paymentData.checkoutRequestID
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.checkoutRequestID =
           paymentData.checkoutRequestID;
       }
@@ -744,10 +889,12 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (paymentData.transactionDate) and run the matching branch.
       if (
         paymentData.transactionDate
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.transactionDate =
           paymentData.transactionDate;
       }
@@ -759,10 +906,12 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (paymentData.callbackResponse) and run the matching branch.
       if (
         paymentData.callbackResponse
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.callbackResponse =
           paymentData.callbackResponse;
       }
@@ -774,6 +923,7 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Perform the side effect or state update expressed on the following line.
       await paymentDoc.save({
         session,
       });
@@ -781,6 +931,7 @@ export const completeBookingPayment = async ({
       // Financial posting participates in the same MongoDB transaction as
       // payment completion. The post-save hook remains as an idempotent
       // compatibility fallback for legacy write paths.
+      // Perform the side effect or state update expressed on the following line.
       await postPaymentToLedger(paymentDoc, { session });
 
 
@@ -794,6 +945,7 @@ export const completeBookingPayment = async ({
       |
       */
 
+      // Declare newPaidAmount for use by the surrounding module or function.
       const newPaidAmount =
         Math.min(
           totalAmount,
@@ -808,9 +960,11 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Perform the side effect or state update expressed on the following line.
       bookingDoc.amountPaid =
         newPaidAmount;
 
+      // Perform the side effect or state update expressed on the following line.
       bookingDoc.balanceAmount =
         Math.max(
           0,
@@ -825,13 +979,16 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (bookingDoc.balanceAmount === 0) and run the matching branch.
       if (
         bookingDoc.balanceAmount === 0
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.paymentStatus =
           "paid";
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.paidAt =
           bookingDoc.paidAt ||
           new Date();
@@ -841,17 +998,20 @@ export const completeBookingPayment = async ({
         | when the complete amount has been received.
         */
 
+        // Check the condition (bookingDoc.status === "pending" || bookingDoc.status === "failed") and run the matching branch.
         if (
           bookingDoc.status === "pending" ||
           bookingDoc.status === "failed"
         ) {
 
+          // Perform the side effect or state update expressed on the following line.
           bookingDoc.status =
             "confirmed";
         }
 
       } else {
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.paymentStatus =
           "partial";
       }
@@ -863,37 +1023,46 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Check the condition (paymentData.mpesaReceiptNumber) and run the matching branch.
       if (
         paymentData.mpesaReceiptNumber
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.mpesaReceipt =
           paymentData.mpesaReceiptNumber;
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.transactionId =
           paymentData.mpesaReceiptNumber;
       }
 
+      // Check the condition (paymentData.transactionId) and run the matching branch.
       if (
         paymentData.transactionId
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.transactionId =
           paymentData.transactionId;
       }
 
+      // Check the condition (paymentData.paymentReference) and run the matching branch.
       if (
         paymentData.paymentReference
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.paymentReference =
           paymentData.paymentReference;
       }
 
+      // Check the condition (canonicalPaymentMethod) and run the matching branch.
       if (
         canonicalPaymentMethod
       ) {
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.paymentMethod =
           canonicalPaymentMethod;
       }
@@ -905,6 +1074,7 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Declare alreadyAttached for use by the surrounding module or function.
       const alreadyAttached =
         Array.isArray(
           bookingDoc.payments
@@ -916,11 +1086,14 @@ export const completeBookingPayment = async ({
         );
 
 
+      // Check the condition (!alreadyAttached) and run the matching branch.
       if (!alreadyAttached) {
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.payments =
           bookingDoc.payments || [];
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.payments.push(
           paymentDoc._id
         );
@@ -944,6 +1117,7 @@ export const completeBookingPayment = async ({
       |
       */
 
+      // Perform the side effect or state update expressed on the following line.
       await bookingDoc.save({
         session,
       });
@@ -959,11 +1133,13 @@ export const completeBookingPayment = async ({
       |
       */
 
+      // Check the condition (bookingDoc.agent && bookingDoc.paymentStatus === "paid") and run the matching branch.
       if (
         bookingDoc.agent &&
         bookingDoc.paymentStatus === "paid"
       ) {
 
+        // Declare existingCommission for use by the surrounding module or function.
         const existingCommission =
           await Commission.findOne({
             booking:
@@ -974,8 +1150,10 @@ export const completeBookingPayment = async ({
           }).session(session);
 
 
+        // Check the condition (!existingCommission) and run the matching branch.
         if (!existingCommission) {
 
+          // Declare agentRate for use by the surrounding module or function.
           const agentRate =
             Number(
               bookingDoc.commissionRate ||
@@ -983,6 +1161,7 @@ export const completeBookingPayment = async ({
             );
 
 
+          // Declare commissionAmount for use by the surrounding module or function.
           const commissionAmount =
             Number(
               bookingDoc.commissionAmount ||
@@ -995,10 +1174,12 @@ export const completeBookingPayment = async ({
             );
 
 
+          // Check the condition (commissionAmount > 0) and run the matching branch.
           if (
             commissionAmount > 0
           ) {
 
+            // Perform the side effect or state update expressed on the following line.
             await Commission.create(
               [{
                 agent:
@@ -1053,6 +1234,7 @@ export const completeBookingPayment = async ({
       |--------------------------------------------------------------------------
       */
 
+      // Perform the side effect or state update expressed on the following line.
       result = {
         payment:
           paymentDoc,
@@ -1065,13 +1247,17 @@ export const completeBookingPayment = async ({
       };
     });
 
+    // Check the condition (result && !result.alreadyCompleted) and run the matching branch.
     if (result && !result.alreadyCompleted) {
+      // Perform the side effect or state update expressed on the following line.
       await sendEmailBestEffort(() => sendPaymentConfirmationEmail(result.booking, result.payment), "Payment confirmation");
     }
+    // Return the value of result to the caller.
     return result;
 
   } finally {
 
+    // Perform the side effect or state update expressed on the following line.
     await session.endSession();
 
   }
@@ -1091,6 +1277,7 @@ export const completeBookingPayment = async ({
 |--------------------------------------------------------------------------
 */
 
+// Declare refundBookingPayment for use by the surrounding module or function.
 export const refundBookingPayment = async ({
   payment,
   booking = null,
@@ -1098,19 +1285,25 @@ export const refundBookingPayment = async ({
   refundData = {},
 }) => {
 
+  // Check the condition (!payment) and run the matching branch.
   if (!payment) {
+    // Stop the current operation by raising a new Error instance.
     throw new Error(
       "Payment is required for refund lifecycle."
     );
   }
 
+  // Declare session for use by the surrounding module or function.
   const session =
     await mongoose.startSession();
 
+  // Declare result for use by the surrounding module or function.
   let result;
 
+  // Run this operation with a dedicated error-handling path for failures.
   try {
 
+    // Perform the side effect or state update expressed on the following line.
     await session.withTransaction(
       async () => {
 
@@ -1120,35 +1313,44 @@ export const refundBookingPayment = async ({
         |--------------------------------------------------------------------------
         */
 
+        // Declare paymentDoc for use by the surrounding module or function.
         const paymentDoc =
           await Payment.findOne({
             _id: payment._id,
             tenantId: payment.tenantId,
           }).session(session);
 
+        // Check the condition (!paymentDoc) and run the matching branch.
         if (!paymentDoc) {
+          // Stop the current operation by raising a new Error instance.
           throw new Error(
             "Payment not found."
           );
         }
 
+        // Declare bookingId for use by the surrounding module or function.
         const bookingId =
           booking?._id ||
           paymentDoc.booking;
 
+        // Check the condition (!bookingId) and run the matching branch.
         if (!bookingId) {
+          // Stop the current operation by raising a new Error instance.
           throw new Error(
             "Refund payment is not attached to a booking."
           );
         }
 
+        // Declare bookingDoc for use by the surrounding module or function.
         const bookingDoc =
           await Booking.findOne({
             _id: bookingId,
             tenantId: paymentDoc.tenantId,
           }).session(session);
 
+        // Check the condition (!bookingDoc) and run the matching branch.
         if (!bookingDoc) {
+          // Stop the current operation by raising a new Error instance.
           throw new Error(
             "Booking not found."
           );
@@ -1160,6 +1362,7 @@ export const refundBookingPayment = async ({
         |--------------------------------------------------------------------------
         */
 
+        // Declare refundReference for use by the surrounding module or function.
         const refundReference =
           String(
             refundData.refundReference ||
@@ -1177,6 +1380,7 @@ export const refundBookingPayment = async ({
         |--------------------------------------------------------------------------
         */
 
+        // Check the condition (refundReference && paymentDoc.refundReference === refundReference && p) and run the matching branch.
         if (
           refundReference &&
           paymentDoc.refundReference ===
@@ -1185,12 +1389,14 @@ export const refundBookingPayment = async ({
             "completed"
         ) {
 
+          // Perform the side effect or state update expressed on the following line.
           result = {
             payment: paymentDoc,
             booking: bookingDoc,
             alreadyProcessed: true,
           };
 
+          // Return the result to the caller.
           return;
         }
 
@@ -1200,6 +1406,7 @@ export const refundBookingPayment = async ({
         |--------------------------------------------------------------------------
         */
 
+        // Declare requestedRefund for use by the surrounding module or function.
         const requestedRefund =
           Number(
             refundAmount ??
@@ -1208,12 +1415,14 @@ export const refundBookingPayment = async ({
             0
           );
 
+        // Check the condition (!Number.isFinite( requestedRefund ) || requestedRefund <= 0) and run the matching branch.
         if (
           !Number.isFinite(
             requestedRefund
           ) ||
           requestedRefund <= 0
         ) {
+          // Stop the current operation by raising a new Error instance.
           throw new Error(
             "Refund amount must be greater than zero."
           );
@@ -1225,17 +1434,20 @@ export const refundBookingPayment = async ({
         |--------------------------------------------------------------------------
         */
 
+        // Declare paymentTotal for use by the surrounding module or function.
         const paymentTotal =
           Number(
             paymentDoc.amount || 0
           );
 
+        // Check the condition (!Number.isFinite( paymentTotal ) || paymentTotal <= 0) and run the matching branch.
         if (
           !Number.isFinite(
             paymentTotal
           ) ||
           paymentTotal <= 0
         ) {
+          // Stop the current operation by raising a new Error instance.
           throw new Error(
             "Payment has an invalid amount."
           );
@@ -1247,17 +1459,20 @@ export const refundBookingPayment = async ({
         |--------------------------------------------------------------------------
         */
 
+        // Declare previousRefunded for use by the surrounding module or function.
         const previousRefunded =
           Number(
             paymentDoc.refundedAmount || 0
           );
 
+        // Check the condition (!Number.isFinite( previousRefunded ) || previousRefunded < 0) and run the matching branch.
         if (
           !Number.isFinite(
             previousRefunded
           ) ||
           previousRefunded < 0
         ) {
+          // Stop the current operation by raising a new Error instance.
           throw new Error(
             "Payment has an invalid refunded amount."
           );
@@ -1269,6 +1484,7 @@ export const refundBookingPayment = async ({
         |--------------------------------------------------------------------------
         */
 
+        // Declare refundableAmount for use by the surrounding module or function.
         const refundableAmount =
           Math.max(
             0,
@@ -1276,10 +1492,12 @@ export const refundBookingPayment = async ({
               previousRefunded
           );
 
+        // Check the condition (requestedRefund > refundableAmount) and run the matching branch.
         if (
           requestedRefund >
           refundableAmount
         ) {
+          // Stop the current operation by raising a new Error instance.
           throw new Error(
             `Refund amount ${requestedRefund} exceeds remaining refundable amount ${refundableAmount}.`
           );
@@ -1291,10 +1509,12 @@ export const refundBookingPayment = async ({
         |--------------------------------------------------------------------------
         */
 
+        // Declare newRefundedAmount for use by the surrounding module or function.
         const newRefundedAmount =
           previousRefunded +
           requestedRefund;
 
+        // Declare fullyRefunded for use by the surrounding module or function.
         const fullyRefunded =
           newRefundedAmount >=
           paymentTotal;
@@ -1305,25 +1525,33 @@ export const refundBookingPayment = async ({
         |--------------------------------------------------------------------------
         */
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.refundedAmount =
           newRefundedAmount;
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.refundRequestedAmount =
           0;
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.refundStatus =
           "completed";
 
+        // Check the condition (refundReference) and run the matching branch.
         if (refundReference) {
+          // Perform the side effect or state update expressed on the following line.
           paymentDoc.refundReference =
             refundReference;
         }
 
+        // Perform the side effect or state update expressed on the following line.
         paymentDoc.refundedAt =
           new Date();
 
+        // Check the condition (fullyRefunded) and run the matching branch.
         if (fullyRefunded) {
 
+          // Perform the side effect or state update expressed on the following line.
           paymentDoc.status =
             "refunded";
 
@@ -1334,21 +1562,26 @@ export const refundBookingPayment = async ({
           | when only part of it has been refunded.
           */
 
+          // Perform the side effect or state update expressed on the following line.
           paymentDoc.status =
             "completed";
         }
 
+        // Check the condition (refundData.refundResponse) and run the matching branch.
         if (
           refundData.refundResponse
         ) {
+          // Perform the side effect or state update expressed on the following line.
           paymentDoc.refundResponse =
             refundData.refundResponse;
         }
 
+        // Perform the side effect or state update expressed on the following line.
         await paymentDoc.save({
           session,
         });
 
+        // Perform the side effect or state update expressed on the following line.
         await postPaymentRefundToLedger(
           paymentDoc,
           requestedRefund,
@@ -1362,23 +1595,30 @@ export const refundBookingPayment = async ({
         |--------------------------------------------------------------------------
         */
 
+        // Declare totalAmount for use by the surrounding module or function.
         const totalAmount =
           Number(
             bookingDoc.totalAmount || 0
           );
 
+        // Declare currentPaid for use by the surrounding module or function.
         const currentPaid =
           Number(
             bookingDoc.amountPaid || 0
           );
 
+        // Declare newPaid for use by the surrounding module or function.
         const newPaid = Math.max(0, currentPaid - requestedRefund);
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.amountPaid = Math.min(totalAmount, newPaid);
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.balanceAmount = Math.max(0, totalAmount - bookingDoc.amountPaid);
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.refundAmount =
           newRefundedAmount;
 
+        // Perform the side effect or state update expressed on the following line.
         bookingDoc.refundStatus =
           "completed";
 
@@ -1388,11 +1628,14 @@ export const refundBookingPayment = async ({
         |--------------------------------------------------------------------------
         */
 
+        // Check the condition (fullyRefunded) and run the matching branch.
         if (fullyRefunded) {
 
+          // Perform the side effect or state update expressed on the following line.
           bookingDoc.paymentStatus =
             "refunded";
 
+          // Perform the side effect or state update expressed on the following line.
           bookingDoc.status =
             "refunded";
 
@@ -1406,10 +1649,12 @@ export const refundBookingPayment = async ({
           | Restore payment status based on the remaining balance.
           */
 
+          // Check the condition (bookingDoc.balanceAmount <= 0) and run the matching branch.
           if (
             bookingDoc.balanceAmount <= 0
           ) {
 
+            // Perform the side effect or state update expressed on the following line.
             bookingDoc.paymentStatus =
               "paid";
 
@@ -1417,20 +1662,24 @@ export const refundBookingPayment = async ({
             bookingDoc.amountPaid > 0
           ) {
 
+            // Perform the side effect or state update expressed on the following line.
             bookingDoc.paymentStatus =
               "partial";
 
           } else {
 
+            // Perform the side effect or state update expressed on the following line.
             bookingDoc.paymentStatus =
               "pending";
           }
         }
 
+        // Perform the side effect or state update expressed on the following line.
         await bookingDoc.save({
           session,
         });
 
+        // Perform the side effect or state update expressed on the following line.
         result = {
           payment: paymentDoc,
           booking: bookingDoc,
@@ -1444,13 +1693,17 @@ export const refundBookingPayment = async ({
       }
     );
 
+    // Check the condition (result && !result.alreadyProcessed && result.fullyRefunded) and run the matching branch.
     if (result && !result.alreadyProcessed && result.fullyRefunded) {
+      // Perform the side effect or state update expressed on the following line.
       await sendEmailBestEffort(() => sendBookingStatusEmail(result.booking, "refunded"), "Refund notification");
     }
+    // Return the value of result to the caller.
     return result;
 
   } finally {
 
+    // Perform the side effect or state update expressed on the following line.
     await session.endSession();
 
   }

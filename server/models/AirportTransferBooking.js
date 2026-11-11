@@ -1,7 +1,14 @@
+/**
+ * Purpose: Airport Transfer Booking database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Declare { Schema } for use by the surrounding module or function.
 const { Schema } = mongoose;
 
+// Declare AirportTransferBookingSchema for use by the surrounding module or function.
 const AirportTransferBookingSchema = new Schema({
   tenantId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   reference: { type: String, required: true, trim: true, uppercase: true },
@@ -45,10 +52,14 @@ const AirportTransferBookingSchema = new Schema({
   updatedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
+// Perform the side effect or state update expressed on the following line.
 AirportTransferBookingSchema.index({ tenantId: 1, reference: 1 }, { unique: true });
+// Perform the side effect or state update expressed on the following line.
 AirportTransferBookingSchema.index({ tenantId: 1, pickupDateTime: 1, status: 1 });
+// Perform the side effect or state update expressed on the following line.
 AirportTransferBookingSchema.index({ tenantId: 1, customer: 1, createdAt: -1 });
 
+// Perform the side effect or state update expressed on the following line.
 AirportTransferBookingSchema.plugin(tenantPlugin);
 
 export default mongoose.models.AirportTransferBooking || mongoose.model("AirportTransferBooking", AirportTransferBookingSchema);

@@ -1,33 +1,48 @@
+/**
+ * Purpose: AIOperations Copilot reusable UI component. Main declarations: AIOperationsCopilot, ask.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
 
+// Load ../../api/adminAIApi so this module can use its exported dependencies.
 import {
   askAdminAI
 } from "../../api/adminAIApi";
 
 
+// Define AIOperationsCopilot; its parameters and body implement this operation.
 export default function AIOperationsCopilot(){
 
+  // Declare [message,setMessage] for use by the surrounding module or function.
   const [message,setMessage] = useState("");
 
+  // Declare [reply,setReply] for use by the surrounding module or function.
   const [reply,setReply] = useState("");
 
+  // Declare [loading,setLoading] for use by the surrounding module or function.
   const [loading,setLoading] = useState(false);
 
 
 
+  // Declare ask for use by the surrounding module or function.
   const ask = async()=>{
 
+    // Check the condition (!message.trim()) and run the matching branch.
     if(!message.trim()) return;
 
 
+    // Run this operation with a dedicated error-handling path for failures.
     try{
 
+      // Perform the side effect or state update expressed on the following line.
       setLoading(true);
 
+      // Declare response for use by the surrounding module or function.
       const response =
         await askAdminAI(message);
 
 
+      // Perform the side effect or state update expressed on the following line.
       setReply(
         response?.data?.reply ||
         "No response received."
@@ -36,17 +51,20 @@ export default function AIOperationsCopilot(){
 
     }catch(error){
 
+      // Perform the side effect or state update expressed on the following line.
       console.error(
         "AI query failed",
         error
       );
 
+      // Perform the side effect or state update expressed on the following line.
       setReply(
         "AI assistant unavailable."
       );
 
     }finally{
 
+      // Perform the side effect or state update expressed on the following line.
       setLoading(false);
 
     }
@@ -55,6 +73,7 @@ export default function AIOperationsCopilot(){
 
 
 
+  // Declare suggestions for use by the surrounding module or function.
   const suggestions = [
 
     "Give me today's business summary",
@@ -71,6 +90,7 @@ export default function AIOperationsCopilot(){
 
 
 
+  // Return the expression shown below to the caller.
   return (
 
     <div className="bg-white rounded-xl shadow p-6">

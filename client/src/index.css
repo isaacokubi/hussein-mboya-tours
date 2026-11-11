@@ -1,57 +1,98 @@
+/* Purpose: Styles for the index interface. Rule comments explain selectors and property groups. */
 @import "./styles/enterprise.css";
 @import "tailwindcss";
 @import "./styles/admin-compliance.css";
 
+/* Apply the following styles to .input. */
 .input {
   @apply w-full p-3 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500;
 }
 
+/* Apply the following styles to select. */
 select { color-scheme: light; }
+/* Apply the following styles to select option. */
 select option { background-color: #ffffff; color: #0f172a; }
+/* Apply the following styles to select option:checked, select option:hover. */
 select option:checked, select option:hover { background-color: #e0e7ff; color: #312e81; }
+/* Apply the following styles to select[aria-label^="Payment status for"]. */
 select[aria-label^="Payment status for"] { min-width: 7.75rem; color:#0f172a !important; background-color:#fff !important; border:1px solid #cbd5e1 !important; border-radius:9999px !important; cursor:pointer; color-scheme:light; }
+/* Apply the following styles to select[aria-label^="Payment status for"] option. */
 select[aria-label^="Payment status for"] option { min-height:2rem; background:#fff !important; color:#0f172a !important; font-weight:700; }
+/* Apply the following styles to select[aria-label^="Payment status for"]:focus. */
 select[aria-label^="Payment status for"]:focus { border-color:#6366f1 !important; box-shadow:0 0 0 3px rgba(99,102,241,.14) !important; outline:none; }
+/* Apply the following styles to select[aria-label^="Payment status for"]:disabled. */
 select[aria-label^="Payment status for"]:disabled { cursor:wait; opacity:.65; }
 
+/* Apply the following styles to .dashboard-card,.dashboard-stat-card,.dashboard-panel,.dashboard-responsive. */
 .dashboard-card,.dashboard-stat-card,.dashboard-panel,.dashboard-responsive { min-width:0; max-width:100%; box-sizing:border-box; }
+/* Apply the following styles to .dashboard-responsive. */
 .dashboard-responsive { width:100%; overflow-x:clip; font-size:clamp(.82rem,.78rem + .16vw,.95rem); }
+/* Apply the following styles to .dashboard-responsive img,.dashboard-responsive video,.dashboard-responsive svg. */
 .dashboard-responsive img,.dashboard-responsive video,.dashboard-responsive svg { max-width:100%; }
+/* Apply the following styles to .dashboard-responsive img,.dashboard-responsive video. */
 .dashboard-responsive img,.dashboard-responsive video { height:auto; object-fit:cover; }
+/* Apply the following styles to .dashboard-responsive h1,.dashboard-responsive h2,.dashboard-responsive h3,.dashboard-responsive h4,. */
 .dashboard-responsive h1,.dashboard-responsive h2,.dashboard-responsive h3,.dashboard-responsive h4,.dashboard-responsive h5,.dashboard-responsive h6,.dashboard-responsive p,.dashboard-responsive span,.dashboard-responsive label,.dashboard-responsive button,.dashboard-responsive a,.dashboard-responsive input,.dashboard-responsive select,.dashboard-responsive textarea,.dashboard-responsive th,.dashboard-responsive td { min-width:0; max-width:100%; }
+/* Apply the following styles to .dashboard-responsive h1. */
 .dashboard-responsive h1 { font-size:clamp(1.35rem,1.05rem + 1vw,2rem); line-height:1.15; }
+/* Apply the following styles to .dashboard-responsive h2. */
 .dashboard-responsive h2 { font-size:clamp(1.1rem,.95rem + .7vw,1.55rem); line-height:1.2; }
+/* Apply the following styles to .dashboard-responsive h3. */
 .dashboard-responsive h3 { font-size:clamp(.95rem,.88rem + .35vw,1.2rem); line-height:1.25; }
+/* Apply the following styles to .dashboard-responsive p,.dashboard-responsive label,.dashboard-responsive span. */
 .dashboard-responsive p,.dashboard-responsive label,.dashboard-responsive span { line-height:1.45; }
+/* Apply the following styles to .dashboard-responsive .text-4xl. */
 .dashboard-responsive .text-4xl { font-size:clamp(1.5rem,1.15rem + 1.3vw,2.25rem) !important; }
+/* Apply the following styles to .dashboard-responsive .text-3xl. */
 .dashboard-responsive .text-3xl { font-size:clamp(1.3rem,1.05rem + 1vw,1.9rem) !important; }
+/* Apply the following styles to .dashboard-responsive .text-2xl. */
 .dashboard-responsive .text-2xl { font-size:clamp(1.15rem,.98rem + .7vw,1.55rem) !important; }
+/* Apply the following styles to .dashboard-responsive .text-xl. */
 .dashboard-responsive .text-xl { font-size:clamp(1rem,.9rem + .45vw,1.25rem) !important; }
+/* Apply the following styles to .dashboard-responsive .text-lg. */
 .dashboard-responsive .text-lg { font-size:clamp(.92rem,.85rem + .3vw,1.1rem) !important; }
+/* Apply the following styles to .dashboard-responsive .text-sm. */
 .dashboard-responsive .text-sm { font-size:clamp(.76rem,.72rem + .18vw,.9rem) !important; }
+/* Apply the following styles to .dashboard-responsive .text-xs. */
 .dashboard-responsive .text-xs { font-size:clamp(.68rem,.64rem + .16vw,.78rem) !important; }
+/* Apply the following styles to .dashboard-responsive .p-8. */
 .dashboard-responsive .p-8 { padding:clamp(1rem,.75rem + 1vw,2rem) !important; }
+/* Apply the following styles to .dashboard-responsive .p-6. */
 .dashboard-responsive .p-6 { padding:clamp(.85rem,.7rem + .7vw,1.5rem) !important; }
+/* Apply the following styles to .dashboard-responsive .p-5. */
 .dashboard-responsive .p-5 { padding:clamp(.75rem,.65rem + .5vw,1.25rem) !important; }
+/* Apply the following styles to .dashboard-responsive .p-4. */
 .dashboard-responsive .p-4 { padding:clamp(.7rem,.6rem + .4vw,1rem) !important; }
+/* Apply the following styles to .dashboard-responsive .grid. */
 .dashboard-responsive .grid { min-width:0; }.dashboard-responsive .grid > * { min-width:0; max-width:100%; }.dashboard-responsive .flex > * { min-width:0; }
+/* Apply the following styles to .dashboard-responsive .overflow-x-auto. */
 .dashboard-responsive .overflow-x-auto { width:100%; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+/* Apply the following styles to .dashboard-responsive table. */
 .dashboard-responsive table { width:max-content; min-width:100%; font-size:clamp(.7rem,.66rem + .15vw,.85rem); }
+/* Apply the following styles to .dashboard-responsive th,.dashboard-responsive td. */
 .dashboard-responsive th,.dashboard-responsive td { padding:clamp(.5rem,.4rem + .25vw,.8rem); white-space:nowrap; vertical-align:middle; }
+/* Apply the following styles to .dashboard-responsive button,.dashboard-responsive a,.dashboard-responsive input,.dashboard-responsi. */
 .dashboard-responsive button,.dashboard-responsive a,.dashboard-responsive input,.dashboard-responsive select,.dashboard-responsive textarea { font-size:inherit; }.dashboard-responsive button,.dashboard-responsive a { max-width:100%; }
+/* Apply the following styles to .dashboard-stat-card .dashboard-value,.dashboard-responsive .dashboard-value. */
 .dashboard-stat-card .dashboard-value,.dashboard-responsive .dashboard-value { font-size:clamp(1rem,.88rem + .55vw,1.65rem); line-height:1.15; font-variant-numeric:tabular-nums; white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; word-break:break-word; }
+/* Apply the following styles to .dashboard-stat-card .dashboard-stat-title. */
 .dashboard-stat-card .dashboard-stat-title { font-size:clamp(.68rem,.64rem + .16vw,.82rem); line-height:1.25; overflow-wrap:anywhere; }
 
 /* Use class-token attribute selectors for Tailwind utility names. This avoids CSS optimizer parsing
    hyphenated utility names and responsive variants as pseudo-classes while preserving behavior. */
+/* Apply the following styles to @media (max-width:1024px). */
 @media (max-width:1024px){
   .dashboard-responsive [class~="grid-cols-4"],.dashboard-responsive [class~="grid-cols-5"],
   .dashboard-responsive [class~="lg:grid-cols-4"],.dashboard-responsive [class~="lg:grid-cols-5"],
+  /* Apply the following styles to .dashboard-responsive [class~="xl:grid-cols-4"],.dashboard-responsive [class~="xl:grid-cols-5"]. */
   .dashboard-responsive [class~="xl:grid-cols-4"],.dashboard-responsive [class~="xl:grid-cols-5"]{
+    /* Configure grid template columns for this selector. */
     grid-template-columns:repeat(2,minmax(0,1fr)) !important;
   }
 }
+/* Apply the following styles to @media (max-width:640px). */
 @media (max-width:640px){
+  /* Apply the following styles to .dashboard-responsive. */
   .dashboard-responsive{font-size:.8rem}
   .dashboard-responsive [class~="grid-cols-2"],.dashboard-responsive [class~="grid-cols-3"],
   .dashboard-responsive [class~="grid-cols-4"],.dashboard-responsive [class~="grid-cols-5"],
@@ -60,56 +101,95 @@ select[aria-label^="Payment status for"]:disabled { cursor:wait; opacity:.65; }
   .dashboard-responsive [class~="lg:grid-cols-2"],.dashboard-responsive [class~="lg:grid-cols-3"],
   .dashboard-responsive [class~="lg:grid-cols-4"],.dashboard-responsive [class~="lg:grid-cols-5"],
   .dashboard-responsive [class~="xl:grid-cols-2"],.dashboard-responsive [class~="xl:grid-cols-3"],
+  /* Apply the following styles to .dashboard-responsive [class~="xl:grid-cols-4"],.dashboard-responsive [class~="xl:grid-cols-5"]. */
   .dashboard-responsive [class~="xl:grid-cols-4"],.dashboard-responsive [class~="xl:grid-cols-5"]{
+    /* Configure grid template columns for this selector. */
     grid-template-columns:minmax(0,1fr) !important;
   }
+  /* Apply the following styles to .dashboard-responsive .gap-8. */
   .dashboard-responsive .gap-8{gap:1rem !important}.dashboard-responsive .gap-6{gap:.9rem !important}.dashboard-responsive .gap-5{gap:.75rem !important}.dashboard-responsive .flex-wrap{row-gap:.5rem}.dashboard-responsive input,.dashboard-responsive select,.dashboard-responsive textarea{min-height:2.4rem}.dashboard-stat-card .dashboard-value,.dashboard-responsive .dashboard-value{font-size:clamp(.95rem,4.2vw,1.35rem)}
 }
+/* Apply the following styles to @media (max-width:420px). */
 @media (max-width:420px){.dashboard-responsive .rounded-3xl{border-radius:1rem !important}.dashboard-responsive .rounded-2xl{border-radius:.85rem !important}.dashboard-responsive .rounded-xl{border-radius:.7rem !important}.dashboard-responsive table{min-width:560px}.dashboard-stat-card{padding:.8rem !important}.dashboard-stat-card .dashboard-value{font-size:1.05rem}}
 
 /* Hospitality management: premium operations workspace */
+/* Apply the following styles to main.min-h-screen.bg-slate-50 > div[class~="max-w-[1600px]"]. */
 main.min-h-screen.bg-slate-50 > div[class~="max-w-[1600px]"]{position:relative}
+/* Apply the following styles to main.min-h-screen.bg-slate-50 > div[class~="max-w-[1600px]"]::before. */
 main.min-h-screen.bg-slate-50 > div[class~="max-w-[1600px]"]::before{content:"";position:absolute;inset:-3rem -8rem auto;height:20rem;pointer-events:none;background:radial-gradient(circle at 20% 20%,rgba(16,185,129,.10),transparent 48%),radial-gradient(circle at 85% 10%,rgba(15,23,42,.07),transparent 45%);z-index:0}
+/* Apply the following styles to main.min-h-screen.bg-slate-50 > div[class~="max-w-[1600px]"] > *. */
 main.min-h-screen.bg-slate-50 > div[class~="max-w-[1600px]"] > *{position:relative;z-index:1}
+/* Apply the following styles to main.min-h-screen.bg-slate-50 header. */
 main.min-h-screen.bg-slate-50 header{border:1px solid rgba(255,255,255,.08);box-shadow:0 24px 60px rgba(15,23,42,.16)}
+/* Apply the following styles to main.min-h-screen.bg-slate-50 header h1. */
 main.min-h-screen.bg-slate-50 header h1{letter-spacing:-.035em}
+/* Apply the following styles to main.min-h-screen.bg-slate-50 .rounded-2xl.border.border-slate-200.bg-white.shadow-sm. */
 main.min-h-screen.bg-slate-50 .rounded-2xl.border.border-slate-200.bg-white.shadow-sm{box-shadow:0 12px 34px rgba(15,23,42,.06);border-color:#e2e8f0}
+/* Apply the following styles to main.min-h-screen.bg-slate-50 input,main.min-h-screen.bg-slate-50 select,main.min-h-screen.bg-slate-. */
 main.min-h-screen.bg-slate-50 input,main.min-h-screen.bg-slate-50 select,main.min-h-screen.bg-slate-50 textarea{border-color:#dbe3ec;box-shadow:inset 0 1px 2px rgba(15,23,42,.025)}
+/* Apply the following styles to main.min-h-screen.bg-slate-50 input:hover,main.min-h-screen.bg-slate-50 select:hover,main.min-h-scre. */
 main.min-h-screen.bg-slate-50 input:hover,main.min-h-screen.bg-slate-50 select:hover,main.min-h-screen.bg-slate-50 textarea:hover{border-color:#b9c7d8}
+/* Apply the following styles to main.min-h-screen.bg-slate-50 button,main.min-h-screen.bg-slate-50 a. */
 main.min-h-screen.bg-slate-50 button,main.min-h-screen.bg-slate-50 a{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background-color .16s ease}
+/* Apply the following styles to main.min-h-screen.bg-slate-50 button:not(:disabled):hover,main.min-h-screen.bg-slate-50 a:hover. */
 main.min-h-screen.bg-slate-50 button:not(:disabled):hover,main.min-h-screen.bg-slate-50 a:hover{transform:translateY(-1px)}
 
 /* Hussein Mboya Tours — premium safari palette */
+/* Apply the following styles to :root. */
 :root{
+  /* Configure   hmt forest for this selector. */
   --hmt-forest:#12372a;
+  /* Configure   hmt deep for this selector. */
   --hmt-deep:#0b241b;
+  /* Configure   hmt sand for this selector. */
   --hmt-sand:#f4ead5;
+  /* Configure   hmt gold for this selector. */
   --hmt-gold:#c99a3e;
+  /* Configure   hmt terracotta for this selector. */
   --hmt-terracotta:#b85c38;
+  /* Configure   hmt cream for this selector. */
   --hmt-cream:#fbf7ef;
+  /* Configure   hmt ink for this selector. */
   --hmt-ink:#17231e;
 }
+/* Apply the following styles to body. */
 body{background:var(--hmt-cream);color:var(--hmt-ink)}
+/* Apply the following styles to .hmt-safari-accent. */
 .hmt-safari-accent{color:var(--hmt-gold)}
+/* Apply the following styles to .hmt-safari-surface. */
 .hmt-safari-surface{background:var(--hmt-forest)}
 
 
 /* Homepage traveller experiences: hard visual contract. Keep this section independent of generic homepage/card styles. */
 .hmt-traveller-experiences,
 .hmt-traveller-experiences[style],
+/* Apply the following styles to [data-home-section="traveller-experiences"]. */
 [data-home-section="traveller-experiences"] {
+  /* Configure background for this selector. */
   background: #12372a !important;
+  /* Configure background color for this selector. */
   background-color: #12372a !important;
+  /* Configure background image for this selector. */
   background-image: none !important;
+  /* Configure color for this selector. */
   color: #ffffff !important;
 }
+/* Apply the following styles to .hmt-traveller-experiences > div. */
 .hmt-traveller-experiences > div { background: transparent !important; }
+/* Apply the following styles to .hmt-traveller-experiences a. */
 .hmt-traveller-experiences a {
+  /* Configure background for this selector. */
   background: #0b241b !important;
+  /* Configure background color for this selector. */
   background-color: #0b241b !important;
+  /* Configure background image for this selector. */
   background-image: none !important;
 }
+/* Apply the following styles to .hmt-traveller-experiences a:hover. */
 .hmt-traveller-experiences a:hover {
+  /* Configure background for this selector. */
   background: #173f31 !important;
+  /* Configure background color for this selector. */
   background-color: #173f31 !important;
 }
+

@@ -1,11 +1,21 @@
+/**
+ * Purpose: Why Choose Us reusable UI component. Main declarations: WhyChooseUs.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useSettings } from "../../context/SettingsContext";
+// Load ../../context/TenantContext so this module can use its exported dependencies.
 import { useTenant } from "../../context/TenantContext";
 
+// Define WhyChooseUs; its parameters and body implement this operation.
 export default function WhyChooseUs() {
+  // Declare { tenant } for use by the surrounding module or function.
   const { tenant } = useTenant() || {};
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
+  // Declare companyName for use by the surrounding module or function.
   const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "Hussein Mboya Tours";
 
+  // Declare items for use by the surrounding module or function.
   const items = [
     { title: "Expert Local Guides", text: `${companyName} provides experienced guides for authentic Kenyan experiences.` },
     { title: "Safe Travel", text: "Your safety and comfort are our highest priority." },
@@ -13,6 +23,7 @@ export default function WhyChooseUs() {
     { title: "Premium Experience", text: "Luxury accommodation and personalized travel experiences." },
   ];
 
+  // Return the expression shown below to the caller.
   return (
     <section className="py-16 text-slate-100" aria-labelledby="why-choose-us-heading">
       <div className="container mx-auto px-6">

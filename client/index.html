@@ -1,13 +1,18 @@
+<!-- Purpose: Browser entry document that loads the React application and its mount point. -->
 <!doctype html>
 <html lang="en">
+  <!-- Metadata configures the browser title, responsive viewport, and document resources. -->
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tours & Travel</title>
   </head>
+  <!-- The body contains the DOM mount point used by React. -->
   <body>
+    <!-- React renders the single-page application inside this element. -->
     <div id="root"></div>
+    <!-- Load the module that initializes React providers and application routing. -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

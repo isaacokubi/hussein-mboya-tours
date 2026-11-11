@@ -1,6 +1,13 @@
+/**
+ * Purpose: Customer Details page-level UI component. Main declarations: money, displayValue, titleCase, statusTone, formatDate.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link, useParams } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   ArrowLeft,
   CalendarDays,
@@ -15,41 +22,59 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
+// Load ../../api/customerApi so this module can use its exported dependencies.
 import { getCustomerProfile } from "../../api/customerApi";
 
+// Declare money for use by the surrounding module or function.
 const money = (value) =>
   `KES ${Number(value || 0).toLocaleString("en-KE", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 
+// Declare displayValue for use by the surrounding module or function.
 const displayValue = (value) => (value ? String(value) : "—");
 
+// Declare titleCase for use by the surrounding module or function.
 const titleCase = (value) =>
   String(value || "pending")
     .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+// Declare statusTone for use by the surrounding module or function.
 const statusTone = (status) => {
+  // Declare value for use by the surrounding module or function.
   const value = String(status || "").toLowerCase();
+  // Check the condition (["completed", "confirmed", "paid", "published"].includes(value)) and run the matching branch.
   if (["completed", "confirmed", "paid", "published"].includes(value)) return "bg-emerald-50 text-emerald-700 ring-emerald-100";
+  // Check the condition (["pending", "processing", "partial"].includes(value)) and run the matching branch.
   if (["pending", "processing", "partial"].includes(value)) return "bg-amber-50 text-amber-700 ring-amber-100";
+  // Check the condition (["cancelled", "failed", "rejected", "refunded"].includes(value)) and run the matching branch.
   if (["cancelled", "failed", "rejected", "refunded"].includes(value)) return "bg-red-50 text-red-700 ring-red-100";
+  // Return a configured text value to the caller.
   return "bg-slate-100 text-slate-700 ring-slate-200";
 };
 
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "—";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Return the expression shown below to the caller.
   return Number.isNaN(date.getTime())
     ? "—"
     : date.toLocaleDateString("en-KE", { day: "2-digit", month: "short", year: "numeric" });
 };
 
+// Declare successfulBookingStatuses for use by the surrounding module or function.
 const successfulBookingStatuses = new Set(["confirmed", "assigned", "ongoing", "completed"]);
 
+// Define CustomerDetails; its parameters and body implement this operation.
 export default function CustomerDetails() {
+  // Declare { id } for use by the surrounding module or function.
   const { id } = useParams();
+  // Declare { data, isLoading, isError, error, isFetching, refetch } for use by the surrounding module or function.
   const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
     queryKey: ["admin-customer", id],
     queryFn: () => getCustomerProfile(id),
@@ -57,14 +82,22 @@ export default function CustomerDetails() {
     staleTime: 15_000,
   });
 
+  // Declare profile for use by the surrounding module or function.
   const profile = data?.data || {};
+  // Declare customer for use by the surrounding module or function.
   const customer = profile.customer;
+  // Declare bookings for use by the surrounding module or function.
   const bookings = Array.isArray(profile.bookings) ? profile.bookings : [];
+  // Declare quotations for use by the surrounding module or function.
   const quotations = Array.isArray(profile.quotations) ? profile.quotations : [];
+  // Declare invoices for use by the surrounding module or function.
   const invoices = Array.isArray(profile.invoices) ? profile.invoices : [];
+  // Declare reviews for use by the surrounding module or function.
   const reviews = Array.isArray(profile.reviews) ? profile.reviews : [];
+  // Declare communications for use by the surrounding module or function.
   const communications = Array.isArray(profile.communications) ? profile.communications : [];
 
+  // Declare metrics for use by the surrounding module or function.
   const metrics = useMemo(() => ({
     bookings: Number(profile.summary?.totalBookings ?? bookings.length ?? 0),
     paid: Number(profile.summary?.totalPaid || 0),
@@ -75,7 +108,9 @@ export default function CustomerDetails() {
     ),
   }), [profile.summary, bookings]);
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
         <div className="mx-auto max-w-7xl animate-pulse space-y-5">
@@ -87,7 +122,9 @@ export default function CustomerDetails() {
     );
   }
 
+  // Check the condition (isError || !customer) and run the matching branch.
   if (isError || !customer) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
         <div className="mx-auto max-w-3xl rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
@@ -103,6 +140,7 @@ export default function CustomerDetails() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
       <div className="mx-auto max-w-7xl space-y-5">
@@ -173,14 +211,20 @@ export default function CustomerDetails() {
   );
 }
 
+// Define Metric; its parameters and body implement this operation.
 function Metric({ icon: Icon, label, value, compact = false }) {
+  // Return the expression shown below to the caller.
   return <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p><p className={`mt-2 font-black tracking-tight text-slate-900 ${compact ? "text-lg" : "text-2xl"}`}>{value}</p></div><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"><Icon size={19} /></div></div></div>;
 }
 
+// Define InfoPanel; its parameters and body implement this operation.
 function InfoPanel({ icon: Icon, title, items, empty, renderItem }) {
+  // Return the expression shown below to the caller.
   return <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><div className="flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"><Icon size={17} /></div><h2 className="font-black text-slate-900">{title}</h2></div><div className="mt-4 space-y-2">{items.slice(0, 8).map((item, index) => <div key={item._id || index} className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm ring-1 ring-slate-100">{renderItem(item)}</div>)}{!items.length && <p className="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">{empty}</p>}{items.length > 8 && <p className="pt-1 text-xs font-semibold text-slate-400">Showing the latest 8 records.</p>}</div></section>;
 }
 
+// Define Header; its parameters and body implement this operation.
 function Header({ children }) {
+  // Return the expression shown below to the caller.
   return <th className="whitespace-nowrap p-4 text-left text-xs font-black uppercase tracking-wider text-slate-500">{children}</th>;
 }

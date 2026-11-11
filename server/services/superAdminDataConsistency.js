@@ -1,5 +1,10 @@
+/**
+ * Purpose: super Admin Data Consistency business-logic service. Main declarations: emptyMetrics, getCanonicalSuperAdminCustomerMetrics.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
 
+// Declare roleNameExpression for use by the surrounding module or function.
 const roleNameExpression = {
   $toLower: {
     $ifNull: [
@@ -9,6 +14,7 @@ const roleNameExpression = {
   },
 };
 
+// Declare emptyMetrics for use by the surrounding module or function.
 const emptyMetrics = () => ({
   customerAccounts: 0,
   customerProfiles: 0,
@@ -25,15 +31,20 @@ const emptyMetrics = () => ({
  * tenantId is preferred; legacy profiles without tenantId inherit tenantId from
  * their linked User. An explicit conflicting tenantId is excluded.
  */
+// Define getCanonicalSuperAdminCustomerMetrics; its parameters and body implement this operation.
 export async function getCanonicalSuperAdminCustomerMetrics(db, tenantIds) {
+  // Check the condition (!db) and run the matching branch.
   if (!db) throw new Error("Database connection is not ready.");
 
+  // Declare normalizedTenantIds for use by the surrounding module or function.
   const normalizedTenantIds = (tenantIds || []).map((id) =>
     id instanceof mongoose.Types.ObjectId ? id : new mongoose.Types.ObjectId(id)
   );
 
+  // Check the condition (!normalizedTenantIds.length) and run the matching branch.
   if (!normalizedTenantIds.length) return emptyMetrics();
 
+  // Declare [accountResult, profileResult] for use by the surrounding module or function.
   const [accountResult, profileResult] = await Promise.all([
     db
       .collection("users")
@@ -113,9 +124,12 @@ export async function getCanonicalSuperAdminCustomerMetrics(db, tenantIds) {
       .toArray(),
   ]);
 
+  // Declare accounts for use by the surrounding module or function.
   const accounts = accountResult[0] || {};
+  // Declare profiles for use by the surrounding module or function.
   const profiles = profileResult[0] || {};
 
+  // Return the object assembled below to the caller.
   return {
     customerAccounts: Number(accounts.customerAccounts || 0),
     customerProfiles: Number(profiles.customerProfiles || 0),

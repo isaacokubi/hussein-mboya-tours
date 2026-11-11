@@ -1,5 +1,11 @@
+/**
+ * Purpose: Travel Search reusable UI component. Main declarations: TravelSearch, updateField, submit.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { useNavigate } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   Search,
   Calendar,
@@ -7,46 +13,61 @@ import {
   MapPin,
 } from "lucide-react";
 
+// Define TravelSearch; its parameters and body implement this operation.
 export default function TravelSearch() {
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
 
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState({
     destination: "",
     date: "",
     travelers: 1,
   });
 
+  // Declare updateField for use by the surrounding module or function.
   const updateField = (field, value) => {
+    // Perform the side effect or state update expressed on the following line.
     setForm((previous) => ({
       ...previous,
       [field]: value,
     }));
   };
 
+  // Declare submit for use by the surrounding module or function.
   const submit = (e) => {
+    // Perform the side effect or state update expressed on the following line.
     e.preventDefault();
 
+    // Declare params for use by the surrounding module or function.
     const params = new URLSearchParams();
 
+    // Check the condition (form.destination.trim()) and run the matching branch.
     if (form.destination.trim()) {
+      // Perform the side effect or state update expressed on the following line.
       params.append(
         "search",
         form.destination.trim()
       );
     }
 
+    // Check the condition (form.date) and run the matching branch.
     if (form.date) {
+      // Perform the side effect or state update expressed on the following line.
       params.append("date", form.date);
     }
 
+    // Perform the side effect or state update expressed on the following line.
     params.append(
       "travelers",
       form.travelers
     );
 
+    // Perform the side effect or state update expressed on the following line.
     navigate(`/tours?${params.toString()}`);
   };
 
+  // Return the expression shown below to the caller.
   return (
     <form
       onSubmit={submit}

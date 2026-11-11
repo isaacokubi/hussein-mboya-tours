@@ -1,3 +1,7 @@
+/**
+ * Purpose: booking Constants server application module. Main declarations: isValidBookingStatus, isValidBookingPaymentStatus, isValidPaymentStatus, isValidPaymentMethod, canTransitionBookingStatus.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 /*
 |--------------------------------------------------------------------------
 | BOOKING CONSTANTS
@@ -13,6 +17,7 @@
 |--------------------------------------------------------------------------
 */
 
+// Declare BOOKING_STATUSES for use by the surrounding module or function.
 export const BOOKING_STATUSES = [
   "pending",
   "failed",
@@ -33,6 +38,7 @@ export const BOOKING_STATUSES = [
 |--------------------------------------------------------------------------
 */
 
+// Declare BOOKING_PAYMENT_STATUSES for use by the surrounding module or function.
 export const BOOKING_PAYMENT_STATUSES = [
   "pending",
   "partial",
@@ -51,6 +57,7 @@ export const BOOKING_PAYMENT_STATUSES = [
 |--------------------------------------------------------------------------
 */
 
+// Declare PAYMENT_STATUSES for use by the surrounding module or function.
 export const PAYMENT_STATUSES = [
   "pending",
   "processing",
@@ -67,6 +74,7 @@ export const PAYMENT_STATUSES = [
 |--------------------------------------------------------------------------
 */
 
+// Declare PAYMENT_METHODS for use by the surrounding module or function.
 export const PAYMENT_METHODS = {
   MPESA: "MPESA",
   CARD: "CARD",
@@ -82,6 +90,7 @@ export const PAYMENT_METHODS = {
 |--------------------------------------------------------------------------
 */
 
+// Declare BOOKING_STATUS_TRANSITIONS for use by the surrounding module or function.
 export const BOOKING_STATUS_TRANSITIONS = {
   pending: [
     "confirmed",
@@ -128,6 +137,7 @@ export const BOOKING_STATUS_TRANSITIONS = {
 |--------------------------------------------------------------------------
 */
 
+// Declare BOOKING_PAYMENT_STATUS_TRANSITIONS for use by the surrounding module or function.
 export const BOOKING_PAYMENT_STATUS_TRANSITIONS = {
   pending: [
     "partial",
@@ -169,6 +179,7 @@ export const BOOKING_PAYMENT_STATUS_TRANSITIONS = {
 |--------------------------------------------------------------------------
 */
 
+// Declare PAYMENT_STATUS_TRANSITIONS for use by the surrounding module or function.
 export const PAYMENT_STATUS_TRANSITIONS = {
   pending: [
     "processing",
@@ -208,18 +219,22 @@ export const PAYMENT_STATUS_TRANSITIONS = {
 |--------------------------------------------------------------------------
 */
 
+// Declare isValidBookingStatus for use by the surrounding module or function.
 export const isValidBookingStatus = (status) =>
   BOOKING_STATUSES.includes(status);
 
 
+// Declare isValidBookingPaymentStatus for use by the surrounding module or function.
 export const isValidBookingPaymentStatus = (status) =>
   BOOKING_PAYMENT_STATUSES.includes(status);
 
 
+// Declare isValidPaymentStatus for use by the surrounding module or function.
 export const isValidPaymentStatus = (status) =>
   PAYMENT_STATUSES.includes(status);
 
 
+// Declare isValidPaymentMethod for use by the surrounding module or function.
 export const isValidPaymentMethod = (method) =>
   Object.values(PAYMENT_METHODS).includes(method);
 
@@ -230,6 +245,7 @@ export const isValidPaymentMethod = (method) =>
 |--------------------------------------------------------------------------
 */
 
+// Declare canTransitionBookingStatus for use by the surrounding module or function.
 export const canTransitionBookingStatus = (
   currentStatus,
   newStatus
@@ -239,6 +255,7 @@ export const canTransitionBookingStatus = (
   ]?.includes(newStatus) ?? false;
 
 
+// Declare canTransitionBookingPaymentStatus for use by the surrounding module or function.
 export const canTransitionBookingPaymentStatus = (
   currentStatus,
   newStatus
@@ -248,6 +265,7 @@ export const canTransitionBookingPaymentStatus = (
   ]?.includes(newStatus) ?? false;
 
 
+// Declare canTransitionPaymentStatus for use by the surrounding module or function.
 export const canTransitionPaymentStatus = (
   currentStatus,
   newStatus

@@ -1,3 +1,7 @@
+/**
+ * Purpose: tenant Isolation Plugin server application module. Main declarations: tenantIsolationPlugin.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
 /**
@@ -12,7 +16,10 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
  * collections such as permissions, currencies and organizations remain
  * global.
  */
+// Define tenantIsolationPlugin; its parameters and body implement this operation.
 export default function tenantIsolationPlugin(schema) {
+  // Check the condition (!schema?.path?.("tenantId")) and run the matching branch.
   if (!schema?.path?.("tenantId")) return;
+  // Perform the side effect or state update expressed on the following line.
   tenantPlugin(schema);
 }

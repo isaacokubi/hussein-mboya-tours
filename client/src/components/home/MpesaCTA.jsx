@@ -1,6 +1,12 @@
+/**
+ * Purpose: Mpesa CTA reusable UI component. Main declarations: MpesaCTA.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { Link } from "react-router-dom";
 
+// Define MpesaCTA; its parameters and body implement this operation.
 export default function MpesaCTA() {
+  // Return the expression shown below to the caller.
   return (
     <section
       className="

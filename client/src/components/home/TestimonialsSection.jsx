@@ -1,18 +1,31 @@
+/**
+ * Purpose: Testimonials Section reusable UI component. Main declarations: TestimonialsSection.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useSettings } from "../../context/SettingsContext";
+// Load ../../context/TenantContext so this module can use its exported dependencies.
 import { useTenant } from "../../context/TenantContext";
 
+// Define TestimonialsSection; its parameters and body implement this operation.
 export default function TestimonialsSection() {
+  // Declare { tenant } for use by the surrounding module or function.
   const { tenant } = useTenant() || {};
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
+  // Declare companyName for use by the surrounding module or function.
   const companyName = settings?.companyName || tenant?.name || tenant?.companyName || "our team";
+  // Declare configured for use by the surrounding module or function.
   const configured = Array.isArray(settings?.testimonials) ? settings.testimonials : [];
   // Public social proof must come from explicitly approved, tenant-managed reviews.
+  // Declare testimonials for use by the surrounding module or function.
   const testimonials = configured
     .filter((item) => item && item.approved === true && String(item.text || "").trim() && String(item.name || "").trim())
     .slice(0, 6);
 
+  // Check the condition (!testimonials.length) and run the matching branch.
   if (!testimonials.length) return null;
 
+  // Return the expression shown below to the caller.
   return (
     <section
       className="hmt-testimonials my-12 overflow-hidden rounded-[2rem] bg-[#12372a] px-5 py-14 text-white shadow-2xl sm:px-8 md:py-20"

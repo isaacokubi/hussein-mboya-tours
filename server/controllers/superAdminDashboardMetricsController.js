@@ -1,24 +1,38 @@
+/**
+ * Purpose: super Admin Dashboard Metrics Controller HTTP controller. Main declarations: count, sum, getSuperAdminDashboardMetrics.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { publicErrorMessage } from "../utils/publicError.js";
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../services/superAdminDataConsistency.js so this module can use its exported dependencies.
 import getCanonicalSuperAdminCustomerMetrics from "../services/superAdminDataConsistency.js";
 
+// Declare count for use by the surrounding module or function.
 const count = async (db, collection, filter = {}) =>
   db.collection(collection).countDocuments(filter);
 
+// Declare sum for use by the surrounding module or function.
 const sum = (rows, key) =>
   rows.reduce((total, row) => total + Number(row?.[key] || 0), 0);
 
+// Declare getSuperAdminDashboardMetrics for use by the surrounding module or function.
 export const getSuperAdminDashboardMetrics = async (_req, res) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare db for use by the surrounding module or function.
     const db = mongoose.connection.db;
 
+    // Check the condition (!db) and run the matching branch.
     if (!db) {
+      // Return the result of res.status(503).json() to the caller.
       return res.status(503).json({
         success: false,
         message: "Database connection is not ready.",
       });
     }
 
+    // Declare tenantRows for use by the surrounding module or function.
     const tenantRows = await db
       .collection("organizations")
       .find({ status: { $in: ["active", "trial"] } })
@@ -33,13 +47,18 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       .sort({ createdAt: 1 })
       .toArray();
 
+    // Declare tenantIds for use by the surrounding module or function.
     const tenantIds = tenantRows.map((tenant) => tenant._id);
+    // Declare tenantFilter for use by the surrounding module or function.
     const tenantFilter = tenantIds.length
       ? { tenantId: { $in: tenantIds } }
       : { tenantId: null };
+    // Declare nonDeleted for use by the surrounding module or function.
     const nonDeleted = { isDeleted: { $ne: true } };
+    // Declare customerMetrics for use by the surrounding module or function.
     const customerMetrics = await getCanonicalSuperAdminCustomerMetrics(db, tenantIds);
 
+    // Declare [ platformUsers, activePlatformUsers, suspendedPlatformUsers, blockedPlatformUsers, tenantStaff, tenantAgents, approvedAgents, tenantVehicles, availableVehicles, assignedVehicles, maintenanceVehicles, tenantTours, tenantDestinations, tenantBookings, pendingBookings, confirmedBookings, tenantPayments, completedPayments, ] for use by the surrounding module or function.
     const [
       platformUsers,
       activePlatformUsers,
@@ -97,6 +116,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       count(db, "payments", { ...tenantFilter, status: "completed" }),
     ]);
 
+    // Declare [revenueRows, tenantSummaries] for use by the surrounding module or function.
     const [revenueRows, tenantSummaries] = await Promise.all([
       db
         .collection("payments")
@@ -152,8 +172,11 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
         .toArray(),
       Promise.all(
         tenantRows.map(async (tenant) => {
+          // Declare scope for use by the surrounding module or function.
           const scope = { tenantId: tenant._id };
+          // Declare tenantCustomerMetrics for use by the surrounding module or function.
           const tenantCustomerMetrics = await getCanonicalSuperAdminCustomerMetrics(db, [tenant._id]);
+          // Declare [ users, tours, bookings, payments, staff, agents, vehicles, availableVehiclesForTenant, destinations, completedPaymentsForTenant, ] for use by the surrounding module or function.
           const [
             users,
             tours,
@@ -178,6 +201,7 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
             count(db, "payments", { ...scope, status: "completed" }),
           ]);
 
+          // Return the object assembled below to the caller.
           return {
             tenantId: String(tenant._id),
             name: tenant.name,
@@ -202,11 +226,16 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       ),
     ]);
 
+    // Declare primary for use by the surrounding module or function.
     const primary = revenueRows.find((row) => row.currency === "KES") || revenueRows[0] || null;
+    // Declare tenantCount for use by the surrounding module or function.
     const tenantCount = tenantRows.length;
+    // Declare activeTenantCount for use by the surrounding module or function.
     const activeTenantCount = tenantRows.filter((tenant) => tenant.status === "active").length;
+    // Declare trialTenantCount for use by the surrounding module or function.
     const trialTenantCount = tenantRows.filter((tenant) => tenant.status === "trial").length;
 
+    // Return the result of res.json() to the caller.
     return res.json({
       success: true,
       scope: {
@@ -263,7 +292,9 @@ export const getSuperAdminDashboardMetrics = async (_req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     console.error("SuperAdmin dashboard metrics error:", error);
+    // Return the result of res.status(500).json() to the caller.
     return res.status(500).json({
       success: false,
       message: publicErrorMessage(error, "Unable to load platform metrics."),

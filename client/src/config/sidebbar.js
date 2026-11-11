@@ -1,5 +1,10 @@
+/**
+ * Purpose: sidebbar configuration module. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/utils/iconMap.js
 
+// Load lucide-react so this module can use its exported dependencies.
 import {
   LayoutDashboard,
   Calendar,
@@ -16,6 +21,7 @@ import {
 
 
 
+// Declare iconMap for use by the surrounding module or function.
 const iconMap = {
 
   LayoutDashboard,

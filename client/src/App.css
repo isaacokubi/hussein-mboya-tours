@@ -1,184 +1,306 @@
+/* Purpose: Styles for the App interface. Rule comments explain selectors and property groups. */
+/* Apply the following styles to .counter. */
 .counter {
+  /* Configure font size for this selector. */
   font-size: 16px;
+  /* Configure padding for this selector. */
   padding: 5px 10px;
+  /* Configure border radius for this selector. */
   border-radius: 5px;
+  /* Configure color for this selector. */
   color: var(--accent);
+  /* Configure background for this selector. */
   background: var(--accent-bg);
+  /* Configure border for this selector. */
   border: 2px solid transparent;
+  /* Configure transition for this selector. */
   transition: border-color 0.3s;
+  /* Configure margin bottom for this selector. */
   margin-bottom: 24px;
 
+  /* Apply the following styles to &:hover. */
   &:hover {
+    /* Configure border color for this selector. */
     border-color: var(--accent-border);
   }
+  /* Apply the following styles to &:focus-visible. */
   &:focus-visible {
+    /* Configure outline for this selector. */
     outline: 2px solid var(--accent);
+    /* Configure outline offset for this selector. */
     outline-offset: 2px;
   }
 }
 
+/* Apply the following styles to .hero. */
 .hero {
+  /* Configure position for this selector. */
   position: relative;
 
   .base,
   .framework,
+  /* Apply the following styles to .vite. */
   .vite {
+    /* Configure inset inline for this selector. */
     inset-inline: 0;
+    /* Configure margin for this selector. */
     margin: 0 auto;
   }
 
+  /* Apply the following styles to .base. */
   .base {
+    /* Configure width for this selector. */
     width: 170px;
+    /* Configure position for this selector. */
     position: relative;
+    /* Configure z index for this selector. */
     z-index: 0;
   }
 
   .framework,
+  /* Apply the following styles to .vite. */
   .vite {
+    /* Configure position for this selector. */
     position: absolute;
   }
 
+  /* Apply the following styles to .framework. */
   .framework {
+    /* Configure z index for this selector. */
     z-index: 1;
+    /* Configure top for this selector. */
     top: 34px;
+    /* Configure height for this selector. */
     height: 28px;
+    /* Configure transform for this selector. */
     transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
       scale(1.4);
   }
 
+  /* Apply the following styles to .vite. */
   .vite {
+    /* Configure z index for this selector. */
     z-index: 0;
+    /* Configure top for this selector. */
     top: 107px;
+    /* Configure height for this selector. */
     height: 26px;
+    /* Configure width for this selector. */
     width: auto;
+    /* Configure transform for this selector. */
     transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
       scale(0.8);
   }
 }
 
+/* Apply the following styles to #center. */
 #center {
+  /* Configure display for this selector. */
   display: flex;
+  /* Configure flex direction for this selector. */
   flex-direction: column;
+  /* Configure gap for this selector. */
   gap: 25px;
+  /* Configure place content for this selector. */
   place-content: center;
+  /* Configure place items for this selector. */
   place-items: center;
+  /* Configure flex grow for this selector. */
   flex-grow: 1;
 
+  /* Apply the following styles to @media (max-width: 1024px). */
   @media (max-width: 1024px) {
+    /* Configure padding for this selector. */
     padding: 32px 20px 24px;
+    /* Configure gap for this selector. */
     gap: 18px;
   }
 }
 
+/* Apply the following styles to #next-steps. */
 #next-steps {
+  /* Configure display for this selector. */
   display: flex;
+  /* Configure border top for this selector. */
   border-top: 1px solid var(--border);
+  /* Configure text align for this selector. */
   text-align: left;
 
+  /* Apply the following styles to & > div. */
   & > div {
+    /* Configure flex for this selector. */
     flex: 1 1 0;
+    /* Configure padding for this selector. */
     padding: 32px;
+    /* Apply the following styles to @media (max-width: 1024px). */
     @media (max-width: 1024px) {
+      /* Configure padding for this selector. */
       padding: 24px 20px;
     }
   }
 
+  /* Apply the following styles to .icon. */
   .icon {
+    /* Configure margin bottom for this selector. */
     margin-bottom: 16px;
+    /* Configure width for this selector. */
     width: 22px;
+    /* Configure height for this selector. */
     height: 22px;
   }
 
+  /* Apply the following styles to @media (max-width: 1024px). */
   @media (max-width: 1024px) {
+    /* Configure flex direction for this selector. */
     flex-direction: column;
+    /* Configure text align for this selector. */
     text-align: center;
   }
 }
 
+/* Apply the following styles to #docs. */
 #docs {
+  /* Configure border right for this selector. */
   border-right: 1px solid var(--border);
 
+  /* Apply the following styles to @media (max-width: 1024px). */
   @media (max-width: 1024px) {
+    /* Configure border right for this selector. */
     border-right: none;
+    /* Configure border bottom for this selector. */
     border-bottom: 1px solid var(--border);
   }
 }
 
+/* Apply the following styles to #next-steps ul. */
 #next-steps ul {
+  /* Configure list style for this selector. */
   list-style: none;
+  /* Configure padding for this selector. */
   padding: 0;
+  /* Configure display for this selector. */
   display: flex;
+  /* Configure gap for this selector. */
   gap: 8px;
+  /* Configure margin for this selector. */
   margin: 32px 0 0;
 
+  /* Apply the following styles to .logo. */
   .logo {
+    /* Configure height for this selector. */
     height: 18px;
   }
 
+  /* Apply the following styles to a. */
   a {
+    /* Configure color for this selector. */
     color: var(--text-h);
+    /* Configure font size for this selector. */
     font-size: 16px;
+    /* Configure border radius for this selector. */
     border-radius: 6px;
+    /* Configure background for this selector. */
     background: var(--social-bg);
+    /* Configure display for this selector. */
     display: flex;
+    /* Configure padding for this selector. */
     padding: 6px 12px;
+    /* Configure align items for this selector. */
     align-items: center;
+    /* Configure gap for this selector. */
     gap: 8px;
+    /* Configure text decoration for this selector. */
     text-decoration: none;
+    /* Configure transition for this selector. */
     transition: box-shadow 0.3s;
 
+    /* Apply the following styles to &:hover. */
     &:hover {
+      /* Configure box shadow for this selector. */
       box-shadow: var(--shadow);
     }
+    /* Apply the following styles to .button-icon. */
     .button-icon {
+      /* Configure height for this selector. */
       height: 18px;
+      /* Configure width for this selector. */
       width: 18px;
     }
   }
 
+  /* Apply the following styles to @media (max-width: 1024px). */
   @media (max-width: 1024px) {
+    /* Configure margin top for this selector. */
     margin-top: 20px;
+    /* Configure flex wrap for this selector. */
     flex-wrap: wrap;
+    /* Configure justify content for this selector. */
     justify-content: center;
 
+    /* Apply the following styles to li. */
     li {
+      /* Configure flex for this selector. */
       flex: 1 1 calc(50% - 8px);
     }
 
+    /* Apply the following styles to a. */
     a {
+      /* Configure width for this selector. */
       width: 100%;
+      /* Configure justify content for this selector. */
       justify-content: center;
+      /* Configure box sizing for this selector. */
       box-sizing: border-box;
     }
   }
 }
 
+/* Apply the following styles to #spacer. */
 #spacer {
+  /* Configure height for this selector. */
   height: 88px;
+  /* Configure border top for this selector. */
   border-top: 1px solid var(--border);
+  /* Apply the following styles to @media (max-width: 1024px). */
   @media (max-width: 1024px) {
+    /* Configure height for this selector. */
     height: 48px;
   }
 }
 
+/* Apply the following styles to .ticks. */
 .ticks {
+  /* Configure position for this selector. */
   position: relative;
+  /* Configure width for this selector. */
   width: 100%;
 
   &::before,
+  /* Apply the following styles to &::after. */
   &::after {
+    /* Configure content for this selector. */
     content: '';
+    /* Configure position for this selector. */
     position: absolute;
+    /* Configure top for this selector. */
     top: -4.5px;
+    /* Configure border for this selector. */
     border: 5px solid transparent;
   }
 
+  /* Apply the following styles to &::before. */
   &::before {
+    /* Configure left for this selector. */
     left: 0;
+    /* Configure border left color for this selector. */
     border-left-color: var(--border);
   }
+  /* Apply the following styles to &::after. */
   &::after {
+    /* Configure right for this selector. */
     right: 0;
+    /* Configure border right color for this selector. */
     border-right-color: var(--border);
   }
 }
+

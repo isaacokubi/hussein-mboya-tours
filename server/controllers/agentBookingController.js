@@ -1,12 +1,23 @@
+/**
+ * Purpose: agent Booking Controller HTTP controller. Main declarations: isValidId, createBooking, getAgentBookings, getAgentBooking, updateBookingStatus.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
 
 
+// Load ../constants/bookingConstants.js so this module can use its exported dependencies.
 import { BOOKING_STATUSES, canTransitionBookingStatus } from "../constants/bookingConstants.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../models/Tour.js so this module can use its exported dependencies.
 import Tour from "../models/Tour.js";
+// Load ../models/Customer.js so this module can use its exported dependencies.
 import Customer from "../models/Customer.js";
+// Load ../models/Agent.js so this module can use its exported dependencies.
 import Agent from "../models/Agent.js";
+// Load ../services/commissionService.js so this module can use its exported dependencies.
 import { createCommission } from "../services/commissionService.js";
 
 /*
@@ -15,6 +26,7 @@ import { createCommission } from "../services/commissionService.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare isValidId for use by the surrounding module or function.
 const isValidId = (id) =>
   mongoose.Types.ObjectId.isValid(id);
 
@@ -26,11 +38,16 @@ const isValidId = (id) =>
 |--------------------------------------------------------------------------
 */
 
+// Declare createBooking for use by the surrounding module or function.
 export const createBooking = async (req, res, next) => {
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
+  // Declare session for use by the surrounding module or function.
   const session = await mongoose.startSession();
 
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Perform the side effect or state update expressed on the following line.
     session.startTransaction();
 
     /*
@@ -39,25 +56,32 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Declare agentProfile for use by the surrounding module or function.
     const agentProfile = await Agent.findOne({
       user: req.user._id,
     }).session(session);
 
+    // Check the condition (!agentProfile) and run the matching branch.
     if (!agentProfile) {
+      // Perform the side effect or state update expressed on the following line.
       await session.abortTransaction();
 
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Agent profile not found.",
       });
     }
 
+    // Check the condition (!agentProfile.isApproved || agentProfile.status !== "active") and run the matching branch.
     if (
       !agentProfile.isApproved ||
       agentProfile.status !== "active"
     ) {
+      // Perform the side effect or state update expressed on the following line.
       await session.abortTransaction();
 
+      // Return the result of res.status(403).json() to the caller.
       return res.status(403).json({
         success: false,
         message:
@@ -71,6 +95,7 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Declare { customer, tour, travelDate, travelers, pickupLocation, pickupTime, hotelName, roomNumber, emergencyContact, specialRequests, paymentMethod, customerNotes, } for use by the surrounding module or function.
     const {
       customer,
       tour,
@@ -92,12 +117,15 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (!isValidId(customer) || !isValidId(tour)) and run the matching branch.
     if (
       !isValidId(customer) ||
       !isValidId(tour)
     ) {
+      // Perform the side effect or state update expressed on the following line.
       await session.abortTransaction();
 
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid customer or tour.",
@@ -110,9 +138,12 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (!travelDate || Number.isNaN(Date.parse(travelDate))) and run the matching branch.
     if (!travelDate || Number.isNaN(Date.parse(travelDate))) {
+      // Perform the side effect or state update expressed on the following line.
       await session.abortTransaction();
 
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "A valid travel date is required.",
@@ -125,12 +156,15 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (!Array.isArray(travelers) || travelers.length === 0) and run the matching branch.
     if (
       !Array.isArray(travelers) ||
       travelers.length === 0
     ) {
+      // Perform the side effect or state update expressed on the following line.
       await session.abortTransaction();
 
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "At least one traveler is required.",
@@ -143,6 +177,7 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Declare [tourData, customerData] for use by the surrounding module or function.
     const [tourData, customerData] =
       await Promise.all([
         Tour.findOne({
@@ -163,9 +198,12 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (!tourData) and run the matching branch.
     if (!tourData) {
+      // Perform the side effect or state update expressed on the following line.
       await session.abortTransaction();
 
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Tour not found.",
@@ -178,9 +216,12 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (!customerData) and run the matching branch.
     if (!customerData) {
+      // Perform the side effect or state update expressed on the following line.
       await session.abortTransaction();
 
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message:
@@ -194,12 +235,15 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (tourData.status === "inactive" || tourData.status === "sold_out") and run the matching branch.
     if (
       tourData.status === "inactive" ||
       tourData.status === "sold_out"
     ) {
+      // Perform the side effect or state update expressed on the following line.
       await session.abortTransaction();
 
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "This tour is not currently available.",
@@ -212,27 +256,33 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Declare price for use by the surrounding module or function.
     const price = Number(
       tourData.agentPrice ??
       tourData.price ??
       0
     );
 
+    // Check the condition (!Number.isFinite(price) || price < 0) and run the matching branch.
     if (
       !Number.isFinite(price) ||
       price < 0
     ) {
+      // Perform the side effect or state update expressed on the following line.
       await session.abortTransaction();
 
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid tour price.",
       });
     }
 
+    // Declare travelerCount for use by the surrounding module or function.
     const travelerCount =
       travelers.length;
 
+    // Declare totalAmount for use by the surrounding module or function.
     const totalAmount =
       price * travelerCount;
 
@@ -242,6 +292,7 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Declare customerName for use by the surrounding module or function.
     const customerName =
       `${customerData.firstName || ""} ${
         customerData.lastName || ""
@@ -253,6 +304,7 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Declare bookingData for use by the surrounding module or function.
     const bookingData = {
       customer: customerData._id,
 
@@ -334,6 +386,7 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Declare booking for use by the surrounding module or function.
     const booking =
       await Booking.create(
         [bookingData],
@@ -346,9 +399,11 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Check the condition (typeof createCommission === "function") and run the matching branch.
     if (
       typeof createCommission === "function"
     ) {
+      // Perform the side effect or state update expressed on the following line.
       await createCommission(
         booking[0],
         session
@@ -361,12 +416,15 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Perform the side effect or state update expressed on the following line.
     customerData.totalBookings =
       Number(customerData.totalBookings || 0) + 1;
 
+    // Perform the side effect or state update expressed on the following line.
     customerData.lastBookingDate =
       new Date();
 
+    // Perform the side effect or state update expressed on the following line.
     await customerData.save({
       session,
     });
@@ -377,8 +435,10 @@ export const createBooking = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
+    // Perform the side effect or state update expressed on the following line.
     await session.commitTransaction();
 
+    // Return the result of res.status(201).json() to the caller.
     return res.status(201).json({
       success: true,
       message:
@@ -387,9 +447,12 @@ export const createBooking = async (req, res, next) => {
     });
 
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     await session.abortTransaction();
+    // Perform the side effect or state update expressed on the following line.
     next(error);
   } finally {
+    // Perform the side effect or state update expressed on the following line.
     await session.endSession();
   }
 };
@@ -400,29 +463,36 @@ export const createBooking = async (req, res, next) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare getAgentBookings for use by the surrounding module or function.
 export const getAgentBookings = async (
   req,
   res,
   next
 ) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare agentProfile for use by the surrounding module or function.
     const agentProfile =
       await Agent.findOne({
         user: req.user._id,
       });
 
+    // Check the condition (!agentProfile) and run the matching branch.
     if (!agentProfile) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Agent profile not found.",
       });
     }
 
+    // Declare page for use by the surrounding module or function.
     const page = Math.max(
       Number(req.query.page) || 1,
       1
     );
 
+    // Declare limit for use by the surrounding module or function.
     const limit = Math.min(
       Math.max(
         Number(req.query.limit) || 20,
@@ -431,34 +501,43 @@ export const getAgentBookings = async (
       100
     );
 
+    // Declare skip for use by the surrounding module or function.
     const skip =
       (page - 1) * limit;
 
+    // Declare filter for use by the surrounding module or function.
     const filter = {
       agent: agentProfile._id,
       isDeleted: false,
     };
 
+    // Check the condition (req.query.status && BOOKING_STATUSES.includes( req.query.status )) and run the matching branch.
     if (
       req.query.status &&
       BOOKING_STATUSES.includes(
         req.query.status
       )
     ) {
+      // Perform the side effect or state update expressed on the following line.
       filter.status =
         req.query.status;
     }
 
+    // Check the condition (req.query.paymentStatus) and run the matching branch.
     if (req.query.paymentStatus) {
+      // Perform the side effect or state update expressed on the following line.
       filter.paymentStatus =
         req.query.paymentStatus;
     }
 
+    // Check the condition (req.query.search) and run the matching branch.
     if (req.query.search) {
+      // Declare search for use by the surrounding module or function.
       const search =
         String(req.query.search)
           .trim();
 
+      // Perform the side effect or state update expressed on the following line.
       filter.$or = [
         {
           "customerSnapshot.name": {
@@ -487,6 +566,7 @@ export const getAgentBookings = async (
       ];
     }
 
+    // Declare [ bookings, total, ] for use by the surrounding module or function.
     const [
       bookings,
       total,
@@ -510,6 +590,7 @@ export const getAgentBookings = async (
       Booking.countDocuments(filter),
     ]);
 
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({
       success: true,
       page,
@@ -523,6 +604,7 @@ export const getAgentBookings = async (
     });
 
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     next(error);
   }
 };
@@ -533,33 +615,41 @@ export const getAgentBookings = async (
 |--------------------------------------------------------------------------
 */
 
+// Declare getAgentBooking for use by the surrounding module or function.
 export const getAgentBooking = async (
   req,
   res,
   next
 ) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Check the condition (!isValidId(req.params.id)) and run the matching branch.
     if (
       !isValidId(req.params.id)
     ) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid booking ID.",
       });
     }
 
+    // Declare agentProfile for use by the surrounding module or function.
     const agentProfile =
       await Agent.findOne({
         user: req.user._id,
       });
 
+    // Check the condition (!agentProfile) and run the matching branch.
     if (!agentProfile) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Agent profile not found.",
       });
     }
 
+    // Declare booking for use by the surrounding module or function.
     const booking =
       await Booking.findOne({
         _id: req.params.id,
@@ -577,19 +667,23 @@ export const getAgentBooking = async (
           "name email phone"
         );
 
+    // Check the condition (!booking) and run the matching branch.
     if (!booking) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Booking not found.",
       });
     }
 
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({
       success: true,
       booking,
     });
 
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     next(error);
   }
 };
@@ -600,29 +694,36 @@ export const getAgentBooking = async (
 |--------------------------------------------------------------------------
 */
 
+// Declare updateBookingStatus for use by the surrounding module or function.
 export const updateBookingStatus = async (
   req,
   res,
   next
 ) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Check the condition (!isValidId(req.params.id)) and run the matching branch.
     if (
       !isValidId(req.params.id)
     ) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid booking ID.",
       });
     }
 
+    // Declare { status } for use by the surrounding module or function.
     const { status } =
       req.body;
 
+    // Check the condition (!BOOKING_STATUSES.includes( status )) and run the matching branch.
     if (
       !BOOKING_STATUSES.includes(
         status
       )
     ) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message:
@@ -630,18 +731,22 @@ export const updateBookingStatus = async (
       });
     }
 
+    // Declare agentProfile for use by the surrounding module or function.
     const agentProfile =
       await Agent.findOne({
         user: req.user._id,
       });
 
+    // Check the condition (!agentProfile) and run the matching branch.
     if (!agentProfile) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Agent profile not found.",
       });
     }
 
+    // Declare booking for use by the surrounding module or function.
     const booking =
       await Booking.findOne({
         _id: req.params.id,
@@ -649,21 +754,27 @@ export const updateBookingStatus = async (
         isDeleted: false,
       });
 
+    // Check the condition (!booking) and run the matching branch.
     if (!booking) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Booking not found.",
       });
     }
 
+    // Check the condition (booking.status === status) and run the matching branch.
     if (booking.status === status) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: `Booking is already ${status}.`,
       });
     }
 
+    // Check the condition (!canTransitionBookingStatus(booking.status, status)) and run the matching branch.
     if (!canTransitionBookingStatus(booking.status, status)) {
+      // Return the result of res.status(409).json() to the caller.
       return res.status(409).json({
         success: false,
         message: `Booking cannot transition from "${booking.status}" to "${status}".`,
@@ -672,7 +783,9 @@ export const updateBookingStatus = async (
       });
     }
 
+    // Check the condition (["ongoing", "completed"].includes(status) && String(booking.paymentSta) and run the matching branch.
     if (["ongoing", "completed"].includes(status) && String(booking.paymentStatus || "").toLowerCase() !== "paid") {
+      // Return the result of res.status(409).json() to the caller.
       return res.status(409).json({
         success: false,
         code: "PAYMENT_REQUIRED_BEFORE_COMPLETION",
@@ -680,13 +793,17 @@ export const updateBookingStatus = async (
       });
     }
 
+    // Perform the side effect or state update expressed on the following line.
     booking.status = status;
 
+    // Perform the side effect or state update expressed on the following line.
     booking.updatedBy =
       req.user._id;
 
+    // Perform the side effect or state update expressed on the following line.
     await booking.save();
 
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({
       success: true,
       message:
@@ -695,6 +812,7 @@ export const updateBookingStatus = async (
     });
 
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     next(error);
   }
 };
@@ -705,33 +823,41 @@ export const updateBookingStatus = async (
 |--------------------------------------------------------------------------
 */
 
+// Declare cancelAgentBooking for use by the surrounding module or function.
 export const cancelAgentBooking = async (
   req,
   res,
   next
 ) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Check the condition (!isValidId(req.params.id)) and run the matching branch.
     if (
       !isValidId(req.params.id)
     ) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message: "Invalid booking ID.",
       });
     }
 
+    // Declare agentProfile for use by the surrounding module or function.
     const agentProfile =
       await Agent.findOne({
         user: req.user._id,
       });
 
+    // Check the condition (!agentProfile) and run the matching branch.
     if (!agentProfile) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Agent profile not found.",
       });
     }
 
+    // Declare booking for use by the surrounding module or function.
     const booking =
       await Booking.findOne({
         _id: req.params.id,
@@ -739,16 +865,20 @@ export const cancelAgentBooking = async (
         isDeleted: false,
       });
 
+    // Check the condition (!booking) and run the matching branch.
     if (!booking) {
+      // Return the result of res.status(404).json() to the caller.
       return res.status(404).json({
         success: false,
         message: "Booking not found.",
       });
     }
 
+    // Check the condition (booking.status === "completed") and run the matching branch.
     if (
       booking.status === "completed"
     ) {
+      // Return the result of res.status(400).json() to the caller.
       return res.status(400).json({
         success: false,
         message:
@@ -756,23 +886,30 @@ export const cancelAgentBooking = async (
       });
     }
 
+    // Perform the side effect or state update expressed on the following line.
     booking.status =
       "cancelled";
 
+    // Perform the side effect or state update expressed on the following line.
     booking.cancelledAt =
       new Date();
 
+    // Perform the side effect or state update expressed on the following line.
     booking.cancelledBy =
       req.user._id;
 
+    // Perform the side effect or state update expressed on the following line.
     booking.cancellationReason =
       req.body.reason || "";
 
+    // Perform the side effect or state update expressed on the following line.
     booking.updatedBy =
       req.user._id;
 
+    // Perform the side effect or state update expressed on the following line.
     await booking.save();
 
+    // Return the result of res.status(200).json() to the caller.
     return res.status(200).json({
       success: true,
       message:
@@ -781,6 +918,7 @@ export const cancelAgentBooking = async (
     });
 
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     next(error);
   }
 };

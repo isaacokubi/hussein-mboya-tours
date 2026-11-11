@@ -1,66 +1,129 @@
+/**
+ * Purpose: Create Tour page-level UI component. Main declarations: createItineraryDay, linesFromText, unwrapList, cleanLabel, CreateTour.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load react so this module can use its exported dependencies.
 import { useMemo, useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { useLocation, useNavigate } from "react-router-dom";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load lucide-react so this module can use its exported dependencies.
 import { CalendarDays, CarFront, CheckCircle2, ChevronLeft, CircleAlert, Compass, ImagePlus, MapPin, ShieldCheck, Users, UserRound, X } from "lucide-react";
 
+// Load ../../api/destinationApi so this module can use its exported dependencies.
 import { getDestinations } from "../../api/destinationApi";
+// Load ../../api/tourApi so this module can use its exported dependencies.
 import { createTour, getDrivers, getGuides, getVehicles } from "../../api/tourApi";
+// Load ../../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../../context/SettingsContext";
 
+// Declare emptyForm for use by the surrounding module or function.
 const emptyForm = { title: "", shortDescription: "", description: "", category: "Safari", destination: "", country: "Kenya", location: "", meetingPoint: "Nairobi, Kenya", date: "", endDate: "", capacity: 20, duration: 1, difficulty: "easy", price: "", discount: 0, highlightsText: "", inclusionsText: "Transport\nGuide", exclusionsText: "International flights", guide: "", driver: "", vehicle: "", status: "upcoming" };
+// Declare createItineraryDay for use by the surrounding module or function.
 const createItineraryDay = (day) => ({ day, title: "", description: "", activitiesText: "", mealsText: "", accommodation: "" });
+// Declare linesFromText for use by the surrounding module or function.
 const linesFromText = (value) => String(value || "").split("\n").map((item) => item.trim()).filter(Boolean);
+// Declare unwrapList for use by the surrounding module or function.
 const unwrapList = (response, keys = []) => { if (Array.isArray(response)) return response; for (const key of keys) if (Array.isArray(response?.[key])) return response[key]; if (Array.isArray(response?.data)) return response.data; if (Array.isArray(response?.data?.data)) return response.data.data; for (const key of keys) if (Array.isArray(response?.data?.[key])) return response.data[key]; return []; };
+// Declare cleanLabel for use by the surrounding module or function.
 const cleanLabel = (value, fallback) => { const text = String(value ?? "").trim(); return text && !/^undefined|^null$/i.test(text) ? text : fallback; };
+// Declare todayIso for use by the surrounding module or function.
 const todayIso = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+// Declare inputClass for use by the surrounding module or function.
 const inputClass = "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-100";
+// Declare labelClass for use by the surrounding module or function.
 const labelClass = "text-sm font-semibold text-slate-700";
 
+// Define CreateTour; its parameters and body implement this operation.
 export default function CreateTour() {
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate(); const location = useLocation(); const queryClient = useQueryClient();
+  // Declare returnPath for use by the surrounding module or function.
   const returnPath = location.state?.returnTo === "/admin/tours" ? "/admin/tours" : "/tour-manager/tours";
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
+  // Declare companyName for use by the surrounding module or function.
   const companyName = String(settings.companyName || settings.displayName || settings.organizationName || "Global Tours").trim();
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState(emptyForm); const [itineraryDays, setItineraryDays] = useState([createItineraryDay(1)]); const [imageFiles, setImageFiles] = useState([]); const [imageError, setImageError] = useState("");
+  // Declare { data: destinationsData, isLoading: destinationsLoading, isError: destinationsError, refetch: refetchDestinations } for use by the surrounding module or function.
   const { data: destinationsData, isLoading: destinationsLoading, isError: destinationsError, refetch: refetchDestinations } = useQuery({ queryKey: ["destinations"], queryFn: getDestinations, retry: 1 });
+  // Declare { data: guidesData, isLoading: guidesLoading, error: guidesError, refetch: refetchGuides } for use by the surrounding module or function.
   const { data: guidesData, isLoading: guidesLoading, error: guidesError, refetch: refetchGuides } = useQuery({ queryKey: ["tour-assignment-guides"], queryFn: getGuides, retry: 1 });
+  // Declare { data: driversData, isLoading: driversLoading, error: driversError, refetch: refetchDrivers } for use by the surrounding module or function.
   const { data: driversData, isLoading: driversLoading, error: driversError, refetch: refetchDrivers } = useQuery({ queryKey: ["tour-assignment-drivers"], queryFn: getDrivers, retry: 1 });
+  // Declare { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError, refetch: refetchVehicles } for use by the surrounding module or function.
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError, refetch: refetchVehicles } = useQuery({ queryKey: ["tour-assignment-vehicles"], queryFn: getVehicles, retry: 1 });
+  // Declare destinations for use by the surrounding module or function.
   const destinations = unwrapList(destinationsData, ["destinations"]);
+  // Declare guides for use by the surrounding module or function.
   const guides = unwrapList(guidesData, ["guides"]).filter((item) => item.availability === "available" && !item.assignedTour && !item.assignedTours?.length);
+  // Declare drivers for use by the surrounding module or function.
   const drivers = unwrapList(driversData, ["drivers"]).filter((item) => item.availability === "available" && !item.assignedTour && !item.assignedTours?.length);
+  // Declare vehicles for use by the surrounding module or function.
   const vehicles = unwrapList(vehiclesData, ["vehicles"]).filter((item) => (item.status === "available" || !item.status) && !item.assignedTour);
+  // Declare selectedDestination for use by the surrounding module or function.
   const selectedDestination = useMemo(() => destinations.find((item) => String(item._id) === String(form.destination)), [destinations, form.destination]);
+  // Declare estimatedTotal for use by the surrounding module or function.
   const estimatedTotal = useMemo(() => { const price = Number(form.price) || 0; const discount = Math.min(100, Math.max(0, Number(form.discount) || 0)); return Math.max(0, price * (1 - discount / 100)); }, [form.price, form.discount]);
+  // Declare assignmentLoading for use by the surrounding module or function.
   const assignmentLoading = guidesLoading || driversLoading || vehiclesLoading; const assignmentError = guidesError || driversError || vehiclesError;
 
+  // Declare { mutate: saveTour, isPending } for use by the surrounding module or function.
   const { mutate: saveTour, isPending } = useMutation({ mutationFn: createTour, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["tour-manager-tours"] }); queryClient.invalidateQueries({ queryKey: ["adminTours"] }); queryClient.invalidateQueries({ queryKey: ["tours"] }); queryClient.invalidateQueries({ queryKey: ["tour-manager-dashboard"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-guides"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-drivers"] }); queryClient.invalidateQueries({ queryKey: ["tour-assignment-vehicles"] }); toast.success("Tour created successfully."); navigate(returnPath); }, onError: (error) => toast.error(error?.response?.data?.message || "Tour creation failed. No changes were applied.") });
+  // Declare handleChange for use by the surrounding module or function.
   const handleChange = (event) => { const { name, value } = event.target; setForm((current) => ({ ...current, [name]: value })); if (name === "duration") { const days = Number(value); if (Number.isInteger(days) && days > 0) setItineraryDays((current) => current.filter((day) => day.day <= days)); } };
+  // Declare updateItineraryDay for use by the surrounding module or function.
   const updateItineraryDay = (index, field, value) => setItineraryDays((current) => current.map((day, dayIndex) => dayIndex === index ? { ...day, [field]: value } : day));
+  // Declare addItineraryDay for use by the surrounding module or function.
   const addItineraryDay = () => setItineraryDays((current) => { const nextDay = current.length + 1; if (nextDay > Number(form.duration) || nextDay > 365) return current; return [...current, createItineraryDay(nextDay)]; });
+  // Declare removeItineraryDay for use by the surrounding module or function.
   const removeItineraryDay = (index) => setItineraryDays((current) => current.filter((_, dayIndex) => dayIndex !== index).map((day, dayIndex) => ({ ...day, day: dayIndex + 1 })));
+  // Declare handleImages for use by the surrounding module or function.
   const handleImages = (event) => { const files = Array.from(event.target.files || []); const allowed = ["image/jpeg", "image/png", "image/webp"]; if (files.some((file) => !allowed.includes(file.type))) { setImageError("Only JPG, PNG and WebP images are supported."); setImageFiles([]); event.target.value = ""; return; } if (files.length > 10) setImageError("A maximum of 10 images can be uploaded."); else setImageError(""); setImageFiles(files.slice(0, 10)); };
+  // Declare removeImage for use by the surrounding module or function.
   const removeImage = (index) => setImageFiles((files) => files.filter((_, itemIndex) => itemIndex !== index));
+  // Declare retryResources for use by the surrounding module or function.
   const retryResources = () => { if (destinationsError) refetchDestinations(); if (guidesError) refetchGuides(); if (driversError) refetchDrivers(); if (vehiclesError) refetchVehicles(); };
+  // Declare submitHandler for use by the surrounding module or function.
   const submitHandler = (event) => {
+    // Perform the side effect or state update expressed on the following line.
     event.preventDefault();
+    // Declare title, shortDescription, description, location for use by the surrounding module or function.
     const title = form.title.trim(), shortDescription = form.shortDescription.trim(), description = form.description.trim(), location = form.location.trim();
+    // Declare price, capacity, duration, discount for use by the surrounding module or function.
     const price = Number(form.price), capacity = Number(form.capacity), duration = Number(form.duration), discount = Number(form.discount || 0);
+    // Check the condition (!title || !description) and run the matching branch.
     if (!title || !description) return toast.error("Tour title and description are required.");
+    // Check the condition (!form.destination) and run the matching branch.
     if (!form.destination) return toast.error("Select a destination before creating the tour.");
+    // Check the condition (!location) and run the matching branch.
     if (!location) return toast.error("Tour location is required.");
+    // Check the condition (!form.date) and run the matching branch.
     if (!form.date) return toast.error("Select a travel date.");
+    // Check the condition (form.date < todayIso) and run the matching branch.
     if (form.date < todayIso) return toast.error("Travel date cannot be in the past.");
+    // Check the condition (form.endDate && form.endDate < form.date) and run the matching branch.
     if (form.endDate && form.endDate < form.date) return toast.error("The return date cannot be before the departure date.");
+    // Check the condition (!Number.isFinite(price) || price < 0) and run the matching branch.
     if (!Number.isFinite(price) || price < 0) return toast.error("Enter a valid KES tour price.");
+    // Check the condition (!Number.isInteger(capacity) || capacity < 1) and run the matching branch.
     if (!Number.isInteger(capacity) || capacity < 1) return toast.error("Capacity must be at least 1 guest.");
+    // Check the condition (!Number.isInteger(duration) || duration < 1 || duration > 365) and run the matching branch.
     if (!Number.isInteger(duration) || duration < 1 || duration > 365) return toast.error("Duration must be a whole number between 1 and 365 days.");
+    // Check the condition (!Number.isFinite(discount) || discount < 0 || discount > 100) and run the matching branch.
     if (!Number.isFinite(discount) || discount < 0 || discount > 100) return toast.error("Discount must be between 0% and 100%.");
+    // Check the condition (itineraryDays.length !== duration) and run the matching branch.
     if (itineraryDays.length !== duration) return toast.error("Add one itinerary day for each of the " + duration + " tour days. You have added " + itineraryDays.length + ".");
+    // Check the condition (itineraryDays.some((day) => !day.title.trim() || !day.description.trim) and run the matching branch.
     if (itineraryDays.some((day) => !day.title.trim() || !day.description.trim())) return toast.error("Every itinerary day needs a title and description before the tour can be created.");
+    // Declare itinerary for use by the surrounding module or function.
     const itinerary = itineraryDays.map((day, index) => ({ day: index + 1, title: day.title.trim(), description: day.description.trim(), activities: linesFromText(day.activitiesText), meals: linesFromText(day.mealsText), accommodation: day.accommodation.trim() }));
+    // Declare payload for use by the surrounding module or function.
     const payload = new FormData();
+    // Declare values for use by the surrounding module or function.
     const values = {
       title, shortDescription, description, category: form.category, destination: form.destination,
       country: form.country.trim() || "Kenya", location, meetingPoint: form.meetingPoint.trim(),
@@ -71,11 +134,15 @@ export default function CreateTour() {
       inclusions: JSON.stringify(linesFromText(form.inclusionsText)), exclusions: JSON.stringify(linesFromText(form.exclusionsText)),
       itinerary: JSON.stringify(itinerary),
     };
+    // Perform the side effect or state update expressed on the following line.
     Object.entries(values).forEach(([key, value]) => payload.append(key, String(value)));
+    // Perform the side effect or state update expressed on the following line.
     imageFiles.forEach((file) => payload.append("images", file));
+    // Perform the side effect or state update expressed on the following line.
     saveTour(payload);
   };
 
+  // Return the expression shown below to the caller.
   return <div className="min-h-screen bg-slate-50">
     <div className="border-b border-emerald-950/20 bg-slate-950 text-white"><div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8"><button type="button" onClick={() => navigate(returnPath)} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-white"><ChevronLeft size={18}/> Back to Tours</button><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-300"><Compass size={14}/> Tour Operations</div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">Create New Tour</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Build a complete tour product with pricing, availability, destination and optional operational resources.</p></div><div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm"><div className="font-bold">{companyName}</div><div className="mt-1 text-xs text-slate-400">Tenant-scoped tour creation • Currency: KES</div></div></div></div></div>
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8"><form onSubmit={submitHandler} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]"><div className="space-y-6">

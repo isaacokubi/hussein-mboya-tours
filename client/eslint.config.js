@@ -1,8 +1,17 @@
+/**
+ * Purpose: eslint.config client application module. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import js from "@eslint/js";
+// Load globals so this module can use its exported dependencies.
 import globals from "globals";
+// Load eslint-plugin-react-hooks so this module can use its exported dependencies.
 import reactHooks from "eslint-plugin-react-hooks";
+// Load eslint-plugin-react-refresh so this module can use its exported dependencies.
 import reactRefresh from "eslint-plugin-react-refresh";
+// Load eslint-plugin-unused-imports so this module can use its exported dependencies.
 import unusedImports from "eslint-plugin-unused-imports";
+// Load eslint/config so this module can use its exported dependencies.
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([

@@ -1,13 +1,24 @@
+/**
+ * Purpose: custom Tour Requests Seed database seed module. Main declarations: seed.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load dotenv so this module can use its exported dependencies.
 import dotenv from "dotenv";
+// Load ../models/Organization.js so this module can use its exported dependencies.
 import Organization from "../models/Organization.js";
+// Load ../models/CustomTourRequest.js so this module can use its exported dependencies.
 import CustomTourRequest from "../models/CustomTourRequest.js";
+// Load ../tenancy/context.js so this module can use its exported dependencies.
 import { runWithTenant } from "../tenancy/context.js";
 
+// Perform the side effect or state update expressed on the following line.
 dotenv.config();
 
+// Declare TENANT_SLUG for use by the surrounding module or function.
 const TENANT_SLUG = "amani-trails-safaris";
 
+// Declare requests for use by the surrounding module or function.
 const requests = [
   { guestContact:{name:"Brian Mwangi",email:"custom-seed-001@amanitrails.co.ke",phone:"0712345601"}, destination:"Maasai Mara", durationDays:5, people:4, adults:4, children:0, startDate:"2026-10-10", budget:420000, requirements:"Private 4x4 safari, Big Five game drives, professional English-speaking guide and a sunset bush experience.", pickupLocation:"JKIA, Nairobi", accommodationPreference:"Luxury lodge", mealPreference:"Full board", transportPreference:"Private 4x4 safari vehicle", specialRequests:"Airport pickup and a flexible first-day itinerary.", status:"quoted", quotedAmount:395000, adminNotes:"Quote prepared for a private luxury Maasai Mara safari." },
   { guestContact:{name:"Faith Wanjiku",email:"custom-seed-002@amanitrails.co.ke",phone:"0723456702"}, destination:"Diani Beach", durationDays:4, people:2, adults:2, children:0, startDate:"2026-11-06", budget:220000, requirements:"Couples beach holiday with a private dinner, marine excursion and airport transfers.", pickupLocation:"Ukunda Airport", accommodationPreference:"Boutique beachfront hotel", mealPreference:"Breakfast and dinner", transportPreference:"Private transfers", specialRequests:"Quiet room suitable for a couple.", status:"approved", quotedAmount:198000, adminNotes:"Customer-ready quote approved for the requested Diani itinerary." },
@@ -16,31 +27,47 @@ const requests = [
   { guestContact:{name:"Samuel Kamau",email:"custom-seed-005@amanitrails.co.ke",phone:"0756789005"}, destination:"Nairobi and Lake Naivasha", durationDays:3, people:4, adults:4, children:0, startDate:"2026-10-24", budget:180000, requirements:"Short private escape combining Nairobi highlights, Lake Naivasha and a guided nature experience.", pickupLocation:"Westlands, Nairobi", accommodationPreference:"Mid-range hotel", mealPreference:"Breakfast", transportPreference:"Private vehicle", specialRequests:"Return to Nairobi by the final afternoon.", status:"rejected", quotedAmount:0, adminNotes:"Demo request marked rejected to exercise the admin status workflow." }
 ];
 
+// Declare seed for use by the surrounding module or function.
 const seed = async () => {
+  // Check the condition (!process.env.MONGODB_URI) and run the matching branch.
   if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing in .env");
+  // Perform the side effect or state update expressed on the following line.
   await mongoose.connect(process.env.MONGODB_URI);
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare organization for use by the surrounding module or function.
     const organization = await Organization.findOne({ slug: TENANT_SLUG, isDeleted: { $ne: true } }).lean();
+    // Check the condition (!organization) and run the matching branch.
     if (!organization) throw new Error("Tenant " + TENANT_SLUG + " was not found.");
 
+    // Perform the side effect or state update expressed on the following line.
     await runWithTenant({ tenantId: organization._id, tenant: organization }, async () => {
+      // Repeat the enclosed work for each required iteration.
       for (const data of requests) {
+        // Perform the side effect or state update expressed on the following line.
         await CustomTourRequest.findOneAndUpdate(
           { tenantId: organization._id, "guestContact.email": data.guestContact.email },
           { $set: { ...data }, $setOnInsert: { tenantId: organization._id, user: null, customer: null } },
           { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true },
         );
+        // Perform the side effect or state update expressed on the following line.
         console.log("Seeded: " + data.guestContact.email + " / " + data.status);
       }
+      // Declare count for use by the surrounding module or function.
       const count = await CustomTourRequest.countDocuments({ tenantId: organization._id });
+      // Perform the side effect or state update expressed on the following line.
       console.log("Amani Trails Safaris custom tour requests: " + count + " total.");
     });
   } finally {
+    // Perform the side effect or state update expressed on the following line.
     await mongoose.connection.close().catch(() => {});
   }
 };
 
+// Perform the side effect or state update expressed on the following line.
 seed().catch((error) => {
+  // Perform the side effect or state update expressed on the following line.
   console.error("Custom tour request seed failed:", error);
+  // Perform the side effect or state update expressed on the following line.
   process.exitCode = 1;
 });

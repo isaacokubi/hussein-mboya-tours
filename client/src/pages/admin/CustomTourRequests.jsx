@@ -1,10 +1,20 @@
+/**
+ * Purpose: Custom Tour Requests page-level UI component. Main declarations: money, customerName, customerEmail, CustomTourRequests, refresh.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { Search, RefreshCw, SlidersHorizontal, MapPin, Users, Clock3, MessageSquareText, WalletCards, UserRound, Car, BriefcaseBusiness, Save, Send, XCircle, AlertCircle } from "lucide-react";
+// Load ../../api/customTourApi so this module can use its exported dependencies.
 import { getAdminCustomTourRequests, quoteCustomTourRequest, assignCustomTourResources } from "../../api/customTourApi";
+// Load ../../api/adminAgentApi so this module can use its exported dependencies.
 import { getAgents } from "../../api/adminAgentApi";
+// Load ../../api/tourApi so this module can use its exported dependencies.
 import { getGuides, getDrivers } from "../../api/tourApi";
 
+// Declare STATUS_STYLES for use by the surrounding module or function.
 const STATUS_STYLES = {
   pending: "border-amber-200 bg-amber-50 text-amber-800",
   quoted: "border-blue-200 bg-blue-50 text-blue-800",
@@ -13,52 +23,79 @@ const STATUS_STYLES = {
   rejected: "border-rose-200 bg-rose-50 text-rose-800",
 };
 
+// Declare money for use by the surrounding module or function.
 const money = (value) => `KES ${Number(value || 0).toLocaleString("en-KE")}`;
+// Declare customerName for use by the surrounding module or function.
 const customerName = (request) => request.customer?.name || request.guestContact?.name || "Guest customer";
+// Declare customerEmail for use by the surrounding module or function.
 const customerEmail = (request) => request.customer?.email || request.guestContact?.email || "No email provided";
+// Declare terminalStatuses for use by the surrounding module or function.
 const terminalStatuses = new Set(["converted", "rejected"]);
 
+// Define CustomTourRequests; its parameters and body implement this operation.
 export default function CustomTourRequests() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [amounts, setAmounts] for use by the surrounding module or function.
   const [amounts, setAmounts] = useState({});
+  // Declare [notes, setNotes] for use by the surrounding module or function.
   const [notes, setNotes] = useState({});
+  // Declare [resources, setResources] for use by the surrounding module or function.
   const [resources, setResources] = useState({});
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [statusFilter, setStatusFilter] for use by the surrounding module or function.
   const [statusFilter, setStatusFilter] = useState("all");
+  // Declare [actionError, setActionError] for use by the surrounding module or function.
   const [actionError, setActionError] = useState("");
 
+  // Declare requestsQuery for use by the surrounding module or function.
   const requestsQuery = useQuery({
     queryKey: ["admin-custom-tour-requests"],
     queryFn: getAdminCustomTourRequests,
   });
+  // Declare agentsQuery for use by the surrounding module or function.
   const agentsQuery = useQuery({ queryKey: ["admin-agents"], queryFn: getAgents });
+  // Declare guidesQuery for use by the surrounding module or function.
   const guidesQuery = useQuery({ queryKey: ["custom-guides"], queryFn: getGuides });
+  // Declare driversQuery for use by the surrounding module or function.
   const driversQuery = useQuery({ queryKey: ["custom-drivers"], queryFn: getDrivers });
 
+  // Declare refresh for use by the surrounding module or function.
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-custom-tour-requests"] });
 
+  // Declare assignMutation for use by the surrounding module or function.
   const assignMutation = useMutation({
     mutationFn: assignCustomTourResources,
     onSuccess: () => { setActionError(""); refresh(); },
     onError: (error) => setActionError(error?.response?.data?.message || "Unable to save the resource assignment."),
   });
 
+  // Declare quoteMutation for use by the surrounding module or function.
   const quoteMutation = useMutation({
     mutationFn: quoteCustomTourRequest,
     onSuccess: () => { setActionError(""); refresh(); },
     onError: (error) => setActionError(error?.response?.data?.message || "Unable to update the request."),
   });
 
+  // Declare requests for use by the surrounding module or function.
   const requests = requestsQuery.data?.requests || [];
+  // Declare filteredRequests for use by the surrounding module or function.
   const filteredRequests = useMemo(() => {
+    // Declare term for use by the surrounding module or function.
     const term = search.trim().toLowerCase();
+    // Return the result of requests.filter() to the caller.
     return requests.filter((r) => {
+      // Declare matchesStatus for use by the surrounding module or function.
       const matchesStatus = statusFilter === "all" || String(r.status || "").toLowerCase() === statusFilter;
+      // Declare haystack for use by the surrounding module or function.
       const haystack = `${r.destination || ""} ${customerName(r)} ${customerEmail(r)} ${r.requirements || ""}`.toLowerCase();
+      // Return the expression shown below to the caller.
       return matchesStatus && (!term || haystack.includes(term));
     });
   }, [requests, search, statusFilter]);
 
+  // Declare stats for use by the surrounding module or function.
   const stats = useMemo(() => ({
     total: requests.length,
     pending: requests.filter((r) => r.status === "pending").length,
@@ -69,18 +106,26 @@ export default function CustomTourRequests() {
     value: requests.reduce((sum, r) => sum + (r.status === "quoted" ? Number(r.quotedAmount || 0) : 0), 0),
   }), [requests]);
 
+  // Declare guideOptions for use by the surrounding module or function.
   const guideOptions = (guidesQuery.data || []).filter((x) => x.availability === "available" && x.status !== "inactive" && x.isDeleted !== true);
+  // Declare driverOptions for use by the surrounding module or function.
   const driverOptions = (driversQuery.data || []).filter((x) => x.availability === "available" && x.status !== "inactive" && x.isDeleted !== true);
+  // Declare agentOptions for use by the surrounding module or function.
   const agentOptions = (agentsQuery.data || []).filter((x) => x.status === "active" && x.isApproved === true);
 
+  // Check the condition (requestsQuery.isLoading) and run the matching branch.
   if (requestsQuery.isLoading) {
+    // Return the expression shown below to the caller.
     return <div className="min-h-screen bg-slate-100 p-6"><div className="mx-auto max-w-7xl animate-pulse space-y-5"><div className="h-36 rounded-3xl bg-slate-300" /><div className="h-24 rounded-2xl bg-white" /><div className="h-72 rounded-3xl bg-white" /></div></div>;
   }
 
+  // Check the condition (requestsQuery.isError) and run the matching branch.
   if (requestsQuery.isError) {
+    // Return the expression shown below to the caller.
     return <div className="min-h-screen bg-slate-100 p-6"><div className="mx-auto max-w-3xl rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm"><AlertCircle className="mx-auto mb-3 text-rose-600" size={30} /><h2 className="text-lg font-bold text-slate-900">Unable to load custom tour requests</h2><p className="mt-1 text-sm text-slate-600">Please refresh and try again.</p><button onClick={() => requestsQuery.refetch()} className="mt-5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700">Retry</button></div></div>;
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-indigo-100 p-4 text-slate-900 sm:p-6">
       <div className="mx-auto max-w-7xl space-y-5">

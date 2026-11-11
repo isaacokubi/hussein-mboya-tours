@@ -1,30 +1,50 @@
+/**
+ * Purpose: Accounting Subledgers page-level UI component. Main declarations: localDate, number, money, titleCase, apiMessage.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load ../../../api/axios so this module can use its exported dependencies.
 import api from "../../../api/axios";
+// Load ./AccountingSubledgers.css so this module can use its exported dependencies.
 import "./AccountingSubledgers.css";
 
+// Declare TYPES for use by the surrounding module or function.
 const TYPES = ["inventory", "payroll", "accrual", "prepayment", "fx"];
+// Declare CURRENCIES for use by the surrounding module or function.
 const CURRENCIES = ["KES", "USD", "EUR", "GBP", "TZS", "UGX", "ZAR"];
 
+// Declare localDate for use by the surrounding module or function.
 const localDate = () => {
+  // Declare d for use by the surrounding module or function.
   const d = new Date();
+  // Declare offset for use by the surrounding module or function.
   const offset = d.getTimezoneOffset();
+  // Return the result of new Date(d.getTime() - offset * 60_000).toISOString().slice() to the caller.
   return new Date(d.getTime() - offset * 60_000).toISOString().slice(0, 10);
 };
 
+// Declare number for use by the surrounding module or function.
 const number = (value) => {
+  // Check the condition (value === null || value === undefined || value === "" || !Number.isFin) and run the matching branch.
   if (value === null || value === undefined || value === "" || !Number.isFinite(Number(value))) return "—";
+  // Return the result of Number(value).toLocaleString() to the caller.
   return Number(value).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+// Declare money for use by the surrounding module or function.
 const money = (value, currency = "KES") =>
   value === null || value === undefined || value === "" || !Number.isFinite(Number(value))
     ? "—"
     : `${currency} ${number(value)}`;
 
+// Declare titleCase for use by the surrounding module or function.
 const titleCase = (value) => String(value || "").replace(/\b\w/g, (c) => c.toUpperCase());
+// Declare apiMessage for use by the surrounding module or function.
 const apiMessage = (error, fallback) => error?.response?.data?.message || error?.message || fallback;
 
+// Declare initialForm for use by the surrounding module or function.
 const initialForm = () => ({
   type: "inventory",
   reference: "",
@@ -40,52 +60,81 @@ const initialForm = () => ({
   direction: "in",
 });
 
+// Define AccountingSubledgers; its parameters and body implement this operation.
 export default function AccountingSubledgers() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState(initialForm);
+  // Declare [registerType, setRegisterType] for use by the surrounding module or function.
   const [registerType, setRegisterType] = useState("all");
+  // Declare [clientError, setClientError] for use by the surrounding module or function.
   const [clientError, setClientError] = useState("");
 
+  // Declare query for use by the surrounding module or function.
   const query = useQuery({
     queryKey: ["accounting-subledgers", registerType],
     queryFn: async () => {
+      // Declare suffix for use by the surrounding module or function.
       const suffix = registerType === "all" ? "" : `?type=${registerType}`;
+      // Return the data value to the caller.
       return (await api.get(`/admin/finance/accounting/subledgers${suffix}`)).data;
     },
     staleTime: 15_000,
   });
 
+  // Declare rows for use by the surrounding module or function.
   const rows = query.data?.data || [];
+  // Declare serverSummary for use by the surrounding module or function.
   const serverSummary = query.data?.summary;
 
+  // Declare summary for use by the surrounding module or function.
   const summary = useMemo(() => ({
     count: Number.isFinite(Number(serverSummary?.count)) ? Number(serverSummary.count) : rows.length,
     baseTotal: Number.isFinite(Number(serverSummary?.baseTotal)) ? Number(serverSummary.baseTotal) : rows.reduce((sum, row) => sum + Number(row.baseAmount || 0), 0),
     foreign: Number.isFinite(Number(serverSummary?.foreign)) ? Number(serverSummary.foreign) : rows.filter((row) => String(row.currency || "KES").toUpperCase() !== "KES").length,
   }), [rows, serverSummary]);
 
+  // Declare update for use by the surrounding module or function.
   const update = (key, value) => {
+    // Perform the side effect or state update expressed on the following line.
     setClientError("");
+    // Perform the side effect or state update expressed on the following line.
     setForm((current) => ({ ...current, [key]: value }));
   };
 
+  // Declare create for use by the surrounding module or function.
   const create = useMutation({
     mutationFn: async () => {
+      // Declare amount for use by the surrounding module or function.
       const amount = Number(form.amount);
+      // Declare rate for use by the surrounding module or function.
       const rate = Number(form.exchangeRate);
+      // Declare quantity for use by the surrounding module or function.
       const quantity = form.quantity === "" ? 0 : Number(form.quantity);
+      // Declare unitCost for use by the surrounding module or function.
       const unitCost = form.unitCost === "" ? 0 : Number(form.unitCost);
+      // Declare currency for use by the surrounding module or function.
       const currency = String(form.currency).toUpperCase();
 
+      // Check the condition (!form.reference.trim()) and run the matching branch.
       if (!form.reference.trim()) throw new Error("Reference is required.");
+      // Check the condition (!form.description.trim()) and run the matching branch.
       if (!form.description.trim()) throw new Error("Description is required.");
+      // Check the condition (!Number.isFinite(amount) || amount <= 0) and run the matching branch.
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("Amount must be greater than zero.");
+      // Check the condition (!Number.isFinite(rate) || rate <= 0) and run the matching branch.
       if (!Number.isFinite(rate) || rate <= 0) throw new Error("Rate to KES must be greater than zero.");
+      // Check the condition (currency === "KES" && rate !== 1) and run the matching branch.
       if (currency === "KES" && rate !== 1) throw new Error("KES entries must use a rate of 1.00.");
+      // Check the condition (currency !== "KES" && rate === 1) and run the matching branch.
       if (currency !== "KES" && rate === 1) throw new Error("Enter the explicit exchange rate to KES for non-KES entries.");
+      // Check the condition (form.type === "inventory" && (!Number.isFinite(quantity) || quantity <) and run the matching branch.
       if (form.type === "inventory" && (!Number.isFinite(quantity) || quantity <= 0)) throw new Error("Inventory quantity must be greater than zero.");
+      // Check the condition (form.type === "inventory" && (!Number.isFinite(unitCost) || unitCost <) and run the matching branch.
       if (form.type === "inventory" && (!Number.isFinite(unitCost) || unitCost <= 0)) throw new Error("Inventory unit cost must be greater than zero.");
 
+      // Return the result of api.post() to the caller.
       return api.post("/admin/finance/accounting/subledgers", {
         ...form,
         currency,
@@ -96,25 +145,35 @@ export default function AccountingSubledgers() {
       });
     },
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["accounting-subledgers"] });
+      // Perform the side effect or state update expressed on the following line.
       setForm(initialForm());
+      // Perform the side effect or state update expressed on the following line.
       setClientError("");
     },
     onError: (error) => setClientError(apiMessage(error, "Unable to save transaction.")),
   });
 
+  // Declare submit for use by the surrounding module or function.
   const submit = (event) => {
+    // Perform the side effect or state update expressed on the following line.
     event.preventDefault();
+    // Perform the side effect or state update expressed on the following line.
     setClientError("");
+    // Perform the side effect or state update expressed on the following line.
     create.mutate();
   };
 
+  // Declare rateHelp for use by the surrounding module or function.
   const rateHelp = form.currency === "KES"
     ? "KES is the functional currency; rate must remain 1.00."
     : `1 ${form.currency} = ${form.exchangeRate || "—"} KES. An explicit rate is required.`;
 
+  // Declare registerLabel for use by the surrounding module or function.
   const registerLabel = registerType === "all" ? "All subledgers" : `${titleCase(registerType)} register`;
 
+  // Return the expression shown below to the caller.
   return (
     <main className="subledger-page min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -292,7 +351,9 @@ export default function AccountingSubledgers() {
   );
 }
 
+// Define Field; its parameters and body implement this operation.
 function Field({ label, required, hint, children }) {
+  // Return the expression shown below to the caller.
   return (
     <label className="block">
       <span className="field-label text-xs">{label}{required ? <span className="ml-1 text-red-600" aria-hidden="true">*</span> : null}</span>

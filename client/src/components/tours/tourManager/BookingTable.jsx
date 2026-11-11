@@ -1,16 +1,30 @@
+/**
+ * Purpose: Booking Table reusable UI component. Main declarations: clean, validText, customerName, tourName, statusClass.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { CalendarDays, ChevronRight, CircleAlert, CreditCard, UserRound } from "lucide-react";
 
+// Declare clean for use by the surrounding module or function.
 const clean = (value) => String(value ?? "").trim().replace(/\s+/g, " ");
+// Declare validText for use by the surrounding module or function.
 const validText = (value) => {
+  // Declare text for use by the surrounding module or function.
   const text = clean(value);
+  // Return the expression shown below to the caller.
   return text && !/^undefined(?:\s+undefined)?$/i.test(text) && !/^null(?:\s+null)?$/i.test(text) ? text : "";
 };
 
+// Declare customerName for use by the surrounding module or function.
 const customerName = (booking) => {
+  // Declare customer for use by the surrounding module or function.
   const customer = booking.customer || {};
+  // Declare user for use by the surrounding module or function.
   const user = booking.user || {};
+  // Declare snapshot for use by the surrounding module or function.
   const snapshot = booking.customerSnapshot || {};
+  // Declare contact for use by the surrounding module or function.
   const contact = booking.contact || {};
+  // Declare candidates for use by the surrounding module or function.
   const candidates = [
     customer.fullName,
     customer.name,
@@ -22,15 +36,21 @@ const customerName = (booking) => {
     contact.name,
     booking.passengerName,
   ];
+  // Return the expression shown below to the caller.
   return candidates.map(validText).find(Boolean) || "Customer record unavailable";
 };
 
+// Declare tourName for use by the surrounding module or function.
 const tourName = (booking) => {
+  // Declare tour for use by the surrounding module or function.
   const tour = booking.tour || {};
+  // Return the expression shown below to the caller.
   return [tour.title, tour.name, booking.tourTitle].map(validText).find(Boolean) || (booking.customTourRequest ? "Custom Tour Package" : "Tour record unavailable");
 };
 
+// Declare statusClass for use by the surrounding module or function.
 const statusClass = (status) => {
+  // Select the appropriate branch based on String(status || "").toLowerCase().
   switch (String(status || "").toLowerCase()) {
     case "completed": return "bg-emerald-50 text-emerald-700 ring-emerald-200";
     case "confirmed": return "bg-sky-50 text-sky-700 ring-sky-200";
@@ -44,13 +64,19 @@ const statusClass = (status) => {
   }
 };
 
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "Date not set";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Return the expression shown below to the caller.
   return Number.isNaN(date.getTime()) ? "Date not set" : date.toLocaleDateString("en-KE", { day: "2-digit", month: "short", year: "numeric" });
 };
 
+// Define BookingTable; its parameters and body implement this operation.
 export default function BookingTable({ bookings = [] }) {
+  // Return the expression shown below to the caller.
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">

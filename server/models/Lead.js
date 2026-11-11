@@ -1,6 +1,12 @@
+/**
+ * Purpose: Lead database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare leadSchema for use by the surrounding module or function.
 const leadSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   integrationKey: { type: mongoose.Schema.Types.ObjectId, ref: "WebsiteIntegrationKey", default: null },
@@ -30,9 +36,13 @@ const leadSchema = new mongoose.Schema({
   lastContactedAt: { type: Date, default: null },
 }, { timestamps: true });
 
+// Perform the side effect or state update expressed on the following line.
 leadSchema.index({ tenantId: 1, phone: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 leadSchema.index({ tenantId: 1, email: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 leadSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 leadSchema.plugin(tenantPlugin);
 
 export default mongoose.models.Lead || mongoose.model("Lead", leadSchema);

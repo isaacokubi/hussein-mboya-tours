@@ -1,9 +1,18 @@
+/**
+ * Purpose: Policy Page page-level UI component. Main declarations: PolicyPage, submit.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load lucide-react so this module can use its exported dependencies.
 import { Send, ShieldCheck } from "lucide-react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation } from "@tanstack/react-query";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../api/privacyApi so this module can use its exported dependencies.
 import { createPrivacyRequest } from "../api/privacyApi";
 
+// Declare content for use by the surrounding module or function.
 const content = {
   privacy: {
     title: "Privacy Policy",
@@ -31,19 +40,27 @@ const content = {
   }
 };
 
+// Declare requestTypes for use by the surrounding module or function.
 const requestTypes = [["access", "Access my data"], ["correction", "Correct my data"], ["deletion", "Delete my data"], ["portability", "Export my data"], ["objection", "Object to processing"], ["restriction", "Restrict processing"]];
 
+// Define PolicyPage; its parameters and body implement this operation.
 export default function PolicyPage({ type = "privacy" }) {
+  // Declare page for use by the surrounding module or function.
   const page = content[type] || content.privacy;
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState({ type: "access", requesterName: "", requesterEmail: "", requesterPhone: "" });
+  // Declare [result, setResult] for use by the surrounding module or function.
   const [result, setResult] = useState(null);
+  // Declare requestM for use by the surrounding module or function.
   const requestM = useMutation({
     mutationFn: createPrivacyRequest,
     onSuccess: (response) => { setResult(response?.data || response); setForm({ type: "access", requesterName: "", requesterEmail: "", requesterPhone: "" }); toast.success("Privacy request submitted."); },
     onError: (e) => toast.error(e?.response?.data?.message || "Unable to submit privacy request."),
   });
+  // Declare submit for use by the surrounding module or function.
   const submit = (e) => { e.preventDefault(); requestM.mutate(form); };
 
+  // Return the expression shown below to the caller.
   return <div className="max-w-4xl mx-auto p-6 md:p-10">
     <h1 className="text-4xl font-bold mb-8">{page.title}</h1>
     <div className="space-y-5 text-gray-700 leading-7">{page.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div>

@@ -1,6 +1,12 @@
+/**
+ * Purpose: Audit Log database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare auditLogSchema for use by the surrounding module or function.
 const auditLogSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true, default: null },
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
@@ -28,15 +34,23 @@ const auditLogSchema = new mongoose.Schema({
   metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { timestamps: true });
 
+// Perform the side effect or state update expressed on the following line.
 auditLogSchema.index({ createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 auditLogSchema.index({ user: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 auditLogSchema.index({ action: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 auditLogSchema.index({ resource: 1, resourceId: 1 });
+// Perform the side effect or state update expressed on the following line.
 auditLogSchema.index({ severity: 1 });
 
+// Perform the side effect or state update expressed on the following line.
 auditLogSchema.statics.log = function (data) { return this.create(data); };
 
+// Declare tenantAuditLogSchema for use by the surrounding module or function.
 const tenantAuditLogSchema = auditLogSchema.plugin(tenantPlugin);
+// Declare AuditLog for use by the surrounding module or function.
 const AuditLog = mongoose.models.AuditLog || mongoose.model("AuditLog", tenantAuditLogSchema);
 
 export default AuditLog;

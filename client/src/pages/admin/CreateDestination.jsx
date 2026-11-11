@@ -1,16 +1,26 @@
+/**
+ * Purpose: Create Destination page-level UI component. Main declarations: CreateDestination, handleChange, handleImages, handleSubmit.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import {useState} from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import {useNavigate} from "react-router-dom";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import {useMutation} from "@tanstack/react-query";
 
+// Load ../../api/adminDestinationApi so this module can use its exported dependencies.
 import {
   createDestination
 } from "../../api/adminDestinationApi";
 
 
+// Declare CreateDestination for use by the surrounding module or function.
 const CreateDestination = () => {
 
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
 
+  // Declare [form,setForm] for use by the surrounding module or function.
   const [form,setForm] = useState({
     name:"",
     slug:"",
@@ -22,25 +32,30 @@ const CreateDestination = () => {
   });
 
 
+  // Declare mutation for use by the surrounding module or function.
   const mutation = useMutation({
 
     mutationFn:createDestination,
 
     onSuccess:()=>{
 
+      // Perform the side effect or state update expressed on the following line.
       alert("Destination created successfully");
 
+      // Perform the side effect or state update expressed on the following line.
       navigate("/admin/destinations");
 
     },
 
     onError:(error)=>{
 
+      // Perform the side effect or state update expressed on the following line.
       console.error(
         "CREATE DESTINATION ERROR:",
         error
       );
 
+      // Perform the side effect or state update expressed on the following line.
       alert(
         error.response?.data?.message ||
         "Failed creating destination"
@@ -52,10 +67,13 @@ const CreateDestination = () => {
 
 
 
+  // Declare handleChange for use by the surrounding module or function.
   const handleChange=(e)=>{
 
+    // Declare {name,value,type,checked} for use by the surrounding module or function.
     const {name,value,type,checked}=e.target;
 
+    // Perform the side effect or state update expressed on the following line.
     setForm({
       ...form,
       [name]:
@@ -67,8 +85,10 @@ const CreateDestination = () => {
   };
 
 
+  // Declare handleImages for use by the surrounding module or function.
   const handleImages=(e)=>{
 
+    // Perform the side effect or state update expressed on the following line.
     setForm({
       ...form,
       images:e.target.files
@@ -77,24 +97,32 @@ const CreateDestination = () => {
   };
 
 
+  // Declare handleSubmit for use by the surrounding module or function.
   const handleSubmit=(e)=>{
 
+    // Perform the side effect or state update expressed on the following line.
     e.preventDefault();
 
+    // Declare data for use by the surrounding module or function.
     const data = new FormData();
 
+    // Perform the side effect or state update expressed on the following line.
     Object.keys(form).forEach((key)=>{
 
+      // Check the condition (key==="images") and run the matching branch.
       if(key==="images"){
 
+        // Perform the side effect or state update expressed on the following line.
         Array.from(form.images).forEach(file=>{
 
+          // Perform the side effect or state update expressed on the following line.
           data.append("images",file);
 
         });
 
       }else{
 
+        // Perform the side effect or state update expressed on the following line.
         data.append(key,form[key]);
 
       }
@@ -102,11 +130,13 @@ const CreateDestination = () => {
     });
 
 
+    // Perform the side effect or state update expressed on the following line.
     mutation.mutate(data);
 
   };
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="p-6">

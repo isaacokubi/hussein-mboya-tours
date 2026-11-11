@@ -1,13 +1,23 @@
+/**
+ * Purpose: Assigned Tours page-level UI component. Main declarations: AssignedTours.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { CalendarDays, MapPin, Users, RefreshCw } from "lucide-react";
+// Load ../../api/guideApi so this module can use its exported dependencies.
 import { getAssignedTours } from "../../api/guideApi";
 
+// Define AssignedTours; its parameters and body implement this operation.
 export default function AssignedTours() {
+  // Declare { data, isLoading, isError, refetch, isFetching } for use by the surrounding module or function.
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["guide-assigned-tours"],
     queryFn: getAssignedTours,
   });
+  // Declare tours for use by the surrounding module or function.
   const tours = Array.isArray(data) ? data : data?.tours || data?.data?.tours || data?.data || [];
+  // Return the expression shown below to the caller.
   return <div className="min-h-screen bg-slate-50 p-4 md:p-8">
     <div className="mx-auto max-w-7xl space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">

@@ -1,5 +1,11 @@
+/**
+ * Purpose: Mpesa Transactions page-level UI component. Main declarations: money, displayValue, getStatus, StatusBadge, MetricCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   AlertCircle,
   CheckCircle2,
@@ -16,8 +22,10 @@ import {
   WalletCards,
   XCircle,
 } from "lucide-react";
+// Load ../../../api/financeApi so this module can use its exported dependencies.
 import { getMpesaTransactions } from "../../../api/financeApi";
 
+// Declare STATUS_META for use by the surrounding module or function.
 const STATUS_META = {
   completed: { label: "Completed", className: "bg-emerald-50 text-emerald-700 ring-emerald-600/20", icon: CheckCircle2 },
   pending: { label: "Pending", className: "bg-amber-50 text-amber-700 ring-amber-600/20", icon: Clock3 },
@@ -26,27 +34,37 @@ const STATUS_META = {
   cancelled: { label: "Cancelled", className: "bg-slate-100 text-slate-600 ring-slate-500/20", icon: XCircle },
 };
 
+// Declare money for use by the surrounding module or function.
 const money = (value) =>
   Number.isFinite(Number(value))
     ? `KES ${Number(value).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : "Unavailable";
 
+// Declare displayValue for use by the surrounding module or function.
 const displayValue = (value, fallback = "Unavailable") => {
+  // Check the condition (value === null || value === undefined || value === "") and run the matching branch.
   if (value === null || value === undefined || value === "") return fallback;
+  // Return the result of String() to the caller.
   return String(value);
 };
 
+// Declare getStatus for use by the surrounding module or function.
 const getStatus = (status) => String(status || "pending").toLowerCase();
 
+// Define StatusBadge; its parameters and body implement this operation.
 function StatusBadge({ status }) {
+  // Declare normalized for use by the surrounding module or function.
   const normalized = getStatus(status);
+  // Declare meta for use by the surrounding module or function.
   const meta = STATUS_META[normalized] || {
     label: displayValue(status, "Unknown"),
     className: "bg-slate-100 text-slate-600 ring-slate-500/20",
     icon: AlertCircle,
   };
+  // Declare Icon for use by the surrounding module or function.
   const Icon = meta.icon;
 
+  // Return the expression shown below to the caller.
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${meta.className}`}>
       <Icon size={13} />
@@ -55,7 +73,9 @@ function StatusBadge({ status }) {
   );
 }
 
+// Define MetricCard; its parameters and body implement this operation.
 function MetricCard({ label, value, hint, icon: Icon, tone = "emerald" }) {
+  // Declare tones for use by the surrounding module or function.
   const tones = {
     emerald: "bg-emerald-50 text-emerald-700",
     blue: "bg-blue-50 text-blue-700",
@@ -63,6 +83,7 @@ function MetricCard({ label, value, hint, icon: Icon, tone = "emerald" }) {
     rose: "bg-rose-50 text-rose-700",
   };
 
+  // Return the expression shown below to the caller.
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
@@ -79,40 +100,63 @@ function MetricCard({ label, value, hint, icon: Icon, tone = "emerald" }) {
   );
 }
 
+// Define MpesaTransactions; its parameters and body implement this operation.
 export default function MpesaTransactions() {
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [status, setStatus] for use by the surrounding module or function.
   const [status, setStatus] = useState("");
 
+  // Declare { data, isLoading, isError, refetch, isFetching } for use by the surrounding module or function.
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["mpesaTransactions", search, status],
     queryFn: () => getMpesaTransactions({ search, status }),
   });
 
+  // Declare payments for use by the surrounding module or function.
   const payments = useMemo(() => {
+    // Check the condition (Array.isArray(data?.data)) and run the matching branch.
     if (Array.isArray(data?.data)) return data.data;
+    // Check the condition (Array.isArray(data?.payments)) and run the matching branch.
     if (Array.isArray(data?.payments)) return data.payments;
+    // Check the condition (Array.isArray(data?.data?.payments)) and run the matching branch.
     if (Array.isArray(data?.data?.payments)) return data.data.payments;
+    // Return the collection assembled below to the caller.
     return [];
   }, [data]);
 
+  // Declare stats for use by the surrounding module or function.
   const stats = useMemo(() => {
+    // Declare completed for use by the surrounding module or function.
     const completed = payments.filter((t) => getStatus(t.status) === "completed");
+    // Declare refunded for use by the surrounding module or function.
     const refunded = payments.filter((t) => getStatus(t.status) === "refunded");
+    // Declare failed for use by the surrounding module or function.
     const failed = payments.filter((t) => getStatus(t.status) === "failed");
+    // Declare pending for use by the surrounding module or function.
     const pending = payments.filter((t) => getStatus(t.status) === "pending");
+    // Declare completedRevenue for use by the surrounding module or function.
     const completedRevenue = completed.reduce((sum, t) => {
+      // Declare amount for use by the surrounding module or function.
       const amount = Number(t.amount);
+      // Return the expression shown below to the caller.
       return Number.isFinite(amount) ? sum + amount : sum;
     }, 0);
 
+    // Return the object assembled below to the caller.
     return { completed, refunded, failed, pending, completedRevenue };
   }, [payments]);
 
+  // Declare hasData for use by the surrounding module or function.
   const hasData = !isLoading && !isError && payments.length > 0;
 
+  // Declare exportCsv for use by the surrounding module or function.
   const exportCsv = () => {
+    // Check the condition (!payments.length) and run the matching branch.
     if (!payments.length) return;
+    // Declare headers for use by the surrounding module or function.
     const headers = ["Receipt", "Customer", "Phone", "Booking", "Amount", "Method", "Status", "Date"];
+    // Declare rows for use by the surrounding module or function.
     const rows = payments.map((payment) => [
       payment.mpesaReceiptNumber || payment.mpesaReceipt || payment.booking?.mpesaReceipt || payment.transactionId || payment.transactionReference || "",
       payment.customer?.name || "",
@@ -123,19 +167,29 @@ export default function MpesaTransactions() {
       payment.status || "",
       payment.createdAt ? new Date(payment.createdAt).toISOString() : "",
     ]);
+    // Declare csv for use by the surrounding module or function.
     const csv = [headers, ...rows]
       .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
       .join("\n");
+    // Declare blob for use by the surrounding module or function.
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    // Declare url for use by the surrounding module or function.
     const url = URL.createObjectURL(blob);
+    // Declare anchor for use by the surrounding module or function.
     const anchor = document.createElement("a");
+    // Perform the side effect or state update expressed on the following line.
     anchor.href = url;
+    // Perform the side effect or state update expressed on the following line.
     anchor.download = "mpesa-transactions.csv";
+    // Perform the side effect or state update expressed on the following line.
     anchor.click();
+    // Perform the side effect or state update expressed on the following line.
     URL.revokeObjectURL(url);
   };
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-[70vh] bg-slate-50 p-6 lg:p-8">
         <div className="mx-auto max-w-7xl animate-pulse space-y-6">
@@ -147,7 +201,9 @@ export default function MpesaTransactions() {
     );
   }
 
+  // Check the condition (isError) and run the matching branch.
   if (isError) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-[70vh] bg-slate-50 p-6 lg:p-8">
         <div className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-sm">
@@ -160,6 +216,7 @@ export default function MpesaTransactions() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">

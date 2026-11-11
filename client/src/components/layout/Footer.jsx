@@ -1,22 +1,43 @@
+/**
+ * Purpose: Footer reusable UI component. Main declarations: Footer.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { PUBLIC_BRAND_NAME, useSettings } from "../../context/SettingsContext";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load ../../context/AuthContext so this module can use its exported dependencies.
 import { useAuth } from "../../context/AuthContext";
+// Load ../../context/TenantContext so this module can use its exported dependencies.
 import { useTenant } from "../../context/TenantContext";
+// Load react-icons/fa6 so this module can use its exported dependencies.
 import { FaFacebookF, FaInstagram, FaXTwitter, FaYoutube, FaPhone, FaLocationDot, FaEnvelope } from "react-icons/fa6";
+// Load lucide-react so this module can use its exported dependencies.
 import { ShieldCheck, ArrowUpRight } from "lucide-react";
 
+// Define Footer; its parameters and body implement this operation.
 export default function Footer() {
+  // Declare { user } for use by the surrounding module or function.
   const { user } = useAuth();
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
+  // Declare { tenant = {} } for use by the surrounding module or function.
   const { tenant = {} } = useTenant() || {};
+  // Declare companyName for use by the surrounding module or function.
   const companyName = !user ? PUBLIC_BRAND_NAME : (settings.companyName || tenant.name || tenant.companyName || "Company");
+  // Declare supportEmail for use by the surrounding module or function.
   const supportEmail = settings.supportEmail || tenant.contactEmail || "";
+  // Declare supportPhone for use by the surrounding module or function.
   const supportPhone = settings.supportPhone || tenant.contactPhone || "";
+  // Declare year for use by the surrounding module or function.
   const year = new Date().getFullYear();
+  // Declare userRole for use by the surrounding module or function.
   const userRole = typeof user?.role === "string" ? user.role.toLowerCase() : user?.role?.name?.toLowerCase() || user?.roles?.[0]?.name?.toLowerCase() || "";
+  // Declare socialLinks for use by the surrounding module or function.
   const socialLinks = [["Facebook", settings.facebook, FaFacebookF], ["Instagram", settings.instagram, FaInstagram], ["X", settings.twitter, FaXTwitter], ["YouTube", settings.youtube, FaYoutube]].filter(([, href]) => href);
+  // Declare popularDestinations for use by the surrounding module or function.
   const popularDestinations = [["Maasai Mara", "/destinations/maasai-mara"], ["Diani Beach", "/destinations/diani-beach"], ["Mount Kenya", "/destinations/mount-kenya"], ["Nairobi", "/destinations/nairobi"]];
 
+  // Return the expression shown below to the caller.
   return (
     <footer className="bg-slate-950 text-slate-300">
       <div className="mx-auto max-w-7xl px-6 pb-12 pt-14">

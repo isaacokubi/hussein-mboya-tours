@@ -1,18 +1,35 @@
+/**
+ * Purpose: Kenya Tax Center reusable UI component. Main declarations: money, unwrapList, errorText, ruleRate, KenyaTaxCenter.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { Calculator, CheckCircle2, RefreshCw, Save, ShieldCheck } from "lucide-react";
+// Load ../../api/taxApi so this module can use its exported dependencies.
 import { calculateTax, getTaxRules, initializeTaxRules, saveTaxRule } from "../../api/taxApi";
 
+// Declare money for use by the surrounding module or function.
 const money = (v) => `KES ${Number(v || 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// Declare unwrapList for use by the surrounding module or function.
 const unwrapList = (value) => Array.isArray(value) ? value : value?.items || value?.data || [];
+// Declare errorText for use by the surrounding module or function.
 const errorText = (e) => e?.response?.data?.message || e?.message || "The request could not be completed.";
+// Declare ruleRate for use by the surrounding module or function.
 const ruleRate = (rule) => rule?.rate === null || rule?.rate === undefined || rule?.rate === "" || !Number.isFinite(Number(rule?.rate)) ? null : Number(rule.rate);
 
+// Define KenyaTaxCenter; its parameters and body implement this operation.
 export default function KenyaTaxCenter() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient(); const rulesQ = useQuery({ queryKey: ["kenya-tax-rules"], queryFn: getTaxRules, staleTime: 30000, retry: 2 });
+  // Declare [amount, setAmount] for use by the surrounding module or function.
   const [amount, setAmount] = useState("10000"); const [category, setCategory] = useState("STANDARD"); const [mode, setMode] = useState("exclusive"); const [rate, setRate] = useState(""); const [result, setResult] = useState(null); const [drafts, setDrafts] = useState({});
+  // Declare rules for use by the surrounding module or function.
   const rules = unwrapList(rulesQ.data); const init = useMutation({ mutationFn: initializeTaxRules, onSuccess: () => qc.invalidateQueries({ queryKey: ["kenya-tax-rules"] }) }); const calc = useMutation({ mutationFn: calculateTax, onSuccess: (data) => setResult(data) }); const save = useMutation({ mutationFn: ({ code, payload }) => saveTaxRule(code, payload), onSuccess: () => qc.invalidateQueries({ queryKey: ["kenya-tax-rules"] }) });
+  // Declare updateDraft for use by the surrounding module or function.
   const updateDraft = (code, field, value) => setDrafts((prev) => ({ ...prev, [code]: { ...(prev[code] || {}), [field]: value } })); const submitCalc = (e) => { e.preventDefault(); calc.mutate({ amount: Number(amount), category, mode, ...(rate !== "" ? { rate: Number(rate) } : {}) }); };
+  // Return the expression shown below to the caller.
   return <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-600">Kenya tax controls</p><h2 className="mt-1 text-2xl font-black text-slate-950">Tax engine & VAT rules</h2><p className="mt-1 max-w-3xl text-sm text-slate-500">Tenant-specific tax calculation with configurable rates and clear separation between calculation and statutory submission.</p></div><button onClick={() => init.mutate()} disabled={init.isPending} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50"><RefreshCw size={16} className={init.isPending ? "animate-spin" : ""}/>Repair defaults</button></div>
     <div className="grid gap-3 rounded-2xl bg-slate-50 p-4 md:grid-cols-5"><label className="text-xs font-bold uppercase tracking-wide text-slate-500">Amount<input value={amount} onChange={(e)=>setAmount(e.target.value)} type="number" min="0" step="0.01" className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal text-slate-900"/></label><label className="text-xs font-bold uppercase tracking-wide text-slate-500">Tax category<select value={category} onChange={(e)=>setCategory(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal"><option>STANDARD</option><option>ZERO_RATED</option><option>EXEMPT</option><option>NON_VAT</option></select></label><label className="text-xs font-bold uppercase tracking-wide text-slate-500">Pricing mode<select value={mode} onChange={(e)=>setMode(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal"><option value="exclusive">Exclusive</option><option value="inclusive">Inclusive</option></select></label><label className="text-xs font-bold uppercase tracking-wide text-slate-500">Override rate %<input value={rate} onChange={(e)=>setRate(e.target.value)} type="number" min="0" max="100" step="0.01" placeholder="Profile/rule rate" className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal"/></label><button onClick={submitCalc} disabled={calc.isPending} className="mt-auto inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 font-bold text-white hover:bg-slate-800 disabled:opacity-50"><Calculator size={16}/>{calc.isPending ? "Calculating…" : "Calculate"}</button></div>
     {calc.isError && <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{errorText(calc.error)}</p>}{result && <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><TaxMetric label="Taxable" value={money(result.taxableAmount)}/><TaxMetric label="Net" value={money(result.netAmount)}/><TaxMetric label="Tax" value={`${money(result.taxAmount)} (${result.rate}%)`}/><TaxMetric label="Total" value={money(result.totalAmount)} strong/></div>}
@@ -20,4 +37,5 @@ export default function KenyaTaxCenter() {
     <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900"><ShieldCheck size={16} className="mt-0.5 shrink-0"/><p><strong>Statutory boundary:</strong> this engine calculates configured tax; it does not claim KRA registration, certification or live eTIMS submission. Those remain controlled by the compliance/eTIMS adapter workflow.</p></div>
   </section>;
 }
+// Define TaxMetric; its parameters and body implement this operation.
 function TaxMetric({ label, value, strong }) { return <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><span className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</span><p className={`mt-1 text-lg font-black ${strong ? "text-indigo-700" : "text-slate-950"}`}>{value}</p></div>; }

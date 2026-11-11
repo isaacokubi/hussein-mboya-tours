@@ -1,26 +1,42 @@
+/**
+ * Purpose: About page-level UI component. Main declarations: About.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useTenant } from "../context/TenantContext";
+// Load ../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../context/SettingsContext";
+// Load lucide-react so this module can use its exported dependencies.
 import { Globe2, HeartHandshake, MapPin, ShieldCheck, Users, Compass, Plane, Star } from "lucide-react";
+// Load framer-motion so this module can use its exported dependencies.
 import { motion } from "framer-motion";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
 
+// Declare ABOUT_IMAGES for use by the surrounding module or function.
 const ABOUT_IMAGES = {
   hero: "https://images.unsplash.com/photo-1549366021-9f761d450615?auto=format&fit=crop&w=2200&q=92",
   story: "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1800&q=92",
 };
 
+// Define About; its parameters and body implement this operation.
 export default function About() {
+  // Declare { tenant } for use by the surrounding module or function.
   const { tenant } = useTenant();
+  // Declare { settings } for use by the surrounding module or function.
   const { settings } = useSettings();
+  // Declare companyName for use by the surrounding module or function.
   const companyName = settings?.companyName || tenant?.name || "Hussein Mboya Tours";
+  // Declare values for use by the surrounding module or function.
   const values = [
     { icon: HeartHandshake, title: "Personalized Experiences", text: "Every journey is carefully designed around your interests, comfort, and travel dreams." },
     { icon: ShieldCheck, title: "Trusted Travel Partner", text: "We provide safe, reliable, and professionally managed tours across Africa." },
     { icon: Globe2, title: "Authentic Adventures", text: "Discover real African cultures, landscapes, wildlife, and unforgettable moments." },
     { icon: Users, title: "Expert Team", text: "Our experienced guides and travel specialists ensure every trip runs smoothly." },
   ];
+  // Declare destinations for use by the surrounding module or function.
   const destinations = ["Maasai Mara Wildlife Safari", "Amboseli National Park", "Diani Beach Holidays", "Mount Kenya Adventures", "Cultural Heritage Tours", "Luxury African Safaris"];
 
+  // Return the expression shown below to the caller.
   return <div className="min-w-0 overflow-x-clip bg-white">
     <section className="relative flex min-h-[420px] items-center bg-cover bg-center sm:min-h-[500px]" style={{ backgroundImage: `url(${ABOUT_IMAGES.hero})` }}>
       <div className="absolute inset-0 bg-black/60" />

@@ -1,11 +1,17 @@
+/**
+ * Purpose: auth Rate Limiters request middleware. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import rateLimit from "express-rate-limit";
 
+// Declare common for use by the surrounding module or function.
 const common = {
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
 };
 
+// Declare loginRateLimiter for use by the surrounding module or function.
 export const loginRateLimiter = rateLimit({
   ...common,
   windowMs: 15 * 60 * 1000,
@@ -16,6 +22,7 @@ export const loginRateLimiter = rateLimit({
   },
 });
 
+// Declare passwordResetRateLimiter for use by the surrounding module or function.
 export const passwordResetRateLimiter = rateLimit({
   ...common,
   windowMs: 15 * 60 * 1000,
@@ -28,6 +35,7 @@ export const passwordResetRateLimiter = rateLimit({
 
 // MFA is an authentication boundary and is intentionally stricter than the
 // normal login limiter. These limits are per client IP by default.
+// Declare mfaSendRateLimiter for use by the surrounding module or function.
 export const mfaSendRateLimiter = rateLimit({
   ...common,
   windowMs: 15 * 60 * 1000,
@@ -38,6 +46,7 @@ export const mfaSendRateLimiter = rateLimit({
   },
 });
 
+// Declare mfaVerifyRateLimiter for use by the surrounding module or function.
 export const mfaVerifyRateLimiter = rateLimit({
   ...common,
   windowMs: 15 * 60 * 1000,

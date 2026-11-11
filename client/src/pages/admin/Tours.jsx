@@ -1,22 +1,30 @@
+/**
+ * Purpose: Tours page-level UI component. Main declarations: Tours.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import {
 useQuery
 } from "@tanstack/react-query";
 
 
+// Load ../../api/adminApi so this module can use its exported dependencies.
 import {
 getAdminTours
 } from "../../api/adminApi";
 
 
+// Load ../../components/admin/DataTable so this module can use its exported dependencies.
 import DataTable from "../../components/admin/DataTable";
 
 
 
 
+// Define Tours; its parameters and body implement this operation.
 export default function Tours(){
 
 
 
+// Declare { data, isLoading } for use by the surrounding module or function.
 const {
 data,
 isLoading
@@ -34,8 +42,10 @@ queryFn:getAdminTours
 
 
 
+// Check the condition (isLoading) and run the matching branch.
 if(isLoading)
 
+// Return the expression shown below to the caller.
 return <p className="p-6">
 Loading tours...
 </p>;
@@ -44,6 +54,7 @@ Loading tours...
 
 
 
+// Declare tours for use by the surrounding module or function.
 const tours =
 data?.data ||
 data ||
@@ -53,6 +64,7 @@ data ||
 
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="

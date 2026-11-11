@@ -1,15 +1,26 @@
+/**
+ * Purpose: Tour Manager Bookings page-level UI component. Main declarations: safeStatus, paymentStatus, personName, customerName, customerEmail.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   AlertTriangle, CalendarDays, Car, CheckCircle2, ChevronLeft, ChevronRight,
   CircleDollarSign, CreditCard, Eye, Mail, MapPin, ReceiptText, RefreshCw,
   Search, ShieldCheck, SlidersHorizontal, UserCheck, UserRound, Users, Wallet, X, XCircle,
 } from "lucide-react";
+// Load ../../api/tourManagerApi so this module can use its exported dependencies.
 import { getBookings, completeBooking, cancelBooking } from "../../api/tourManagerApi";
 
+// Declare STATUS_OPTIONS for use by the surrounding module or function.
 const STATUS_OPTIONS = ["all", "pending", "confirmed", "assigned", "ongoing", "completed", "cancelled", "refunded"];
+// Declare PAYMENT_OPTIONS for use by the surrounding module or function.
 const PAYMENT_OPTIONS = ["all", "pending", "partial", "paid", "failed", "cancelled", "refunded"];
+// Declare statusMeta for use by the surrounding module or function.
 const statusMeta = {
   pending: { label: "Pending", classes: "bg-amber-50 text-amber-700 ring-amber-200", dot: "bg-amber-500" },
   confirmed: { label: "Confirmed", classes: "bg-blue-50 text-blue-700 ring-blue-200", dot: "bg-blue-500" },
@@ -19,6 +30,7 @@ const statusMeta = {
   cancelled: { label: "Cancelled", classes: "bg-rose-50 text-rose-700 ring-rose-200", dot: "bg-rose-500" },
   refunded: { label: "Refunded", classes: "bg-slate-100 text-slate-700 ring-slate-200", dot: "bg-slate-500" },
 };
+// Declare paymentMeta for use by the surrounding module or function.
 const paymentMeta = {
   pending: { label: "Pending", classes: "bg-amber-50 text-amber-700 ring-amber-200" },
   partial: { label: "Partial", classes: "bg-orange-50 text-orange-700 ring-orange-200" },
@@ -27,105 +39,189 @@ const paymentMeta = {
   cancelled: { label: "Cancelled", classes: "bg-slate-100 text-slate-600 ring-slate-200" },
   refunded: { label: "Refunded", classes: "bg-violet-50 text-violet-700 ring-violet-200" },
 };
+// Declare safeStatus for use by the surrounding module or function.
 const safeStatus = (value) => String(value || "pending").trim().toLowerCase();
+// Declare paymentStatus for use by the surrounding module or function.
 const paymentStatus = (booking) => safeStatus(booking?.paymentStatus || booking?.payment?.status);
+// Declare personName for use by the surrounding module or function.
 const personName = (person) => {
+  // Check the condition (!person || typeof person !== "object") and run the matching branch.
   if (!person || typeof person !== "object") return "";
+  // Return the expression shown below to the caller.
   return person.name || person.fullName || [person.firstName, person.lastName].filter(Boolean).join(" ").trim();
 };
+// Declare customerName for use by the surrounding module or function.
 const customerName = (booking) => {
+  // Declare customer for use by the surrounding module or function.
   const customer = booking?.customer || {};
+  // Declare display for use by the surrounding module or function.
   const display = booking?.customerDisplay || {};
+  // Declare snapshot for use by the surrounding module or function.
   const snapshot = booking?.customerSnapshot || booking?.customerDetails || booking?.customerInfo || {};
+  // Declare contact for use by the surrounding module or function.
   const contact = booking?.contact || {};
+  // Return the expression shown below to the caller.
   return display.name || personName(customer) || personName(booking?.user) || snapshot.name || personName(snapshot) || contact.name || "Customer record unavailable";
 };
+// Declare customerEmail for use by the surrounding module or function.
 const customerEmail = (booking) => {
+  // Declare customer for use by the surrounding module or function.
   const customer = booking?.customer || {};
+  // Declare display for use by the surrounding module or function.
   const display = booking?.customerDisplay || {};
+  // Declare snapshot for use by the surrounding module or function.
   const snapshot = booking?.customerSnapshot || {};
+  // Declare contact for use by the surrounding module or function.
   const contact = booking?.contact || {};
+  // Return the expression shown below to the caller.
   return display.email || customer.email || booking?.user?.email || snapshot.email || contact.email || "";
 };
+// Declare customerPhone for use by the surrounding module or function.
 const customerPhone = (booking) => {
+  // Declare customer for use by the surrounding module or function.
   const customer = booking?.customer || {};
+  // Declare display for use by the surrounding module or function.
   const display = booking?.customerDisplay || {};
+  // Declare snapshot for use by the surrounding module or function.
   const snapshot = booking?.customerSnapshot || {};
+  // Declare contact for use by the surrounding module or function.
   const contact = booking?.contact || {};
+  // Return the expression shown below to the caller.
   return display.phone || customer.phone || booking?.user?.phone || snapshot.phone || contact.phone || "";
 };
+// Declare tourName for use by the surrounding module or function.
 const tourName = (booking) => {
+  // Declare tour for use by the surrounding module or function.
   const tour = booking?.tour || booking?.tourSnapshot || {};
+  // Return the expression shown below to the caller.
   return tour.title || tour.name || booking?.tourName || booking?.packageName || booking?.customTourName || "Custom Tour Package";
 };
+// Declare destinationName for use by the surrounding module or function.
 const destinationName = (booking) => {
+  // Declare destination for use by the surrounding module or function.
   const destination = booking?.tour?.destination || booking?.destination;
+  // Check the condition (!destination) and run the matching branch.
   if (!destination) return "";
+  // Return the expression shown below to the caller.
   return typeof destination === "string" ? destination : destination.name || destination.title || "";
 };
+// Declare guestCount for use by the surrounding module or function.
 const guestCount = (booking) => {
+  // Declare direct for use by the surrounding module or function.
   const direct = Number(booking?.numberOfGuests ?? booking?.guestCount ?? booking?.pax);
+  // Check the condition (Number.isFinite(direct)) and run the matching branch.
   if (Number.isFinite(direct)) return direct;
+  // Check the condition (Array.isArray(booking?.travelers)) and run the matching branch.
   if (Array.isArray(booking?.travelers)) return booking.travelers.length;
+  // Check the condition (Array.isArray(booking?.guests)) and run the matching branch.
   if (Array.isArray(booking?.guests)) return booking.guests.length;
+  // Return the expression shown below to the caller.
   return null;
 };
+// Declare amountValue for use by the surrounding module or function.
 const amountValue = (booking) => {
+  // Declare numeric for use by the surrounding module or function.
   const numeric = Number(booking?.totalAmount ?? booking?.amount ?? booking?.total ?? booking?.price);
+  // Return the expression shown below to the caller.
   return Number.isFinite(numeric) ? numeric : null;
 };
+// Declare formatKES for use by the surrounding module or function.
 const formatKES = (value) => value === null || value === undefined || !Number.isFinite(Number(value)) ? "—" : `KES ${Number(value).toLocaleString("en-KE", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "Not scheduled";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Check the condition (Number.isNaN(date.getTime())) and run the matching branch.
   if (Number.isNaN(date.getTime())) return "Invalid date";
+  // Return the result of new Intl.DateTimeFormat("en-KE", { day: "2-digit", month: "short", year: "numeric", timeZone: "Africa/Nairobi" }).format() to the caller.
   return new Intl.DateTimeFormat("en-KE", { day: "2-digit", month: "short", year: "numeric", timeZone: "Africa/Nairobi" }).format(date);
 };
+// Declare formatDateTime for use by the surrounding module or function.
 const formatDateTime = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "Not available";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Check the condition (Number.isNaN(date.getTime())) and run the matching branch.
   if (Number.isNaN(date.getTime())) return "Invalid date";
+  // Return the result of new Intl.DateTimeFormat("en-KE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Nairobi" }).format() to the caller.
   return new Intl.DateTimeFormat("en-KE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Nairobi" }).format(date);
 };
+// Declare initials for use by the surrounding module or function.
 const initials = (name) => {
+  // Declare parts for use by the surrounding module or function.
   const parts = String(name || "CU").trim().split(/\s+/).filter(Boolean);
+  // Check the condition (!parts.length) and run the matching branch.
   if (!parts.length) return "CU";
+  // Check the condition (parts.length === 1) and run the matching branch.
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  // Return the result of `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase() to the caller.
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 };
+// Declare bookingNumber for use by the surrounding module or function.
 const bookingNumber = (booking) => booking?.bookingNumber || booking?.reference || booking?.bookingReference || booking?.bookingCode || booking?._id || "Booking reference unavailable";
 
+// Define StatusBadge; its parameters and body implement this operation.
 function StatusBadge({ status }) {
+  // Declare meta for use by the surrounding module or function.
   const meta = statusMeta[safeStatus(status)] || statusMeta.pending;
+  // Return the expression shown below to the caller.
   return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${meta.classes}`}><span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />{meta.label}</span>;
 }
+// Define PaymentBadge; its parameters and body implement this operation.
 function PaymentBadge({ status }) {
+  // Declare meta for use by the surrounding module or function.
   const meta = paymentMeta[safeStatus(status)] || paymentMeta.pending;
+  // Return the expression shown below to the caller.
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${meta.classes}`}>{meta.label}</span>;
 }
+// Define MetricCard; its parameters and body implement this operation.
 function MetricCard({ icon: Icon, label, value, detail, tone }) {
+  // Declare tones for use by the surrounding module or function.
   const tones = { emerald: "border-emerald-100 bg-emerald-50/70 text-emerald-700", amber: "border-amber-100 bg-amber-50/70 text-amber-700", blue: "border-blue-100 bg-blue-50/70 text-blue-700", violet: "border-violet-100 bg-violet-50/70 text-violet-700" };
+  // Return the expression shown below to the caller.
   return <div className={`rounded-2xl border p-5 shadow-sm ${tones[tone] || tones.blue}`}><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.16em] opacity-70">{label}</p><p className="mt-2 text-2xl font-black text-slate-950">{value}</p><p className="mt-1 text-xs font-medium opacity-75">{detail}</p></div><div className="rounded-xl bg-white/80 p-2.5 shadow-sm"><Icon size={20} /></div></div></div>;
 }
 
+// Define TourManagerBookings; its parameters and body implement this operation.
 export default function TourManagerBookings() {
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [statusFilter, setStatusFilter] for use by the surrounding module or function.
   const [statusFilter, setStatusFilter] = useState("all");
+  // Declare [paymentFilter, setPaymentFilter] for use by the surrounding module or function.
   const [paymentFilter, setPaymentFilter] = useState("all");
+  // Declare [selectedBooking, setSelectedBooking] for use by the surrounding module or function.
   const [selectedBooking, setSelectedBooking] = useState(null);
+  // Declare [page, setPage] for use by the surrounding module or function.
   const [page, setPage] = useState(1);
+  // Declare { data, isLoading, isError, error, isFetching, refetch } for use by the surrounding module or function.
   const { data, isLoading, isError, error, isFetching, refetch } = useQuery({ queryKey: ["manager-bookings", page], queryFn: () => getBookings({ page, limit: 20 }), placeholderData: (previousData) => previousData });
+  // Declare bookings for use by the surrounding module or function.
   const bookings = useMemo(() => { const result = data?.bookings || data?.data?.bookings || data?.data || data || []; return Array.isArray(result) ? result : []; }, [data]);
+  // Declare filteredBookings for use by the surrounding module or function.
   const filteredBookings = useMemo(() => { const query = search.trim().toLowerCase(); return bookings.filter((booking) => { const haystack = [bookingNumber(booking), customerName(booking), customerEmail(booking), customerPhone(booking), tourName(booking), destinationName(booking)].filter(Boolean).join(" ").toLowerCase(); return (!query || haystack.includes(query)) && (statusFilter === "all" || safeStatus(booking.status) === statusFilter) && (paymentFilter === "all" || paymentStatus(booking) === paymentFilter); }); }, [bookings, search, statusFilter, paymentFilter]);
+  // Declare metrics for use by the surrounding module or function.
   const metrics = useMemo(() => { const total = Number.isFinite(Number(data?.total)) ? Number(data.total) : bookings.length; const pending = bookings.filter((booking) => safeStatus(booking.status) === "pending").length; const operational = bookings.filter((booking) => ["confirmed", "assigned", "ongoing"].includes(safeStatus(booking.status)) && paymentStatus(booking) !== "cancelled").length; const paidValue = bookings.reduce((sum, booking) => paymentStatus(booking) === "paid" && amountValue(booking) !== null ? sum + amountValue(booking) : sum, 0); const totalValue = bookings.reduce((sum, booking) => amountValue(booking) !== null ? sum + amountValue(booking) : sum, 0); return { total, pending, operational, paidValue, totalValue }; }, [bookings, data?.total]);
+  // Declare completeMutation for use by the surrounding module or function.
   const completeMutation = useMutation({ mutationFn: completeBooking, onSuccess: () => { toast.success("Booking marked as completed."); queryClient.invalidateQueries({ queryKey: ["manager-bookings"] }); queryClient.invalidateQueries({ queryKey: ["tour-manager-dashboard"] }); setSelectedBooking(null); }, onError: (mutationError) => toast.error(mutationError?.response?.data?.message || "Booking completion failed. No changes were applied.") });
+  // Declare cancelMutation for use by the surrounding module or function.
   const cancelMutation = useMutation({ mutationFn: ({ id, reason }) => cancelBooking(id, reason), onSuccess: () => { toast.success("Booking cancelled successfully."); queryClient.invalidateQueries({ queryKey: ["manager-bookings"] }); queryClient.invalidateQueries({ queryKey: ["tour-manager-dashboard"] }); setSelectedBooking(null); }, onError: (mutationError) => toast.error(mutationError?.response?.data?.message || "Booking cancellation failed. No changes were applied.") });
+  // Declare handleComplete for use by the surrounding module or function.
   const handleComplete = (booking) => { if (!booking?._id || completeMutation.isPending) return; if (!window.confirm(`Mark ${bookingNumber(booking)} as completed?`)) return; completeMutation.mutate(booking._id); };
+  // Declare handleCancel for use by the surrounding module or function.
   const handleCancel = (booking) => { if (!booking?._id || cancelMutation.isPending) return; const reason = window.prompt("Cancellation reason:", "Cancelled by tour manager"); if (reason === null) return; cancelMutation.mutate({ id: booking._id, reason: reason.trim() || "Cancelled by tour manager" }); };
+  // Declare totalPages for use by the surrounding module or function.
   const totalPages = Math.max(Number(data?.pages) || Number(data?.totalPages) || 1, 1);
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-[1600px] animate-pulse space-y-6"><div className="h-40 rounded-3xl bg-slate-200" /><div className="grid gap-4 md:grid-cols-4">{[1,2,3,4].map((item) => <div key={item} className="h-32 rounded-2xl bg-slate-200" />)}</div><div className="h-[520px] rounded-3xl bg-slate-200" /></div></div>;
+  // Check the condition (isError) and run the matching branch.
   if (isError) return <section className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-3xl rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-sm"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600"><AlertTriangle /></div><h1 className="mt-5 text-2xl font-black text-slate-950">Bookings could not be loaded</h1><p className="mt-2 text-sm text-slate-600">The booking service did not return a usable response. Unavailable data is not represented as zero.</p><p className="mt-3 text-xs font-medium text-slate-500">{error?.response?.data?.message || error?.message || "Service unavailable"}</p><button onClick={() => refetch()} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700"><RefreshCw size={16} />Retry</button></div></section>;
+  // Return the expression shown below to the caller.
   return <section className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-[1600px] space-y-6">
     <header className="overflow-hidden rounded-3xl bg-slate-950 text-white shadow-xl"><div className="relative px-6 py-7 sm:px-8 lg:px-10"><div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-emerald-500/20 to-transparent" /><div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div><div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-emerald-300"><ShieldCheck size={14} />Tenant-scoped operations</div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">Booking Operations Center</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Review customer bookings, payment state, travel schedules and operational readiness from one controlled workspace.</p></div><button onClick={() => refetch()} disabled={isFetching} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"><RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />{isFetching ? "Refreshing" : "Refresh bookings"}</button></div></div><div className="grid grid-cols-2 border-t border-white/10 sm:grid-cols-4"><div className="border-white/10 p-4 sm:border-r"><p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Records</p><p className="mt-1 text-xl font-black">{metrics.total}</p></div><div className="border-white/10 p-4 sm:border-r"><p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Pending</p><p className="mt-1 text-xl font-black text-amber-300">{metrics.pending}</p></div><div className="border-white/10 p-4 sm:border-r"><p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Operational</p><p className="mt-1 text-xl font-black text-blue-300">{metrics.operational}</p></div><div className="p-4"><p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Paid value</p><p className="mt-1 text-xl font-black text-emerald-300">{formatKES(metrics.paidValue)}</p></div></div></header>
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><MetricCard icon={ReceiptText} label="Total bookings" value={metrics.total} detail="Records returned by the manager API" tone="blue" /><MetricCard icon={CircleDollarSign} label="Booking value" value={formatKES(metrics.totalValue)} detail="Value of loaded booking records" tone="emerald" /><MetricCard icon={UserCheck} label="Operational" value={metrics.operational} detail="Confirmed, assigned or ongoing" tone="violet" /><MetricCard icon={Wallet} label="Paid value" value={formatKES(metrics.paidValue)} detail="Successful payment status only" tone="emerald" /></div>

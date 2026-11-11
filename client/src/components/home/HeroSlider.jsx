@@ -1,15 +1,29 @@
+/**
+ * Purpose: Hero Slider reusable UI component. Main declarations: HeroSlider, normalizeBrand, markVideoLoaded, playVideo, pauseAllVideos.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useTenant } from "../../context/TenantContext";
+// Load ../../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../../context/SettingsContext";
+// Load react so this module can use its exported dependencies.
 import { useEffect, useRef, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load swiper/react so this module can use its exported dependencies.
 import { Swiper, SwiperSlide } from "swiper/react";
+// Load swiper/modules so this module can use its exported dependencies.
 import { Autoplay, EffectFade } from "swiper/modules";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load ../../api/heroApi so this module can use its exported dependencies.
 import { getHeroSlides } from "../../api/heroApi";
+// Load swiper/css so this module can use its exported dependencies.
 import "swiper/css";
+// Load swiper/css/effect-fade so this module can use its exported dependencies.
 import "swiper/css/effect-fade";
 
 // Curated, high-resolution travel photography; local assets remain the final fallback.
+// Declare HERO_IMAGE_CANDIDATES for use by the surrounding module or function.
 const HERO_IMAGE_CANDIDATES = [
   "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=2400&q=85",
   "https://images.unsplash.com/photo-1549366021-9f761d450615?auto=format&fit=crop&w=2400&q=85",
@@ -23,6 +37,7 @@ const HERO_IMAGE_CANDIDATES = [
   "/demo-destinations/kenya-landscape-02.svg",
 ];
 
+// Declare FALLBACK_HERO_SLIDES for use by the surrounding module or function.
 const FALLBACK_HERO_SLIDES = [
   {
     _id: "fallback-mara",
@@ -71,18 +86,31 @@ const FALLBACK_HERO_SLIDES = [
   },
 ];
 
+// Define HeroSlider; its parameters and body implement this operation.
 export default function HeroSlider() {
+  // Declare { tenant } for use by the surrounding module or function.
   const { tenant } = useTenant() || {};
+  // Declare { settings = {} } for use by the surrounding module or function.
   const { settings = {} } = useSettings() || {};
+  // Declare tenantName for use by the surrounding module or function.
   const tenantName = String(tenant?.name || tenant?.companyName || "").trim();
+  // Declare configuredName for use by the surrounding module or function.
   const configuredName = String(settings?.companyName || "").trim();
+  // Declare companyName for use by the surrounding module or function.
   const companyName = tenantName || configuredName || "Hussein Mboya Tours";
+  // Declare tenantKey for use by the surrounding module or function.
   const tenantKey = tenant?._id || tenant?.id || tenant?.slug || companyName;
+  // Declare videoRefs for use by the surrounding module or function.
   const videoRefs = useRef([]);
+  // Declare [heroReady, setHeroReady] for use by the surrounding module or function.
   const [heroReady, setHeroReady] = useState(false);
+  // Declare [loadedVideos, setLoadedVideos] for use by the surrounding module or function.
   const [loadedVideos, setLoadedVideos] = useState({});
+  // Declare [imageOverrides, setImageOverrides] for use by the surrounding module or function.
   const [imageOverrides, setImageOverrides] = useState({});
+  // Declare [imageAttempts, setImageAttempts] for use by the surrounding module or function.
   const [imageAttempts, setImageAttempts] = useState({});
+  // Declare { data: rawSlides = [] } for use by the surrounding module or function.
   const { data: rawSlides = [] } = useQuery({
     queryKey: ["heroSlides", tenantKey],
     queryFn: getHeroSlides,
@@ -92,8 +120,11 @@ export default function HeroSlider() {
     retry: 1,
   });
 
+  // Declare normalizeBrand for use by the surrounding module or function.
   const normalizeBrand = (value) => {
+    // Check the condition (typeof value !== "string") and run the matching branch.
     if (typeof value !== "string") return value;
+    // Return the result of value       .replace(/\{\{\s*companyName\s*\}\}/gi, companyName)       .replace(/\bYour Travel Company\b/gi, companyName)       .replace() to the caller.
     return value
       .replace(/\{\{\s*companyName\s*\}\}/gi, companyName)
       .replace(/\bYour Travel Company\b/gi, companyName)
@@ -102,13 +133,16 @@ export default function HeroSlider() {
 
   // Keep tenant-managed slides when there are several. If the API only returns one
   // slide, supplement it with curated slides so the hero still rotates through images.
+  // Declare apiSlides for use by the surrounding module or function.
   const apiSlides = Array.isArray(rawSlides) ? rawSlides.filter(Boolean).slice(0, 5) : [];
+  // Declare sourceSlides for use by the surrounding module or function.
   const sourceSlides = apiSlides.length >= 2
     ? apiSlides
     : apiSlides.length === 1
       ? [apiSlides[0], ...FALLBACK_HERO_SLIDES.slice(1)]
       : FALLBACK_HERO_SLIDES;
 
+  // Declare slides for use by the surrounding module or function.
   const slides = sourceSlides.slice(0, 5).map((slide, index) => ({
     ...slide,
     description: normalizeBrand(slide.description || slide.subtitle || ""),
@@ -120,19 +154,29 @@ export default function HeroSlider() {
     video: slide.video?.url || slide.video || "",
   }));
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Declare timer for use by the surrounding module or function.
     const timer = window.setTimeout(() => setHeroReady(true), 1200);
+    // Return the expression shown below to the caller.
     return () => window.clearTimeout(timer);
   }, []);
 
+  // Declare markVideoLoaded for use by the surrounding module or function.
   const markVideoLoaded = (index) => setLoadedVideos((current) => ({ ...current, [index]: true }));
+  // Declare playVideo for use by the surrounding module or function.
   const playVideo = (index) => {
+    // Declare video for use by the surrounding module or function.
     const video = videoRefs.current[index];
+    // Check the condition (!video || !heroReady) and run the matching branch.
     if (!video || !heroReady) return;
+    // Perform the side effect or state update expressed on the following line.
     video.play().catch(() => {});
   };
+  // Declare pauseAllVideos for use by the surrounding module or function.
   const pauseAllVideos = () => videoRefs.current.forEach((video) => video?.pause());
 
+  // Return the expression shown below to the caller.
   return (
     <section className="relative overflow-hidden px-1 py-1">
       <div className="relative h-[62vh] min-h-[480px] max-h-[820px] overflow-hidden rounded-xl shadow-2xl sm:h-[68vh] lg:h-[78vh]">

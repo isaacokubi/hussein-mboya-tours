@@ -1,4 +1,9 @@
+/**
+ * Purpose: Custom Tour Package page-level UI component. Main declarations: CustomTourPackage, handleChange, handleSubmit.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   CalendarDays,
   CheckCircle2,
@@ -9,7 +14,9 @@ import {
   Users,
 } from "lucide-react";
 
+// Define CustomTourPackage; its parameters and body implement this operation.
 export default function CustomTourPackage() {
+  // Declare [formData, setFormData] for use by the surrounding module or function.
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -23,28 +30,37 @@ export default function CustomTourPackage() {
     message: "",
   });
 
+  // Declare [submitted, setSubmitted] for use by the surrounding module or function.
   const [submitted, setSubmitted] = useState(false);
 
+  // Declare handleChange for use by the surrounding module or function.
   const handleChange = (event) => {
+    // Declare { name, value } for use by the surrounding module or function.
     const { name, value } = event.target;
 
+    // Perform the side effect or state update expressed on the following line.
     setFormData((previous) => ({
       ...previous,
       [name]: value,
     }));
   };
 
+  // Declare handleSubmit for use by the surrounding module or function.
   const handleSubmit = (event) => {
+    // Perform the side effect or state update expressed on the following line.
     event.preventDefault();
 
+    // Perform the side effect or state update expressed on the following line.
     setSubmitted(true);
 
+    // Perform the side effect or state update expressed on the following line.
     window.scrollTo({
       top: 0,
       behavior: "smooth",
     });
   };
 
+  // Return the expression shown below to the caller.
   return (
     <section className="min-h-screen bg-slate-50">
       {/* HERO */}

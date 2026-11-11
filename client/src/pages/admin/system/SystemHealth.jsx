@@ -1,8 +1,15 @@
+/**
+ * Purpose: System Health page-level UI component. Main declarations: normalizeHealth, getStatus, formatUptime, ServiceCard, SystemHealth.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useQuery } from "@tanstack/react-query";
+// Load ../../../api/admin/systemHealthApi so this module can use its exported dependencies.
 import { getSystemHealth } from "../../../api/admin/systemHealthApi";
 
+// Declare normalizeHealth for use by the surrounding module or function.
 const normalizeHealth = (payload) => payload?.system || payload?.data?.system || payload?.data || payload || {};
 
+// Declare serviceDefinitions for use by the surrounding module or function.
 const serviceDefinitions = [
   { key: "server", label: "Application server", description: "API runtime and request processing" },
   { key: "database", label: "Database", description: "Primary application data store" },
@@ -10,6 +17,7 @@ const serviceDefinitions = [
   { key: "mpesa", label: "M-Pesa", description: "Payment gateway connectivity" },
 ];
 
+// Declare statusMeta for use by the surrounding module or function.
 const statusMeta = {
   online: { label: "Online", tone: "text-emerald-700 bg-emerald-50 border-emerald-200" },
   connected: { label: "Connected", tone: "text-emerald-700 bg-emerald-50 border-emerald-200" },
@@ -18,32 +26,53 @@ const statusMeta = {
   not_configured: { label: "Not configured", tone: "text-amber-700 bg-amber-50 border-amber-200" },
 };
 
+// Define getStatus; its parameters and body implement this operation.
 function getStatus(status) {
+  // Return the expression shown below to the caller.
   return statusMeta[status] || { label: status ? String(status) : "Unknown", tone: "text-slate-700 bg-slate-50 border-slate-200" };
 }
 
+// Define formatUptime; its parameters and body implement this operation.
 function formatUptime(value) {
+  // Check the condition (typeof value === "number" && Number.isFinite(value)) and run the matching branch.
   if (typeof value === "number" && Number.isFinite(value)) {
+    // Declare total for use by the surrounding module or function.
     const total = Math.max(0, Math.floor(value));
+    // Declare days for use by the surrounding module or function.
     const days = Math.floor(total / 86400);
+    // Declare hours for use by the surrounding module or function.
     const hours = Math.floor((total % 86400) / 3600);
+    // Declare minutes for use by the surrounding module or function.
     const minutes = Math.floor((total % 3600) / 60);
+    // Declare seconds for use by the surrounding module or function.
     const seconds = total % 60;
+    // Check the condition (days) and run the matching branch.
     if (days) return `${days}d ${hours}h ${minutes}m`;
+    // Check the condition (hours) and run the matching branch.
     if (hours) return `${hours}h ${minutes}m ${seconds}s`;
+    // Check the condition (minutes) and run the matching branch.
     if (minutes) return `${minutes}m ${seconds}s`;
+    // Return the expression shown below to the caller.
     return `${seconds}s`;
   }
+  // Check the condition (typeof value === "string") and run the matching branch.
   if (typeof value === "string") {
+    // Declare match for use by the surrounding module or function.
     const match = value.match(/^(\d+)\s*seconds?$/i);
+    // Check the condition (match) and run the matching branch.
     if (match) return formatUptime(Number(match[1]));
+    // Return the expression shown below to the caller.
     return value || "Unknown";
   }
+  // Return a configured text value to the caller.
   return "Unknown";
 }
 
+// Define ServiceCard; its parameters and body implement this operation.
 function ServiceCard({ label, description, status, message, environment }) {
+  // Declare meta for use by the surrounding module or function.
   const meta = getStatus(status);
+  // Return the expression shown below to the caller.
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
@@ -59,16 +88,21 @@ function ServiceCard({ label, description, status, message, environment }) {
   );
 }
 
+// Define SystemHealth; its parameters and body implement this operation.
 export default function SystemHealth() {
+  // Declare { data, isLoading, isError, error, dataUpdatedAt, refetch, isFetching } for use by the surrounding module or function.
   const { data, isLoading, isError, error, dataUpdatedAt, refetch, isFetching } = useQuery({
     queryKey: ["systemHealth"],
     queryFn: getSystemHealth,
     refetchInterval: 60000,
   });
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <div className="p-6 text-slate-600">Checking system health...</div>;
 
+  // Check the condition (isError) and run the matching branch.
   if (isError) {
+    // Return the expression shown below to the caller.
     return (
       <div className="p-6">
         <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">
@@ -81,21 +115,31 @@ export default function SystemHealth() {
     );
   }
 
+  // Declare health for use by the surrounding module or function.
   const health = normalizeHealth(data);
+  // Declare services for use by the surrounding module or function.
   const services = health.services || {};
+  // Declare serviceStatuses for use by the surrounding module or function.
   const serviceStatuses = {
     server: health.server || health.status,
     database: health.database,
     cloudinary: services.cloudinary?.status || health.cloudinary,
     mpesa: services.mpesa?.status || health.mpesa,
   };
+  // Declare operationalCount for use by the surrounding module or function.
   const operationalCount = Object.values(serviceStatuses).filter((status) => ["online", "connected"].includes(status)).length;
+  // Declare degraded for use by the surrounding module or function.
   const degraded = Object.values(serviceStatuses).some((status) => ["unavailable", "disconnected", "not_configured"].includes(status));
+  // Declare overallLabel for use by the surrounding module or function.
   const overallLabel = degraded ? "Degraded" : operationalCount === serviceDefinitions.length ? "Operational" : "Partial";
+  // Declare overallTone for use by the surrounding module or function.
   const overallTone = degraded ? "text-amber-700 bg-amber-50 border-amber-200" : operationalCount === serviceDefinitions.length ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-slate-700 bg-slate-50 border-slate-200";
+  // Declare mpesaEnvironment for use by the surrounding module or function.
   const mpesaEnvironment = services.mpesa?.environment;
+  // Declare checkedAt for use by the surrounding module or function.
   const checkedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString() : "Not available";
 
+  // Return the expression shown below to the caller.
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

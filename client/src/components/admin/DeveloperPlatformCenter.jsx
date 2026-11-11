@@ -1,63 +1,91 @@
+/**
+ * Purpose: Developer Platform Center reusable UI component. Main declarations: unwrap, DeveloperPlatformCenter, copySecret.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { CheckCircle2, Copy, KeyRound, RefreshCw, Send, Trash2, Webhook } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/axios so this module can use its exported dependencies.
 import api from "../../api/axios";
 
+// Declare unwrap for use by the surrounding module or function.
 const unwrap = (response) => response?.data?.data ?? response?.data ?? [];
+// Declare supportedEvents for use by the surrounding module or function.
 const supportedEvents = ["booking.created", "booking.updated", "payment.completed", "payment.failed", "invoice.created", "invoice.updated"];
 
+// Define DeveloperPlatformCenter; its parameters and body implement this operation.
 export default function DeveloperPlatformCenter() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [name, setName] for use by the surrounding module or function.
   const [name, setName] = useState("");
+  // Declare [hook, setHook] for use by the surrounding module or function.
   const [hook, setHook] = useState({ name: "", url: "", events: "booking.created,payment.completed" });
+  // Declare [secret, setSecret] for use by the surrounding module or function.
   const [secret, setSecret] = useState("");
 
+  // Declare keys for use by the surrounding module or function.
   const keys = useQuery({ queryKey: ["dev-keys"], queryFn: async () => unwrap(await api.get("/admin/developer/api-keys")) });
+  // Declare hooks for use by the surrounding module or function.
   const hooks = useQuery({ queryKey: ["dev-hooks"], queryFn: async () => unwrap(await api.get("/admin/developer/webhooks")) });
 
+  // Declare createKey for use by the surrounding module or function.
   const createKey = useMutation({
     mutationFn: () => api.post("/admin/developer/api-keys", { name }),
     onSuccess: (response) => { setSecret(response.data.data.secret); setName(""); qc.invalidateQueries({ queryKey: ["dev-keys"] }); toast.success("API key created."); },
     onError: (error) => toast.error(error?.response?.data?.message || "Unable to create API key."),
   });
 
+  // Declare revoke for use by the surrounding module or function.
   const revoke = useMutation({
     mutationFn: (id) => api.post(`/admin/developer/api-keys/${id}/revoke`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["dev-keys"] }); toast.success("API key revoked."); },
     onError: (error) => toast.error(error?.response?.data?.message || "Unable to revoke API key."),
   });
 
+  // Declare createHook for use by the surrounding module or function.
   const createHook = useMutation({
     mutationFn: () => api.post("/admin/developer/webhooks", { ...hook, events: hook.events.split(",").map((x) => x.trim()).filter(Boolean) }),
     onSuccess: (response) => { setHook({ name: "", url: "", events: "booking.created,payment.completed" }); setSecret(response.data.data.secret || ""); qc.invalidateQueries({ queryKey: ["dev-hooks"] }); toast.success("Webhook registered."); },
     onError: (error) => toast.error(error?.response?.data?.message || "Unable to register webhook."),
   });
 
+  // Declare updateHook for use by the surrounding module or function.
   const updateHook = useMutation({
     mutationFn: ({ id, active }) => api.patch(`/admin/developer/webhooks/${id}`, { active }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["dev-hooks"] }); toast.success("Webhook status updated."); },
     onError: (error) => toast.error(error?.response?.data?.message || "Unable to update webhook."),
   });
 
+  // Declare testHook for use by the surrounding module or function.
   const testHook = useMutation({
     mutationFn: (id) => api.post(`/admin/developer/webhooks/${id}/test`),
     onSuccess: (response) => toast.success(response?.data?.message || "Webhook test queued."),
     onError: (error) => toast.error(error?.response?.data?.message || "Unable to queue webhook test."),
   });
 
+  // Declare removeHook for use by the surrounding module or function.
   const removeHook = useMutation({
     mutationFn: (id) => api.delete(`/admin/developer/webhooks/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["dev-hooks"] }); toast.success("Webhook deleted."); },
     onError: (error) => toast.error(error?.response?.data?.message || "Unable to delete webhook."),
   });
 
+  // Declare copySecret for use by the surrounding module or function.
   const copySecret = async () => {
+    // Check the condition (!secret) and run the matching branch.
     if (!secret) return;
+    // Perform the side effect or state update expressed on the following line.
     await navigator.clipboard.writeText(secret);
+    // Perform the side effect or state update expressed on the following line.
     toast.success("Secret copied to clipboard.");
   };
 
+  // Return the expression shown below to the caller.
   return (
     <div className="mt-8 grid gap-6 lg:grid-cols-2">
       <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">

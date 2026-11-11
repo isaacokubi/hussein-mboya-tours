@@ -1,5 +1,10 @@
+/**
+ * Purpose: Permission Guard reusable UI component. Main declarations: PermissionGuard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/components/PermissionGuard.jsx
 
+// Load react-router-dom so this module can use its exported dependencies.
 import {
   Navigate,
   useLocation
@@ -7,6 +12,7 @@ import {
 
 
 
+// Define PermissionGuard; its parameters and body implement this operation.
 export default function PermissionGuard({
 
   permission,
@@ -16,15 +22,19 @@ export default function PermissionGuard({
 }) {
 
 
+  // Declare location for use by the surrounding module or function.
   const location = useLocation();
 
 
 
+  // Declare user for use by the surrounding module or function.
   let user;
 
 
+  // Run this operation with a dedicated error-handling path for failures.
   try {
 
+    // Perform the side effect or state update expressed on the following line.
     user =
       JSON.parse(
         localStorage.getItem("user")
@@ -32,8 +42,10 @@ export default function PermissionGuard({
 
   }
 
+  // Handle the error raised by the preceding protected operation.
   catch {
 
+    // Perform the side effect or state update expressed on the following line.
     user = null;
 
   }
@@ -45,8 +57,10 @@ export default function PermissionGuard({
 
   // Not logged in
 
+  // Check the condition (!user) and run the matching branch.
   if(!user){
 
+    // Return the expression shown below to the caller.
     return (
 
       <Navigate
@@ -71,6 +85,7 @@ export default function PermissionGuard({
 
 
 
+  // Declare permissions for use by the surrounding module or function.
   const permissions =
     user?.permissions || [];
 
@@ -80,6 +95,7 @@ export default function PermissionGuard({
 
 
 
+  // Declare isAdmin for use by the surrounding module or function.
   const isAdmin =
     user?.role === "admin"
     ||
@@ -91,6 +107,7 @@ export default function PermissionGuard({
 
 
 
+  // Declare allowed for use by the surrounding module or function.
   const allowed =
 
     isAdmin
@@ -111,9 +128,11 @@ export default function PermissionGuard({
 
 
 
+  // Check the condition (!allowed) and run the matching branch.
   if(!allowed){
 
 
+    // Return the expression shown below to the caller.
     return (
 
       <Navigate
@@ -135,6 +154,7 @@ export default function PermissionGuard({
 
 
 
+  // Return the value of children to the caller.
   return children;
 
 

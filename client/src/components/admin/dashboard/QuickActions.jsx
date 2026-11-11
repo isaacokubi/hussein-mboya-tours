@@ -1,6 +1,12 @@
+/**
+ * Purpose: Quick Actions reusable UI component. Main declarations: QuickActions.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { ArrowRight, BarChart3, CalendarCheck, Image, Users } from "lucide-react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
 
+// Declare actions for use by the surrounding module or function.
 const actions = [
   { name: "Manage Users", path: "/admin/users", icon: Users, description: "Review customers and users" },
   { name: "View Bookings", path: "/admin/bookings", icon: CalendarCheck, description: "Manage current bookings" },
@@ -8,7 +14,9 @@ const actions = [
   { name: "Reports", path: "/admin/reports", icon: BarChart3, description: "Review business reports" },
 ];
 
+// Define QuickActions; its parameters and body implement this operation.
 export default function QuickActions() {
+  // Return the expression shown below to the caller.
   return (
     <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
       <div className="mb-5">

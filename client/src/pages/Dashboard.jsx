@@ -1,26 +1,48 @@
+/**
+ * Purpose: Dashboard page-level UI component. Main declarations: normalizeBookings, statusOf, paymentStatusOf, Dashboard, Card.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useSettings } from "../context/SettingsContext";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link, Navigate } from "react-router-dom";
+// Load ../api/bookingApi so this module can use its exported dependencies.
 import { getMyBookings } from "../api/bookingApi";
+// Load ../context/AuthContext so this module can use its exported dependencies.
 import { useAuth } from "../context/AuthContext";
+// Load ../utils/roleUtils so this module can use its exported dependencies.
 import { dashboardPath, getUserRole } from "../utils/roleUtils";
+// Load ../components/common/MobileDashboardNav so this module can use its exported dependencies.
 import MobileDashboardNav from "../components/common/MobileDashboardNav";
+// Load ../components/notifications/AssignmentNotifications so this module can use its exported dependencies.
 import AssignmentNotifications from "../components/notifications/AssignmentNotifications";
+// Load ../utils/dashboardData so this module can use its exported dependencies.
 import { firstNumeric, unwrapData } from "../utils/dashboardData";
+// Load ../utils/currency so this module can use its exported dependencies.
 import { formatCurrency, getCurrency, getCurrencySymbol } from "../utils/currency";
 
+// Declare normalizeBookings for use by the surrounding module or function.
 const normalizeBookings = (data) => {
+  // Check the condition (Array.isArray(data)) and run the matching branch.
   if (Array.isArray(data)) return data;
+  // Check the condition (Array.isArray(data?.bookings)) and run the matching branch.
   if (Array.isArray(data?.bookings)) return data.bookings;
+  // Check the condition (Array.isArray(data?.data?.bookings)) and run the matching branch.
   if (Array.isArray(data?.data?.bookings)) return data.data.bookings;
+  // Check the condition (Array.isArray(data?.data)) and run the matching branch.
   if (Array.isArray(data?.data)) return data.data;
+  // Check the condition (Array.isArray(data?.results)) and run the matching branch.
   if (Array.isArray(data?.results)) return data.results;
+  // Return the collection assembled below to the caller.
   return [];
 };
 
+// Declare statusOf for use by the surrounding module or function.
 const statusOf = (booking) =>
   String(booking?.bookingStatus || booking?.status || "pending").trim().toLowerCase();
 
+// Declare paymentStatusOf for use by the surrounding module or function.
 const paymentStatusOf = (booking) =>
   String(
     typeof booking?.paymentStatus === "object"
@@ -30,13 +52,20 @@ const paymentStatusOf = (booking) =>
     .trim()
     .toLowerCase();
 
+// Define Dashboard; its parameters and body implement this operation.
 export default function Dashboard() {
+  // Declare { user } for use by the surrounding module or function.
   const { user } = useAuth();
+  // Declare { settings } for use by the surrounding module or function.
   const { settings } = useSettings();
+  // Declare role for use by the surrounding module or function.
   const role = getUserRole(user);
+  // Declare currency for use by the surrounding module or function.
   const currency = getCurrency(settings);
+  // Declare currencySymbol for use by the surrounding module or function.
   const currencySymbol = getCurrencySymbol(settings);
 
+  // Declare { data, isLoading, error, refetch, isFetching } for use by the surrounding module or function.
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["my-bookings", user?._id],
     queryFn: getMyBookings,
@@ -47,10 +76,15 @@ export default function Dashboard() {
     retry: 1,
   });
 
+  // Check the condition (role !== "customer") and run the matching branch.
   if (role !== "customer") return <Navigate to={dashboardPath(user)} replace />;
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading)
+    // Return the expression shown below to the caller.
     return <div className="dashboard-responsive customer-ops p-4 text-sm">Loading dashboard...</div>;
+  // Check the condition (error) and run the matching branch.
   if (error)
+    // Return the expression shown below to the caller.
     return (
       <div className="dashboard-responsive customer-ops min-h-[50vh] p-4 sm:p-6">
         <div className="mx-auto max-w-2xl rounded-2xl border border-rose-200 bg-white p-6 shadow-sm">
@@ -75,12 +109,18 @@ export default function Dashboard() {
       </div>
     );
 
+  // Declare payload for use by the surrounding module or function.
   const payload = unwrapData(data);
+  // Declare bookings for use by the surrounding module or function.
   const bookings = normalizeBookings(data);
+  // Declare serverStats for use by the surrounding module or function.
   const serverStats = payload?.stats || data?.stats || {};
+  // Declare startOfToday for use by the surrounding module or function.
   const startOfToday = new Date();
+  // Perform the side effect or state update expressed on the following line.
   startOfToday.setHours(0, 0, 0, 0);
 
+  // Declare upcomingTrips for use by the surrounding module or function.
   const upcomingTrips = bookings
     .filter(
       (booking) =>
@@ -90,19 +130,27 @@ export default function Dashboard() {
     )
     .sort((a, b) => new Date(a.travelDate) - new Date(b.travelDate));
 
+  // Declare completedTrips for use by the surrounding module or function.
   const completedTrips = bookings.filter((booking) => statusOf(booking) === "completed");
+  // Declare cancelledTrips for use by the surrounding module or function.
   const cancelledTrips = bookings.filter((booking) => statusOf(booking) === "cancelled");
 
+  // Declare localTotalSpent for use by the surrounding module or function.
   const localTotalSpent = bookings.reduce((total, booking) => {
+    // Declare status for use by the surrounding module or function.
     const status = statusOf(booking);
+    // Declare paymentStatus for use by the surrounding module or function.
     const paymentStatus = paymentStatusOf(booking);
+    // Check the condition (!["confirmed", "completed", "assigned", "ongoing"].includes(status) ||) and run the matching branch.
     if (
       !["confirmed", "completed", "assigned", "ongoing"].includes(status) ||
       !["paid", "completed", "success"].includes(paymentStatus)
     ) {
+      // Return the value of total to the caller.
       return total;
     }
 
+    // Declare paid for use by the surrounding module or function.
     const paid = Number(
       booking.amountPaid ??
         booking.paidAmount ??
@@ -111,16 +159,24 @@ export default function Dashboard() {
         booking.amount ??
         0
     );
+    // Return the expression shown below to the caller.
     return total + Math.max(0, paid - Number(booking.refundAmount || 0));
   }, 0);
 
+  // Declare displayedTotal for use by the surrounding module or function.
   const displayedTotal = firstNumeric(serverStats.totalTrips, data?.total, bookings.length);
+  // Declare displayedUpcoming for use by the surrounding module or function.
   const displayedUpcoming = firstNumeric(serverStats.upcomingTrips, upcomingTrips.length);
+  // Declare displayedCompleted for use by the surrounding module or function.
   const displayedCompleted = firstNumeric(serverStats.completedTrips, completedTrips.length);
+  // Declare displayedCancelled for use by the surrounding module or function.
   const displayedCancelled = firstNumeric(serverStats.cancelledTrips, cancelledTrips.length);
+  // Declare displayedSpent for use by the surrounding module or function.
   const displayedSpent = firstNumeric(serverStats.totalSpent, localTotalSpent);
+  // Declare nextTrip for use by the surrounding module or function.
   const nextTrip = upcomingTrips[0];
 
+  // Return the expression shown below to the caller.
   return (
     <div className="dashboard-responsive min-h-screen bg-gray-100 p-3 sm:p-4 md:p-6">
       <MobileDashboardNav role="customer" title="Customer Dashboard" />
@@ -228,7 +284,9 @@ export default function Dashboard() {
   );
 }
 
+// Define Card; its parameters and body implement this operation.
 function Card({ title, value }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="dashboard-card min-w-0 rounded-xl bg-white p-3 shadow sm:rounded-2xl sm:p-5">
       <p className="truncate text-[10px] text-gray-500 sm:text-xs">{title}</p>

@@ -1,14 +1,24 @@
+/**
+ * Purpose: Review Card reusable UI component. Main declarations: ReviewCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { ThumbsUp, CalendarDays, User } from "lucide-react";
 
+// Load ./Rating so this module can use its exported dependencies.
 import Rating from "./Rating";
 
+// Define ReviewCard; its parameters and body implement this operation.
 export default function ReviewCard({ review = {} }) {
+  // Declare user for use by the surrounding module or function.
   const user = review.user || {};
 
+  // Declare name for use by the surrounding module or function.
   const name = user.name || "Anonymous Traveler";
 
+  // Declare avatar for use by the surrounding module or function.
   const avatar = user.avatar;
 
+  // Declare initials for use by the surrounding module or function.
   const initials = name
     .split(" ")
     .map((word) => word[0])
@@ -16,10 +26,12 @@ export default function ReviewCard({ review = {} }) {
     .substring(0, 2)
     .toUpperCase();
 
+  // Declare date for use by the surrounding module or function.
   const date = review.createdAt
     ? new Date(review.createdAt).toLocaleDateString()
     : null;
 
+  // Return the expression shown below to the caller.
   return (
     <div
       className="

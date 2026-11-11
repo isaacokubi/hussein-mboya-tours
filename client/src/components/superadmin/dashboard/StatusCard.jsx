@@ -1,10 +1,16 @@
+/**
+ * Purpose: Status Card reusable UI component. Main declarations: StatusCard.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 
+// Define StatusCard; its parameters and body implement this operation.
 export default function StatusCard({
  title,
  status,
  detail
 }){
 
+// Return the expression shown below to the caller.
 return (
 
 <div className="bg-white rounded-xl border p-5">

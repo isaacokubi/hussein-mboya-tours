@@ -1,3 +1,7 @@
+/**
+ * Purpose: Traveller Form reusable UI component. Main declarations: TravelerForm, updateTraveler, addTraveler, removeTraveler.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import {
     useEffect,
     useState
@@ -8,6 +12,7 @@ from "react";
 
 
 
+// Define TravelerForm; its parameters and body implement this operation.
 export default function TravelerForm({
 
     onChange
@@ -18,6 +23,7 @@ export default function TravelerForm({
 
 
 
+// Declare [ travelers, setTravelers ] for use by the surrounding module or function.
 const [
 
 travelers,
@@ -49,11 +55,14 @@ passportNumber:""
 
 
 
+// Perform the side effect or state update expressed on the following line.
 useEffect(()=>{
 
 
+// Check the condition (onChange) and run the matching branch.
 if(onChange){
 
+// Perform the side effect or state update expressed on the following line.
 onChange(travelers);
 
 }
@@ -69,9 +78,11 @@ onChange(travelers);
 
 
 
+// Declare updateTraveler for use by the surrounding module or function.
 const updateTraveler=(index,field,value)=>{
 
 
+// Declare updated for use by the surrounding module or function.
 const updated = travelers.map(
 
 (traveler,i)=>
@@ -98,6 +109,7 @@ traveler
 
 
 
+// Perform the side effect or state update expressed on the following line.
 setTravelers(updated);
 
 
@@ -112,9 +124,11 @@ setTravelers(updated);
 
 
 
+// Declare addTraveler for use by the surrounding module or function.
 const addTraveler=()=>{
 
 
+// Perform the side effect or state update expressed on the following line.
 setTravelers([
 
 ...travelers,
@@ -142,17 +156,21 @@ passportNumber:""
 
 
 
+// Declare removeTraveler for use by the surrounding module or function.
 const removeTraveler=(index)=>{
 
 
+// Check the condition (travelers.length===1) and run the matching branch.
 if(travelers.length===1){
 
+// Return the result to the caller.
 return;
 
 }
 
 
 
+// Perform the side effect or state update expressed on the following line.
 setTravelers(
 
 travelers.filter(
@@ -174,6 +192,7 @@ travelers.filter(
 
 
 
+// Return the expression shown below to the caller.
 return (
 
 <div>

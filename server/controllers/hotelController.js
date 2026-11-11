@@ -1,25 +1,50 @@
+/**
+ * Purpose: hotel Controller HTTP controller. Main declarations: tenantIdOf, clean, slugify, ref, daysBetween.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../models/Hotel.js so this module can use its exported dependencies.
 import Hotel from "../models/Hotel.js";
+// Load ../models/HotelRoomType.js so this module can use its exported dependencies.
 import HotelRoomType from "../models/HotelRoomType.js";
+// Load ../models/HotelBooking.js so this module can use its exported dependencies.
 import HotelBooking from "../models/HotelBooking.js";
+// Load ../models/Customer.js so this module can use its exported dependencies.
 import Customer from "../models/Customer.js";
+// Declare tenantIdOf for use by the surrounding module or function.
 const tenantIdOf=(req)=>req.tenantId||req.user?.tenantId; const clean=(v)=>String(v??"").trim(); const slugify=(v)=>clean(v).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,170); const ref=()=>`HTL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`; const daysBetween=(a,b)=>Math.ceil((new Date(b)-new Date(a))/86400000); const staffRoles=new Set(["admin","manager","tour_manager","tourmanager","agent"]); const roleOf=(req)=>String(req.user?.role||"").trim().toLowerCase().replace(/[\s-]+/g,"_");
+// Declare requireTenant for use by the surrounding module or function.
 const requireTenant=(req,res)=>{const tenantId=tenantIdOf(req);if(!tenantId||!mongoose.isValidObjectId(tenantId)){res.status(400).json({success:false,message:"A valid company/tenant context is required."});return null;}return tenantId;};
+// Declare regexSpecialChars for use by the surrounding module or function.
 const regexSpecialChars = new Set([".", "*", "+", "?", "^", "$", "{", "}", "(", ")", "|", "[", "]", "\\"]);
+// Declare escapeRegex for use by the surrounding module or function.
 const escapeRegex = (value) => Array.from(String(value ?? ""), (char) => regexSpecialChars.has(char) ? "\\" + char : char).join("");
+// Declare arrayClean for use by the surrounding module or function.
 const arrayClean=(value,max=50)=>Array.isArray(value)?value.map(clean).filter(Boolean).slice(0,max):clean(value)?[clean(value)]:[];
+// Declare normalizeRoomPayload for use by the surrounding module or function.
 const normalizeRoomPayload=(body={})=>({name:clean(body.name),description:clean(body.description),maxAdults:Number(body.maxAdults??2),maxChildren:Number(body.maxChildren??1),beds:arrayClean(body.beds,20),amenities:arrayClean(body.amenities,50),totalRooms:Number(body.totalRooms),availableRooms:body.availableRooms===undefined?Number(body.totalRooms):Number(body.availableRooms),nightlyRate:Number(body.nightlyRate),mealPlans:arrayClean(body.mealPlans,10),currency:clean(body.currency||"KES").toUpperCase(),status:["active","inactive"].includes(body.status)?body.status:"active"});
+// Declare listHotels for use by the surrounding module or function.
 export const listHotels = async (req, res, next) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare tenantId for use by the surrounding module or function.
     const tenantId = requireTenant(req, res);
+    // Check the condition (!tenantId) and run the matching branch.
     if (!tenantId) return;
+    // Declare filter for use by the surrounding module or function.
     const filter = { tenantId, status: "active" };
+    // Check the condition (req.query.city) and run the matching branch.
     if (req.query.city) {
+      // Declare city for use by the surrounding module or function.
       const city = escapeRegex(clean(req.query.city));
+      // Perform the side effect or state update expressed on the following line.
       filter.city = new RegExp("^" + city + "$", "i");
     }
+    // Check the condition (req.query.featured === "true") and run the matching branch.
     if (req.query.featured === "true") filter.featured = true;
+    // Declare hotels for use by the surrounding module or function.
     const hotels = await Hotel.find(filter).sort({ featured: -1, name: 1 }).lean();
+    // Declare data for use by the surrounding module or function.
     const data = await Promise.all(hotels.map(async (hotel) => ({
       ...hotel,
       roomTypes: await HotelRoomType.find({
@@ -28,17 +53,25 @@ export const listHotels = async (req, res, next) => {
         status: "active",
       }).sort({ nightlyRate: 1 }).lean(),
     })));
+    // Return the result of res.json() to the caller.
     return res.json({ success: true, data });
   } catch (error) {
+    // Return the result of next() to the caller.
     return next(error);
   }
 };
 
+// Declare getHotel for use by the surrounding module or function.
 export const getHotel = async (req, res, next) => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Declare tenantId for use by the surrounding module or function.
     const tenantId = requireTenant(req, res);
+    // Check the condition (!tenantId) and run the matching branch.
     if (!tenantId) return;
+    // Declare key for use by the surrounding module or function.
     const key = clean(req.params.id);
+    // Declare hotel for use by the surrounding module or function.
     const hotel = await Hotel.findOne({
       tenantId,
       status: "active",
@@ -47,26 +80,39 @@ export const getHotel = async (req, res, next) => {
         { slug: key.toLowerCase() },
       ],
     }).lean();
+    // Check the condition (!hotel) and run the matching branch.
     if (!hotel) return res.status(404).json({ success: false, message: "Hotel not found." });
+    // Declare rooms for use by the surrounding module or function.
     const rooms = await HotelRoomType.find({
       tenantId: hotel.tenantId,
       hotel: hotel._id,
       status: "active",
     }).sort({ nightlyRate: 1 }).lean();
+    // Return the result of res.json() to the caller.
     return res.json({ success: true, data: { ...hotel, roomTypes: rooms } });
   } catch (error) {
+    // Return the result of next() to the caller.
     return next(error);
   }
 };
 
+// Declare listAdminHotels for use by the surrounding module or function.
 export const listAdminHotels=async(req,res,next)=>{try{const tenantId=requireTenant(req,res);if(!tenantId)return;const filter={tenantId};if(req.query.status)filter.status=req.query.status;const hotels=await Hotel.find(filter).sort({createdAt:-1}).lean();const data=await Promise.all(hotels.map(async h=>({...h,roomTypes:await HotelRoomType.find({tenantId:h.tenantId,hotel:h._id}).sort({nightlyRate:1}).lean()})));res.json({success:true,data});}catch(e){next(e);}};
+// Declare createHotel for use by the surrounding module or function.
 export const createHotel=async(req,res,next)=>{try{const tenantId=requireTenant(req,res);if(!tenantId)return;const name=clean(req.body.name);if(!name)return res.status(400).json({success:false,message:"Hotel name is required."});const baseSlug=slugify(req.body.slug||name)||`hotel-${Date.now()}`;let slug=baseSlug,n=2;while(await Hotel.exists({tenantId,slug}))slug=`${baseSlug}-${n++}`;const hotel=await Hotel.create({...req.body,name,slug,tenantId,createdBy:req.user?._id||null,updatedBy:req.user?._id||null});res.status(201).json({success:true,data:hotel});}catch(e){next(e);}};
+// Declare updateHotel for use by the surrounding module or function.
 export const updateHotel=async(req,res,next)=>{try{const tenantId=requireTenant(req,res);if(!tenantId)return;const hotel=await Hotel.findOne({_id:req.params.id,tenantId});if(!hotel)return res.status(404).json({success:false,message:"Hotel not found."});const allowed=["name","description","location","address","city","county","country","latitude","longitude","starRating","amenities","images","contactPhone","contactEmail","checkInTime","checkOutTime","cancellationPolicy","status","featured","currency"];for(const key of allowed)if(req.body[key]!==undefined)hotel[key]=req.body[key];const name=clean(hotel.name);if(!name||!clean(hotel.city)||!clean(hotel.location))return res.status(400).json({success:false,message:"Hotel name, city and location are required."});const stars=Number(hotel.starRating);if(!Number.isInteger(stars)||stars<1||stars>5)return res.status(400).json({success:false,message:"Star rating must be an integer from 1 to 5."});if(hotel.contactEmail&&(!/^\S+@\S+\.\S+$/.test(clean(hotel.contactEmail))))return res.status(400).json({success:false,message:"Reservations email is invalid."});if(hotel.latitude!==undefined&&hotel.latitude!==null&&hotel.latitude!==""&&(!Number.isFinite(Number(hotel.latitude))||Number(hotel.latitude)<-90||Number(hotel.latitude)>90))return res.status(400).json({success:false,message:"Latitude must be between -90 and 90."});if(hotel.longitude!==undefined&&hotel.longitude!==null&&hotel.longitude!==""&&(!Number.isFinite(Number(hotel.longitude))||Number(hotel.longitude)<-180||Number(hotel.longitude)>180))return res.status(400).json({success:false,message:"Longitude must be between -180 and 180."});hotel.name=name;hotel.amenities=arrayClean(hotel.amenities,50);hotel.images=arrayClean(hotel.images,30);hotel.status=["draft","active","inactive"].includes(hotel.status)?hotel.status:"draft";hotel.currency=clean(hotel.currency||"KES").toUpperCase();if(req.body.name!==undefined&&clean(req.body.name)!==hotel.name){let baseSlug=slugify(hotel.name)||`hotel-${Date.now()}`,slug=baseSlug,n=2;while(await Hotel.exists({_id:{$ne:hotel._id},tenantId,slug}))slug=`${baseSlug}-${n++}`;hotel.slug=slug;}hotel.updatedBy=req.user?._id||null;await hotel.save();res.json({success:true,message:"Property updated successfully.",data:hotel});}catch(e){if(e?.code===11000)return res.status(409).json({success:false,message:"A property with that name already exists for this tenant."});next(e);}};
+// Declare createRoomType for use by the surrounding module or function.
 export const createRoomType=async(req,res,next)=>{try{const tenantId=requireTenant(req,res);if(!tenantId)return;const hotelId=clean(req.params.hotelId);if(!mongoose.isValidObjectId(hotelId))return res.status(400).json({success:false,message:"Select a valid property before creating a room type."});const hotel=await Hotel.findOne({_id:hotelId,tenantId});if(!hotel)return res.status(404).json({success:false,message:"The selected property was not found in your tenant."});const payload=normalizeRoomPayload(req.body);if(!payload.name)return res.status(400).json({success:false,message:"Room type name is required."});if(!Number.isFinite(payload.totalRooms)||payload.totalRooms<1)return res.status(400).json({success:false,message:"Total rooms must be at least 1."});if(!Number.isFinite(payload.availableRooms)||payload.availableRooms<0||payload.availableRooms>payload.totalRooms)return res.status(400).json({success:false,message:"Available rooms cannot exceed total rooms."});if(!Number.isFinite(payload.nightlyRate)||payload.nightlyRate<0)return res.status(400).json({success:false,message:"Nightly rate must be zero or greater."});if(!Number.isInteger(payload.maxAdults)||payload.maxAdults<1||!Number.isInteger(payload.maxChildren)||payload.maxChildren<0)return res.status(400).json({success:false,message:"Room guest capacity is invalid."});if(!payload.mealPlans.length)payload.mealPlans=["room_only"];const room=await HotelRoomType.create({...payload,tenantId,hotel:hotel._id,createdBy:req.user?._id||null,updatedBy:req.user?._id||null});res.status(201).json({success:true,message:`${room.name} was added to ${hotel.name}.`,data:room});}catch(e){if(e?.code===11000)return res.status(409).json({success:false,message:"A room type with this name already exists for this property."});next(e);}};
+// Declare updateRoomType for use by the surrounding module or function.
 export const updateRoomType=async(req,res,next)=>{try{const tenantId=requireTenant(req,res);if(!tenantId)return;const room=await HotelRoomType.findOne({_id:req.params.id,tenantId});if(!room)return res.status(404).json({success:false,message:"Room type not found."});const allowed=["name","description","maxAdults","maxChildren","beds","amenities","totalRooms","availableRooms","nightlyRate","mealPlans","currency","status"];for(const key of allowed)if(req.body[key]!==undefined)room[key]=req.body[key];room.name=clean(room.name);if(!room.name)return res.status(400).json({success:false,message:"Room type name is required."});room.totalRooms=Number(room.totalRooms);room.availableRooms=Number(room.availableRooms);room.nightlyRate=Number(room.nightlyRate);room.maxAdults=Number(room.maxAdults);room.maxChildren=Number(room.maxChildren);if(!Number.isFinite(room.totalRooms)||room.totalRooms<0||!Number.isFinite(room.availableRooms)||room.availableRooms<0||room.availableRooms>room.totalRooms)return res.status(400).json({success:false,message:"Available rooms cannot exceed total rooms."});if(!Number.isFinite(room.nightlyRate)||room.nightlyRate<0)return res.status(400).json({success:false,message:"Nightly rate must be zero or greater."});if(!Number.isInteger(room.maxAdults)||room.maxAdults<1||!Number.isInteger(room.maxChildren)||room.maxChildren<0)return res.status(400).json({success:false,message:"Room guest capacity is invalid."});room.beds=arrayClean(room.beds,20);room.amenities=arrayClean(room.amenities,50);room.mealPlans=arrayClean(room.mealPlans,10);room.currency=clean(room.currency||"KES").toUpperCase();room.status=["active","inactive"].includes(room.status)?room.status:"active";room.updatedBy=req.user?._id||null;await room.save();res.json({success:true,message:"Room type updated successfully.",data:room});}catch(e){if(e?.code===11000)return res.status(409).json({success:false,message:"A room type with this name already exists for this property."});next(e);}};
+// Declare resolveCustomer for use by the surrounding module or function.
 const resolveCustomer=async(req,payload)=>{if(!req.user?._id)return null;let customer=await Customer.findOne({tenantId:tenantIdOf(req),user:req.user._id});if(customer)return customer;const firstName=clean(payload.firstName||req.user.firstName||req.user.name?.split(" ")[0]||"Guest"),lastName=clean(payload.lastName||req.user.lastName||req.user.name?.split(" ").slice(1).join(" ")||"Customer"),phone=clean(payload.phone||req.user.phone||"");if(!phone)return null;return Customer.create({tenantId:tenantIdOf(req),user:req.user._id,firstName,lastName,email:clean(payload.email||req.user.email),phone,createdBy:req.user._id,updatedBy:req.user._id});};
+// Declare createHotelBooking for use by the surrounding module or function.
 export const createHotelBooking=async(req,res,next)=>{try{const tenantId=tenantIdOf(req),hotel=await Hotel.findOne({_id:req.body.hotelId,tenantId,status:"active"}),room=await HotelRoomType.findOne({_id:req.body.roomTypeId,tenantId,hotel:req.body.hotelId,status:"active"});if(!hotel||!room)return res.status(404).json({success:false,message:"Hotel or room type not found."});const checkIn=new Date(req.body.checkIn),checkOut=new Date(req.body.checkOut),nights=daysBetween(checkIn,checkOut),rooms=Number(req.body.rooms||1),adults=Number(req.body.adults||1),children=Number(req.body.children||0);if(Number.isNaN(checkIn.getTime())||Number.isNaN(checkOut.getTime())||!Number.isFinite(nights)||nights<=0||!Number.isInteger(rooms)||rooms<1||adults<1)return res.status(400).json({success:false,message:"Valid check-in, check-out, rooms and guests are required."});if(adults>rooms*room.maxAdults||children>rooms*room.maxChildren)return res.status(400).json({success:false,message:"Guest count exceeds the selected room capacity."});const overlap=await HotelBooking.aggregate([{ $match:{tenantId,roomType:room._id,status:{$nin:["cancelled","no_show"]},checkIn:{$lt:checkOut},checkOut:{$gt:checkIn}}},{ $group:{_id:null,rooms:{$sum:"$rooms"}}}]);const bookedRooms=Number(overlap[0]?.rooms||0);if(bookedRooms+rooms>room.totalRooms)return res.status(409).json({success:false,message:`Only ${Math.max(room.totalRooms-bookedRooms,0)} room(s) are available for those dates.`});const subtotal=nights*rooms*Number(room.nightlyRate||0),taxes=Number(req.body.taxes||0),fees=Number(req.body.fees||0),customer=await resolveCustomer(req,req.body);if(req.user?.role==="customer"&&!customer)return res.status(400).json({success:false,message:"A customer phone number is required to complete the booking."});const booking=await HotelBooking.create({tenantId,reference:ref(),hotel:hotel._id,roomType:room._id,customer:customer?._id||null,user:req.user?._id||null,linkedBooking:req.body.linkedBooking||null,checkIn,checkOut,rooms,adults,children,guests:Array.isArray(req.body.guests)?req.body.guests:[],mealPlan:req.body.mealPlan||"room_only",specialRequests:clean(req.body.specialRequests),status:"pending",paymentStatus:"pending",source:req.body.source||"website",subtotal,taxes,fees,totalAmount:subtotal+taxes+fees,currency:hotel.currency||room.currency||"KES",createdBy:req.user?._id||null,updatedBy:req.user?._id||null});res.status(201).json({success:true,data:booking});}catch(e){next(e);}};
+// Declare listHotelBookings for use by the surrounding module or function.
 export const listHotelBookings=async(req,res,next)=>{try{if(roleOf(req)!=="customer"&&!staffRoles.has(roleOf(req)))return res.status(403).json({success:false,message:"Not allowed."});const filter={tenantId:tenantIdOf(req)};if(req.query.status)filter.status=req.query.status;if(req.query.customerId)filter.customer=req.query.customerId;if(req.user?.role==="customer")filter.user=req.user._id;const rows=await HotelBooking.find(filter).populate("hotel","name city").populate("roomType","name nightlyRate").sort({checkIn:1,createdAt:-1}).lean();res.json({success:true,data:rows});}catch(e){next(e);}};
+// Declare HOTEL_STATUS_TRANSITIONS for use by the surrounding module or function.
 const HOTEL_STATUS_TRANSITIONS = {
   pending: new Set(["confirmed", "cancelled", "no_show"]),
   confirmed: new Set(["checked_in", "cancelled", "no_show"]),
@@ -76,36 +122,60 @@ const HOTEL_STATUS_TRANSITIONS = {
   no_show: new Set([]),
 };
 
+// Declare updateHotelBooking for use by the surrounding module or function.
 export const updateHotelBooking=async(req,res,next)=>{try{
+  // Declare tenantId for use by the surrounding module or function.
   const tenantId=tenantIdOf(req);
+  // Declare booking for use by the surrounding module or function.
   const booking=await HotelBooking.findOne({_id:req.params.id,tenantId});
+  // Check the condition (!booking) and run the matching branch.
   if(!booking)return res.status(404).json({success:false,message:"Hotel booking not found."});
 
+  // Declare role for use by the surrounding module or function.
   const role=roleOf(req);
+  // Declare isCustomer for use by the surrounding module or function.
   const isCustomer=role==="customer";
+  // Check the condition (isCustomer&&String(booking.user)!==String(req.user._id)) and run the matching branch.
   if(isCustomer&&String(booking.user)!==String(req.user._id))return res.status(403).json({success:false,message:"Not allowed."});
+  // Check the condition (!isCustomer&&!staffRoles.has(role)) and run the matching branch.
   if(!isCustomer&&!staffRoles.has(role))return res.status(403).json({success:false,message:"Only authorized booking operations staff may modify this reservation."});
 
+  // Declare requestedKeys for use by the surrounding module or function.
   const requestedKeys=Object.keys(req.body||{});
+  // Check the condition (isCustomer&&requestedKeys.some(key=>key!=="specialRequests")) and run the matching branch.
   if(isCustomer&&requestedKeys.some(key=>key!=="specialRequests")){
+    // Return the result of res.status(403).json() to the caller.
     return res.status(403).json({success:false,message:"Customers may only update special requests on an existing reservation."});
   }
 
+  // Check the condition (req.body.status!==undefined) and run the matching branch.
   if(req.body.status!==undefined){
+    // Check the condition (isCustomer) and run the matching branch.
     if(isCustomer)return res.status(403).json({success:false,message:"Customers cannot change reservation status."});
+    // Declare nextStatus for use by the surrounding module or function.
     const nextStatus=clean(req.body.status).toLowerCase();
+    // Declare allowed for use by the surrounding module or function.
     const allowed=HOTEL_STATUS_TRANSITIONS[booking.status]||new Set();
+    // Check the condition (!allowed.has(nextStatus)) and run the matching branch.
     if(!allowed.has(nextStatus))return res.status(409).json({success:false,message:`Invalid hotel reservation status transition: ${booking.status} → ${nextStatus}.`});
+    // Perform the side effect or state update expressed on the following line.
     booking.status=nextStatus;
   }
 
+  // Check the condition (req.body.specialRequests!==undefined) and run the matching branch.
   if(req.body.specialRequests!==undefined)booking.specialRequests=clean(req.body.specialRequests);
+  // Check the condition (req.body.notes!==undefined) and run the matching branch.
   if(req.body.notes!==undefined){
+    // Check the condition (isCustomer) and run the matching branch.
     if(isCustomer)return res.status(403).json({success:false,message:"Customers cannot modify internal reservation notes."});
+    // Perform the side effect or state update expressed on the following line.
     booking.notes=clean(req.body.notes);
   }
 
+  // Perform the side effect or state update expressed on the following line.
   booking.updatedBy=req.user?._id||null;
+  // Perform the side effect or state update expressed on the following line.
   await booking.save();
+  // Perform the side effect or state update expressed on the following line.
   res.json({success:true,data:booking});
 }catch(e){next(e);}};

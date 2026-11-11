@@ -1,5 +1,10 @@
+/**
+ * Purpose: seed Destinations database seed module. Main declarations: seedDestinations.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import Destination from "../models/Destination.js";
 
+// Declare destinations for use by the surrounding module or function.
 const destinations = [
   {
     name: "Maasai Mara",
@@ -36,9 +41,13 @@ const destinations = [
   },
 ];
 
+// Define seedDestinations; its parameters and body implement this operation.
 export default async function seedDestinations() {
+  // Perform the side effect or state update expressed on the following line.
   await Destination.deleteMany({});
+  // Declare created for use by the surrounding module or function.
   const created = await Destination.insertMany(destinations);
   // debug removed
+  // Return the value of created to the caller.
   return created;
 }

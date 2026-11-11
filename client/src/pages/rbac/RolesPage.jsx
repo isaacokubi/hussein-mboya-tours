@@ -1,5 +1,11 @@
+/**
+ * Purpose: Roles Page page-level UI component. Main declarations: permissionId, permissionLabel, permissionDescription, roleId, roleKey.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect, useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   Check,
   ChevronDown,
@@ -14,9 +20,12 @@ import {
   Users,
   X,
 } from "lucide-react";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/admin/adminRoleApi so this module can use its exported dependencies.
 import { getAdminRoles, getAdminPermissions, updateAdminRolePermissions } from "../../api/admin/adminRoleApi";
 
+// Declare ROLE_META for use by the surrounding module or function.
 const ROLE_META = {
   super_admin: { tone: "violet", description: "Full platform control, including security and access policies." },
   superadmin: { tone: "violet", description: "Full platform control, including security and access policies." },
@@ -31,6 +40,7 @@ const ROLE_META = {
   customer: { tone: "slate", description: "Customer self-service access only." },
 };
 
+// Declare toneClasses for use by the surrounding module or function.
 const toneClasses = {
   violet: "bg-violet-50 text-violet-700 ring-violet-200",
   emerald: "bg-emerald-50 text-emerald-700 ring-emerald-200",
@@ -40,100 +50,153 @@ const toneClasses = {
   slate: "bg-slate-100 text-slate-700 ring-slate-200",
 };
 
+// Declare permissionId for use by the surrounding module or function.
 const permissionId = (permission) => {
+  // Check the condition (permission == null) and run the matching branch.
   if (permission == null) return null;
+  // Check the condition (typeof permission === "string") and run the matching branch.
   if (typeof permission === "string") return permission;
+  // Return the expression shown below to the caller.
   return permission._id || permission.id || permission.key || permission.name || null;
 };
 
+// Declare permissionLabel for use by the surrounding module or function.
 const permissionLabel = (permission) =>
   permission?.label || permission?.displayName || permission?.name || permission?.key || "Unnamed permission";
 
+// Declare permissionDescription for use by the surrounding module or function.
 const permissionDescription = (permission) => permission?.description || permission?.helpText || "Controls access to this capability.";
 
+// Declare roleId for use by the surrounding module or function.
 const roleId = (role) => role?._id || role?.id || null;
 
+// Declare roleKey for use by the surrounding module or function.
 const roleKey = (role) => String(role?.name || role?.key || "").toLowerCase().replace(/\s+/g, "_");
 
+// Declare prettyName for use by the surrounding module or function.
 const prettyName = (role) => String(role?.displayName || role?.name || "Role").replace(/_/g, " ");
 
+// Define RolesPage; its parameters and body implement this operation.
 export default function RolesPage() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [selected, setSelected] for use by the surrounding module or function.
   const [selected, setSelected] = useState(null);
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [moduleFilter, setModuleFilter] for use by the surrounding module or function.
   const [moduleFilter, setModuleFilter] = useState("all");
+  // Declare [showOnlySelected, setShowOnlySelected] for use by the surrounding module or function.
   const [showOnlySelected, setShowOnlySelected] = useState(false);
 
+  // Declare rolesQuery for use by the surrounding module or function.
   const rolesQuery = useQuery({ queryKey: ["admin-roles"], queryFn: getAdminRoles });
+  // Declare permissionsQuery for use by the surrounding module or function.
   const permissionsQuery = useQuery({ queryKey: ["admin-permissions"], queryFn: getAdminPermissions });
 
+  // Declare roles for use by the surrounding module or function.
   const roles = useMemo(() => {
+    // Declare value for use by the surrounding module or function.
     const value = rolesQuery.data?.roles || rolesQuery.data?.data || rolesQuery.data || [];
+    // Return the expression shown below to the caller.
     return Array.isArray(value) ? value : [];
   }, [rolesQuery.data]);
 
+  // Declare permissions for use by the surrounding module or function.
   const permissions = useMemo(() => {
+    // Declare value for use by the surrounding module or function.
     const value = permissionsQuery.data?.permissions || permissionsQuery.data?.data || permissionsQuery.data || [];
+    // Return the expression shown below to the caller.
     return Array.isArray(value) ? value : [];
   }, [permissionsQuery.data]);
 
+  // Declare grouped for use by the surrounding module or function.
   const grouped = useMemo(
     () => permissions.reduce((acc, permission) => {
+      // Declare key for use by the surrounding module or function.
       const key = permission?.module || permission?.category || String(permission?.name || "other").split(/[._]/)[0] || "other";
+      // Perform the side effect or state update expressed on the following line.
       (acc[key] ||= []).push(permission);
+      // Return the value of acc to the caller.
       return acc;
     }, {}),
     [permissions]
   );
 
+  // Declare modules for use by the surrounding module or function.
   const modules = useMemo(() => Object.keys(grouped).sort((a, b) => a.localeCompare(b)), [grouped]);
 
+  // Declare effectiveSelected for use by the surrounding module or function.
   const effectiveSelected = useMemo(() => {
+    // Check the condition (selected && roles.some((role) => roleId(role) === selected)) and run the matching branch.
     if (selected && roles.some((role) => roleId(role) === selected)) return selected;
+    // Declare preferred for use by the surrounding module or function.
     const preferred = roles.find((role) => ["super_admin", "superadmin"].includes(roleKey(role)));
+    // Return the expression shown below to the caller.
     return roleId(preferred) || roleId(roles[0]);
   }, [roles, selected]);
 
+  // Declare activeRole for use by the surrounding module or function.
   const activeRole = roles.find((role) => roleId(role) === effectiveSelected);
+  // Declare activePermissionIds for use by the surrounding module or function.
   const activePermissionIds = useMemo(
     () => new Set((activeRole?.permissions || []).map(permissionId).filter(Boolean)),
     [activeRole]
   );
 
+  // Declare filteredGrouped for use by the surrounding module or function.
   const filteredGrouped = useMemo(() => {
+    // Declare needle for use by the surrounding module or function.
     const needle = search.trim().toLowerCase();
+    // Return the result of Object.entries(grouped).reduce() to the caller.
     return Object.entries(grouped).reduce((acc, [module, items]) => {
+      // Check the condition (moduleFilter !== "all" && module !== moduleFilter) and run the matching branch.
       if (moduleFilter !== "all" && module !== moduleFilter) return acc;
+      // Declare filtered for use by the surrounding module or function.
       const filtered = items.filter((permission) => {
+        // Declare matchesSearch for use by the surrounding module or function.
         const matchesSearch = !needle || [permissionLabel(permission), permission?.name, permission?.key, permission?.description]
           .filter(Boolean)
           .join(" ")
           .toLowerCase()
           .includes(needle);
+        // Declare matchesSelected for use by the surrounding module or function.
         const matchesSelected = !showOnlySelected || activePermissionIds.has(permissionId(permission));
+        // Return the expression shown below to the caller.
         return matchesSearch && matchesSelected;
       });
+      // Check the condition (filtered.length) and run the matching branch.
       if (filtered.length) acc[module] = filtered;
+      // Return the value of acc to the caller.
       return acc;
     }, {});
   }, [grouped, search, moduleFilter, showOnlySelected, activePermissionIds]);
 
+  // Declare mutation for use by the surrounding module or function.
   const mutation = useMutation({
     mutationFn: ({ id, permissions: ids }) => updateAdminRolePermissions(id, ids),
     onSuccess: (response) => {
+      // Perform the side effect or state update expressed on the following line.
       qc.invalidateQueries({ queryKey: ["admin-roles"] });
+      // Perform the side effect or state update expressed on the following line.
       toast.success(response?.message || "Role permissions saved successfully.");
     },
     onError: (error) => toast.error(error?.response?.data?.message || "Could not save role permissions."),
   });
 
+  // Check the condition (rolesQuery.isLoading || permissionsQuery.isLoading) and run the matching branch.
   if (rolesQuery.isLoading || permissionsQuery.isLoading) {
+    // Return the expression shown below to the caller.
     return <LoadingState />;
   }
 
+  // Check the condition (rolesQuery.isError || permissionsQuery.isError) and run the matching branch.
   if (rolesQuery.isError || permissionsQuery.isError) {
+    // Declare rolesError for use by the surrounding module or function.
     const rolesError = rolesQuery.error?.response?.data?.message || rolesQuery.error?.message;
+    // Declare permissionsError for use by the surrounding module or function.
     const permissionsError = permissionsQuery.error?.response?.data?.message || permissionsQuery.error?.message;
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-screen bg-slate-50 p-6 lg:p-8">
         <div className="mx-auto max-w-4xl rounded-2xl border border-red-200 bg-white p-8 shadow-sm">
@@ -153,10 +216,13 @@ export default function RolesPage() {
     );
   }
 
+  // Check the condition (!roles.length) and run the matching branch.
   if (!roles.length) {
+    // Return the expression shown below to the caller.
     return <EmptyState title="No roles configured" description="Create or provision an operational role before assigning permissions." />;
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1500px]">
@@ -288,34 +354,54 @@ export default function RolesPage() {
   );
 }
 
+// Define PermissionEditor; its parameters and body implement this operation.
 function PermissionEditor({ role, grouped, allPermissions, mutation }) {
+  // Declare [checked, setChecked] for use by the surrounding module or function.
   const [checked, setChecked] = useState(() => new Set((role?.permissions || []).map(permissionId).filter(Boolean)));
 
+  // Declare visibleIds for use by the surrounding module or function.
   const visibleIds = Object.values(grouped).flat().map(permissionId).filter(Boolean);
+  // Declare allIds for use by the surrounding module or function.
   const allIds = allPermissions.map(permissionId).filter(Boolean);
+  // Declare isSuperAdmin for use by the surrounding module or function.
   const isSuperAdmin = ["super_admin", "superadmin"].includes(roleKey(role));
 
+  // Declare toggle for use by the surrounding module or function.
   const toggle = (id) => setChecked((previous) => {
+    // Declare next for use by the surrounding module or function.
     const next = new Set(previous);
+    // Check the condition (next.has(id)) and run the matching branch.
     if (next.has(id)) next.delete(id); else next.add(id);
+    // Return the value of next to the caller.
     return next;
   });
 
+  // Declare setVisible for use by the surrounding module or function.
   const setVisible = (value) => setChecked((previous) => {
+    // Declare next for use by the surrounding module or function.
     const next = new Set(previous);
+    // Perform the side effect or state update expressed on the following line.
     visibleIds.forEach((id) => value ? next.add(id) : next.delete(id));
+    // Return the value of next to the caller.
     return next;
   });
 
+  // Declare save for use by the surrounding module or function.
   const save = () => {
+    // Check the condition (!roleId(role)) and run the matching branch.
     if (!roleId(role)) return;
+    // Check the condition (isSuperAdmin && checked.size === 0) and run the matching branch.
     if (isSuperAdmin && checked.size === 0) {
+      // Perform the side effect or state update expressed on the following line.
       toast.error("Super Admin cannot be saved with zero permissions.");
+      // Return the result to the caller.
       return;
     }
+    // Perform the side effect or state update expressed on the following line.
     mutation.mutate({ id: roleId(role), permissions: [...checked] });
   };
 
+  // Return the expression shown below to the caller.
   return (
     <div className="p-5 sm:p-6">
       <div className="mb-5 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-start sm:justify-between">
@@ -401,7 +487,9 @@ function PermissionEditor({ role, grouped, allPermissions, mutation }) {
   );
 }
 
+// Define Stat; its parameters and body implement this operation.
 function Stat({ label, value, icon: Icon }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="rounded-xl bg-white/10 p-3 ring-1 ring-white/10">
       <Icon size={17} className="mb-2 text-emerald-200" />
@@ -411,7 +499,9 @@ function Stat({ label, value, icon: Icon }) {
   );
 }
 
+// Define LoadingState; its parameters and body implement this operation.
 function LoadingState() {
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 p-6 lg:p-8">
       <div className="mx-auto max-w-7xl animate-pulse space-y-6">
@@ -422,7 +512,9 @@ function LoadingState() {
   );
 }
 
+// Define EmptyState; its parameters and body implement this operation.
 function EmptyState({ title, description }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 p-6 lg:p-8">
       <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">

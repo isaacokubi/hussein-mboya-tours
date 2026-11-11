@@ -1,7 +1,14 @@
+/**
+ * Purpose: User Preference database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/UserPreference.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
 /*
@@ -10,6 +17,7 @@ import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 |--------------------------------------------------------------------------
 */
 
+// Declare budgetRangeSchema for use by the surrounding module or function.
 const budgetRangeSchema = new mongoose.Schema(
   {
 
@@ -42,6 +50,7 @@ const budgetRangeSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Declare userPreferenceSchema for use by the surrounding module or function.
 const userPreferenceSchema = new mongoose.Schema(
   {
     /*
@@ -231,14 +240,17 @@ const userPreferenceSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 userPreferenceSchema.index({
   preferredCategories: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 userPreferenceSchema.index({
   preferredCountries: 1,
 });
 
+// Perform the side effect or state update expressed on the following line.
 userPreferenceSchema.index({
   receivePromotions: 1,
 });
@@ -249,22 +261,31 @@ userPreferenceSchema.index({
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 userPreferenceSchema.methods.addInterest = async function (interest) {
+  // Check the condition (!this.interests.includes(interest)) and run the matching branch.
   if (!this.interests.includes(interest)) {
+    // Perform the side effect or state update expressed on the following line.
     this.interests.push(interest);
+    // Perform the side effect or state update expressed on the following line.
     await this.save();
   }
 
+  // Return the expression shown below to the caller.
   return this;
 };
 
+// Perform the side effect or state update expressed on the following line.
 userPreferenceSchema.methods.removeInterest = async function (interest) {
+  // Perform the side effect or state update expressed on the following line.
   this.interests = this.interests.filter(
     (item) => item !== interest,
   );
 
+  // Perform the side effect or state update expressed on the following line.
   await this.save();
 
+  // Return the expression shown below to the caller.
   return this;
 };
 
@@ -274,6 +295,7 @@ userPreferenceSchema.methods.removeInterest = async function (interest) {
 |--------------------------------------------------------------------------
 */
 
+// Declare UserPreference for use by the surrounding module or function.
 const UserPreference =
   mongoose.models.UserPreference ||
   mongoose.model("UserPreference", userPreferenceSchema.plugin(tenantPlugin));

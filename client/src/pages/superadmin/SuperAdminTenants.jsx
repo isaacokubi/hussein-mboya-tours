@@ -1,77 +1,116 @@
+/**
+ * Purpose: Super Admin Tenants page-level UI component. Main declarations: tenantUrl, planLabel, formatDate, SuperAdminTenants, refresh.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load ../../api/superAdminTenantsApi so this module can use its exported dependencies.
 import { deleteSuperAdminTenant, getSuperAdminTenants, updateSuperAdminTenantStatus, switchSuperAdminTenantPlan } from "../../api/superAdminTenantsApi";
+// Load ../../api/tenantSubscriptionApi so this module can use its exported dependencies.
 import { activateTenantSubscription } from "../../api/tenantSubscriptionApi";
 
+// Declare PLATFORM_HOST for use by the surrounding module or function.
 const PLATFORM_HOST = String(import.meta.env.VITE_PLATFORM_HOST || "globaltours.com").replace(/^https?:\/\//, "").replace(/\/$/, "");
+// Declare PLANS for use by the surrounding module or function.
 const PLANS = [
   { value: "starter", label: "Starter", tone: "slate" },
   { value: "professional", label: "Professional", tone: "emerald" },
   { value: "business", label: "Business", tone: "blue" },
   { value: "enterprise", label: "Enterprise", tone: "violet" },
 ];
+// Declare tenantUrl for use by the surrounding module or function.
 const tenantUrl = (tenant) => `https://${tenant.slug}.${PLATFORM_HOST}`;
+// Declare planLabel for use by the surrounding module or function.
 const planLabel = (plan) => PLANS.find((item) => item.value === String(plan || "").toLowerCase())?.label || String(plan || "—");
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value) => value ? new Date(value).toLocaleDateString("en-KE", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
+// Define SuperAdminTenants; its parameters and body implement this operation.
 export default function SuperAdminTenants() {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient();
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare [deleteTarget, setDeleteTarget] for use by the surrounding module or function.
   const [deleteTarget, setDeleteTarget] = useState(null);
+  // Declare [confirmation, setConfirmation] for use by the surrounding module or function.
   const [confirmation, setConfirmation] = useState("");
+  // Declare [activateTarget, setActivateTarget] for use by the surrounding module or function.
   const [activateTarget, setActivateTarget] = useState(null);
+  // Declare [switchTarget, setSwitchTarget] for use by the surrounding module or function.
   const [switchTarget, setSwitchTarget] = useState(null);
+  // Declare [switchPlan, setSwitchPlan] for use by the surrounding module or function.
   const [switchPlan, setSwitchPlan] = useState("starter");
+  // Declare [activation, setActivation] for use by the surrounding module or function.
   const [activation, setActivation] = useState({ plan: "starter", periodDays: 30, amount: "", reference: "" });
 
+  // Declare { data, isLoading, isError, error } for use by the surrounding module or function.
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["platform-tenants", search],
     queryFn: () => getSuperAdminTenants({ search, limit: 100 }),
     staleTime: 30000,
     refetchOnMount: "always",
   });
+  // Declare tenants for use by the surrounding module or function.
   const tenants = data?.tenants || data?.data || [];
 
+  // Declare refresh for use by the surrounding module or function.
   const refresh = () => {
+    // Perform the side effect or state update expressed on the following line.
     qc.invalidateQueries({ queryKey: ["platform-tenants"] });
+    // Perform the side effect or state update expressed on the following line.
     qc.invalidateQueries({ queryKey: ["superadmin-dashboard"] });
   };
 
+  // Declare statusMutation for use by the surrounding module or function.
   const statusMutation = useMutation({
     mutationFn: ({ id, status }) => updateSuperAdminTenantStatus(id, status),
     onSuccess: (result) => { refresh(); toast.success(result.message || "Company status updated."); },
     onError: (err) => toast.error(err?.response?.data?.message || err.message || "Unable to update company."),
   });
 
+  // Declare switchMutation for use by the surrounding module or function.
   const switchMutation = useMutation({
     mutationFn: ({ id, plan }) => switchSuperAdminTenantPlan(id, plan),
     onSuccess: (result) => {
+      // Perform the side effect or state update expressed on the following line.
       setSwitchTarget(null);
+      // Perform the side effect or state update expressed on the following line.
       refresh();
+      // Perform the side effect or state update expressed on the following line.
       toast.success(result.message || "Subscription plan switched for testing.");
     },
     onError: (err) => toast.error(err?.response?.data?.message || err.message || "Unable to switch subscription plan."),
   });
 
+  // Declare activateMutation for use by the surrounding module or function.
   const activateMutation = useMutation({
     mutationFn: ({ id, payload }) => activateTenantSubscription(id, payload),
     onSuccess: (result) => { setActivateTarget(null); refresh(); toast.success(result.message || "Subscription activated."); },
     onError: (err) => toast.error(err?.response?.data?.message || err.message || "Unable to activate subscription."),
   });
 
+  // Declare deleteMutation for use by the surrounding module or function.
   const deleteMutation = useMutation({
     mutationFn: ({ id }) => deleteSuperAdminTenant(id, "DELETE"),
     onSuccess: (result) => { setDeleteTarget(null); setConfirmation(""); refresh(); toast.success(result.message || "Company deleted successfully."); },
     onError: (err) => toast.error(err?.response?.data?.message || err.message || "Unable to delete company."),
   });
 
+  // Declare openSwitcher for use by the surrounding module or function.
   const openSwitcher = (tenant) => {
+    // Perform the side effect or state update expressed on the following line.
     setSwitchTarget(tenant);
+    // Perform the side effect or state update expressed on the following line.
     setSwitchPlan(String(tenant.subscription?.plan || "starter").toLowerCase());
   };
 
+  // Return the expression shown below to the caller.
   return (
     <main className="space-y-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

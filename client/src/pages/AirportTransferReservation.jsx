@@ -1,26 +1,49 @@
+/**
+ * Purpose: Airport Transfer Reservation page-level UI component. Main declarations: money, AirportTransferReservation, update, Field, Summary.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link, useNavigate, useSearchParams, useParams } from "react-router-dom";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { ArrowLeft, Car, CheckCircle2, Clock3, Luggage, MapPin, Plane, ShieldCheck, Users } from "lucide-react";
+// Load ../api/airportTransferApi so this module can use its exported dependencies.
 import { createTransferBooking, getAirportTransfer } from "../api/airportTransferApi";
 
+// Declare input for use by the surrounding module or function.
 const input = "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
+// Declare money for use by the surrounding module or function.
 const money = (value, currency = "KES") => `${currency} ${Number(value || 0).toLocaleString("en-KE", { maximumFractionDigits: 2 })}`;
 
+// Define AirportTransferReservation; its parameters and body implement this operation.
 export default function AirportTransferReservation() {
+  // Declare { id } for use by the surrounding module or function.
   const { id } = useParams();
+  // Declare [params] for use by the surrounding module or function.
   const [params] = useSearchParams();
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
+  // Declare { data: item, isLoading, isError } for use by the surrounding module or function.
   const { data: item, isLoading, isError } = useQuery({ queryKey: ["airport-transfer-reservation", id], queryFn: () => getAirportTransfer(id), enabled: !!id, staleTime: 30000 });
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState({ pickupDateTime: "", pickupLocation: "", dropoffLocation: "", passengerName: "", passengerPhone: "", passengerEmail: "", passengers: 1, luggage: 0, flightNumber: "", airline: "", terminal: "", specialRequests: "" });
+  // Declare update for use by the surrounding module or function.
   const update = (key, value) => setForm(f => ({ ...f, [key]: value }));
+  // Declare booking for use by the surrounding module or function.
   const booking = useMutation({ mutationFn: createTransferBooking, onSuccess: result => { const bookingId = result?._id || result?.id; if (bookingId) navigate(`/hospitality-payment/${bookingId}?type=airport_transfer`); }, onError: error => window.alert(error?.response?.data?.message || "Unable to create the transfer reservation. Please check your details and try again.") });
+  // Declare total for use by the surrounding module or function.
   const total = item ? (item.pricingModel === "per_passenger" ? Number(item.price || 0) * Number(form.passengers || 1) : Number(item.price || 0)) : 0;
+  // Declare valid for use by the surrounding module or function.
   const valid = item && form.pickupDateTime && form.passengerName.trim() && form.passengerPhone.trim() && form.pickupLocation.trim() && form.dropoffLocation.trim() && Number(form.passengers) >= 1 && Number(form.passengers) <= Number(item.passengerCapacity || 1) && Number(form.luggage) >= 0 && Number(form.luggage) <= Number(item.luggageCapacity || 0);
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <main className="min-h-screen bg-slate-50 px-5 py-16"><div className="mx-auto max-w-5xl animate-pulse space-y-6"><div className="h-32 rounded-3xl bg-slate-200"/><div className="h-96 rounded-3xl bg-slate-200"/></div></main>;
+  // Check the condition (isError || !item) and run the matching branch.
   if (isError || !item) return <main className="min-h-screen bg-slate-50 px-5 py-20"><div className="mx-auto max-w-xl rounded-3xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200"><Plane className="mx-auto text-slate-300" size={52}/><h1 className="mt-5 text-2xl font-black text-slate-900">Transfer service not available</h1><p className="mt-2 text-sm leading-6 text-slate-500">This service may have been removed or is temporarily unavailable.</p><Link to="/airport-transfers" className="mt-6 inline-flex rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white">Back to transfers</Link></div></main>;
 
+  // Return the expression shown below to the caller.
   return <main className="min-h-screen bg-slate-50">
     <section className="bg-slate-950 text-white"><div className="mx-auto max-w-7xl px-5 py-5 md:px-8"><Link to={`/airport-transfers/${id}`} className="inline-flex items-center gap-2 text-sm font-bold text-slate-300 hover:text-white"><ArrowLeft size={17}/> Back to service</Link></div></section>
     <section className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12"><div className="grid gap-7 lg:grid-cols-[1fr_360px]">
@@ -52,5 +75,7 @@ export default function AirportTransferReservation() {
   </main>;
 }
 
+// Define Field; its parameters and body implement this operation.
 function Field({ label, children }) { return <label className="text-sm font-semibold text-slate-700">{label}{children}</label>; }
+// Define Summary; its parameters and body implement this operation.
 function Summary({ icon, label, value }) { return <div className="rounded-2xl bg-white p-4"><div className="flex items-center gap-2 text-emerald-600">{icon}</div><p className="mt-2 text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</p><p className="mt-1 text-sm font-black text-slate-900">{value}</p></div>; }

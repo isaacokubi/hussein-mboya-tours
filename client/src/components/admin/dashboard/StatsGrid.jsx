@@ -1,17 +1,29 @@
+/**
+ * Purpose: Stats Grid reusable UI component. Main declarations: number, money, StatsGrid.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import StatCard from "./Statcard";
+// Load ../../../utils/dashboardData so this module can use its exported dependencies.
 import { firstNumeric, numeric, unwrapData } from "../../../utils/dashboardData";
 
+// Declare number for use by the surrounding module or function.
 const number = (value) => numeric(value).toLocaleString();
+// Declare money for use by the surrounding module or function.
 const money = (value, currency = "KES") => `${currency} ${number(value)}`;
 
+// Define StatsGrid; its parameters and body implement this operation.
 export default function StatsGrid({ stats = {}, summary = {} }) {
+  // Declare source for use by the surrounding module or function.
   const source = unwrapData(stats);
+  // Declare paymentStats for use by the surrounding module or function.
   const paymentStats = source.paymentStats || {};
   // The canonical payment count comes from the payments collection. Do not derive
   // it from the visible status buckets because processing/legacy states may not be
   // represented by the three dashboard buckets.
+  // Declare paymentCount for use by the surrounding module or function.
   const paymentCount = firstNumeric(source.payments, paymentStats.completed, paymentStats.pending, paymentStats.failed);
 
+  // Declare cards for use by the surrounding module or function.
   const cards = {
     users: ["Users", firstNumeric(source.users)],
     customers: ["Customers", firstNumeric(source.customers)],
@@ -32,7 +44,9 @@ export default function StatsGrid({ stats = {}, summary = {} }) {
     revenue: ["Revenue", money(firstNumeric(source.revenue), source.revenueCurrency || "KES")],
   };
 
+  // Declare primaryCards for use by the surrounding module or function.
   const primaryCards = [cards.revenue, cards.bookings, cards.payments, cards.customers];
+  // Declare operationalCards for use by the surrounding module or function.
   const operationalCards = [
     cards.users,
     cards.staff,
@@ -49,6 +63,7 @@ export default function StatsGrid({ stats = {}, summary = {} }) {
     cards.completedPayments,
   ];
 
+  // Return the expression shown below to the caller.
   return (
     <section className="space-y-5" aria-label="Business metrics">
       <div>

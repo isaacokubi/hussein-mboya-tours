@@ -1,4 +1,9 @@
+/**
+ * Purpose: playwright.tours.config client application module. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { defineConfig } from "@playwright/test";
+// Load node:process so this module can use its exported dependencies.
 import process from "node:process";
 
 export default defineConfig({

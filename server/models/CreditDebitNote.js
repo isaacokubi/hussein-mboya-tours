@@ -1,6 +1,12 @@
+/**
+ * Purpose: Credit Debit Note database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare creditDebitNoteSchema for use by the surrounding module or function.
 const creditDebitNoteSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   noteNumber: { type: String, trim: true },
@@ -27,15 +33,23 @@ const creditDebitNoteSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
+// Perform the side effect or state update expressed on the following line.
 creditDebitNoteSchema.pre("save", function(next) {
+  // Check the condition (!this.noteNumber) and run the matching branch.
   if (!this.noteNumber) this.noteNumber = `${this.type === "credit" ? "CN" : "DN"}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  // Check the condition (this.status === "issued" && !this.issuedAt) and run the matching branch.
   if (this.status === "issued" && !this.issuedAt) this.issuedAt = new Date();
+  // Perform the side effect or state update expressed on the following line.
   next();
 });
 
+// Perform the side effect or state update expressed on the following line.
 creditDebitNoteSchema.index({ tenantId: 1, noteNumber: 1 }, { unique: true });
+// Perform the side effect or state update expressed on the following line.
 creditDebitNoteSchema.index({ tenantId: 1, originalInvoice: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 creditDebitNoteSchema.index({ tenantId: 1, etimsStatus: 1, createdAt: -1 });
+// Perform the side effect or state update expressed on the following line.
 creditDebitNoteSchema.plugin(tenantPlugin);
 
 export default mongoose.models.CreditDebitNote || mongoose.model("CreditDebitNote", creditDebitNoteSchema);

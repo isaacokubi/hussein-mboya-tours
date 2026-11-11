@@ -1,6 +1,12 @@
+/**
+ * Purpose: Purchase Order database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 
+// Declare lineSchema for use by the surrounding module or function.
 const lineSchema = new mongoose.Schema({
   description: { type: String, required: true, trim: true },
   quantity: { type: Number, required: true, min: 0.001 },
@@ -12,6 +18,7 @@ const lineSchema = new mongoose.Schema({
   total: { type: Number, min: 0, default: 0 },
 }, { _id: true });
 
+// Declare purchaseOrderSchema for use by the surrounding module or function.
 const purchaseOrderSchema = new mongoose.Schema({
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   poNumber: { type: String, trim: true },
@@ -33,25 +40,43 @@ const purchaseOrderSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true });
 
+// Perform the side effect or state update expressed on the following line.
 purchaseOrderSchema.pre("validate", function(next) {
+  // Check the condition (!this.lines.length) and run the matching branch.
   if (!this.lines.length) return next(new Error("Purchase order requires at least one line item."));
+  // Declare subtotal for use by the surrounding module or function.
   let subtotal = 0; let taxAmount = 0;
+  // Perform the side effect or state update expressed on the following line.
   this.lines.forEach((line) => {
+    // Perform the side effect or state update expressed on the following line.
     line.subtotal = Math.round(line.quantity * line.unitCost * 100) / 100;
+    // Perform the side effect or state update expressed on the following line.
     line.taxAmount = line.taxType === "standard" ? Math.round(line.subtotal * (line.taxRate / 100) * 100) / 100 : 0;
+    // Perform the side effect or state update expressed on the following line.
     line.total = Math.round((line.subtotal + line.taxAmount) * 100) / 100;
+    // Perform the side effect or state update expressed on the following line.
     subtotal += line.subtotal; taxAmount += line.taxAmount;
   });
+  // Perform the side effect or state update expressed on the following line.
   this.subtotal = Math.round(subtotal * 100) / 100;
+  // Perform the side effect or state update expressed on the following line.
   this.taxAmount = Math.round(taxAmount * 100) / 100;
+  // Perform the side effect or state update expressed on the following line.
   this.totalAmount = Math.round((subtotal + taxAmount) * 100) / 100;
+  // Perform the side effect or state update expressed on the following line.
   next();
 });
+// Perform the side effect or state update expressed on the following line.
 purchaseOrderSchema.pre("save", function(next) {
+  // Check the condition (!this.poNumber) and run the matching branch.
   if (!this.poNumber) this.poNumber = `PO-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  // Perform the side effect or state update expressed on the following line.
   next();
 });
+// Perform the side effect or state update expressed on the following line.
 purchaseOrderSchema.index({ tenantId: 1, poNumber: 1 }, { unique: true });
+// Perform the side effect or state update expressed on the following line.
 purchaseOrderSchema.index({ tenantId: 1, supplier: 1, status: 1 });
+// Perform the side effect or state update expressed on the following line.
 purchaseOrderSchema.plugin(tenantPlugin);
 export default mongoose.models.PurchaseOrder || mongoose.model("PurchaseOrder", purchaseOrderSchema);

@@ -1,8 +1,16 @@
+/**
+ * Purpose: Super Admin Api Monitor page-level UI component. Main declarations: normalize, statusTone, StatusPill, MetricCard, formatCheckedAt.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useQuery } from "@tanstack/react-query";
+// Load react so this module can use its exported dependencies.
 import { useMemo, useState } from "react";
+// Load lucide-react so this module can use its exported dependencies.
 import { Activity, AlertTriangle, CheckCircle2, Clock3, Database, Gauge, RefreshCw, Server, ShieldCheck, Wifi } from "lucide-react";
+// Load ../../api/superAdminApi so this module can use its exported dependencies.
 import { getApiMonitor } from "../../api/superAdminApi";
 
+// Declare toneMap for use by the surrounding module or function.
 const toneMap = {
   healthy: "border-emerald-200 bg-emerald-50 text-emerald-700",
   warning: "border-amber-200 bg-amber-50 text-amber-700",
@@ -10,21 +18,33 @@ const toneMap = {
   neutral: "border-slate-200 bg-slate-50 text-slate-700",
 };
 
+// Define normalize; its parameters and body implement this operation.
 function normalize(value) {
+  // Return the result of String(value || "").trim().toLowerCase() to the caller.
   return String(value || "").trim().toLowerCase();
 }
 
+// Define statusTone; its parameters and body implement this operation.
 function statusTone(value) {
+  // Declare status for use by the surrounding module or function.
   const status = normalize(value);
+  // Check the condition (["online", "connected", "normal", "active", "healthy"].includes(status) and run the matching branch.
   if (["online", "connected", "normal", "active", "healthy"].includes(status)) return "healthy";
+  // Check the condition (["degraded", "warning", "development"].includes(status)) and run the matching branch.
   if (["degraded", "warning", "development"].includes(status)) return "warning";
+  // Check the condition (["offline", "disconnected", "failed", "error"].includes(status)) and run the matching branch.
   if (["offline", "disconnected", "failed", "error"].includes(status)) return "danger";
+  // Return a configured text value to the caller.
   return "neutral";
 }
 
+// Define StatusPill; its parameters and body implement this operation.
 function StatusPill({ value, fallback = "Unknown" }) {
+  // Declare display for use by the surrounding module or function.
   const display = value === undefined || value === null || value === "" ? fallback : String(value);
+  // Declare tone for use by the surrounding module or function.
   const tone = statusTone(display);
+  // Return the expression shown below to the caller.
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${toneMap[tone]}`}>
       {tone === "healthy" ? <CheckCircle2 size={13} /> : tone === "danger" ? <AlertTriangle size={13} /> : <Activity size={13} />}
@@ -33,7 +53,9 @@ function StatusPill({ value, fallback = "Unknown" }) {
   );
 }
 
+// Define MetricCard; its parameters and body implement this operation.
 function MetricCard({ icon: Icon, label, value, helper, tone = "neutral" }) {
+  // Declare styles for use by the surrounding module or function.
   const styles = {
     healthy: "border-emerald-200 bg-gradient-to-br from-white to-emerald-50",
     warning: "border-amber-200 bg-gradient-to-br from-white to-amber-50",
@@ -41,6 +63,7 @@ function MetricCard({ icon: Icon, label, value, helper, tone = "neutral" }) {
     neutral: "border-slate-200 bg-white",
   };
 
+  // Return the expression shown below to the caller.
   return (
     <div className={`rounded-2xl border p-5 shadow-sm ${styles[tone] || styles.neutral}`}>
       <div className="flex items-start justify-between gap-4">
@@ -57,15 +80,22 @@ function MetricCard({ icon: Icon, label, value, helper, tone = "neutral" }) {
   );
 }
 
+// Define formatCheckedAt; its parameters and body implement this operation.
 function formatCheckedAt(timestamp, fallback) {
+  // Check the condition (!timestamp) and run the matching branch.
   if (!timestamp) return fallback;
+  // Declare parsed for use by the surrounding module or function.
   const parsed = new Date(timestamp);
+  // Return the expression shown below to the caller.
   return Number.isNaN(parsed.getTime()) ? fallback : parsed.toLocaleTimeString();
 }
 
+// Define SuperAdminApiMonitor; its parameters and body implement this operation.
 export default function SuperAdminApiMonitor() {
+  // Declare [lastRefresh, setLastRefresh] for use by the surrounding module or function.
   const [lastRefresh, setLastRefresh] = useState(null);
 
+  // Declare { data, isLoading, isError, error, refetch, isFetching } for use by the surrounding module or function.
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["superadmin-api-monitor"],
     queryFn: getApiMonitor,
@@ -74,23 +104,37 @@ export default function SuperAdminApiMonitor() {
     retry: 1,
   });
 
+  // Declare monitor for use by the surrounding module or function.
   const monitor = data?.data || data || {};
+  // Declare endpoints for use by the surrounding module or function.
   const endpoints = Array.isArray(monitor.endpoints) ? monitor.endpoints : [];
+  // Declare healthScore for use by the surrounding module or function.
   const healthScore = Number.isFinite(Number(monitor.healthScore)) ? Number(monitor.healthScore) : null;
+  // Declare environment for use by the surrounding module or function.
   const environment = monitor.server?.environment || "Unknown";
+  // Declare databaseStatus for use by the surrounding module or function.
   const databaseStatus = monitor.database?.status || "Unknown";
+  // Declare endpointSummary for use by the surrounding module or function.
   const endpointSummary = useMemo(() => {
+    // Declare registered for use by the surrounding module or function.
     const registered = endpoints.filter((endpoint) => normalize(endpoint.status) === "registered").length;
+    // Declare degraded for use by the surrounding module or function.
     const degraded = endpoints.filter((endpoint) => normalize(endpoint.status) === "degraded").length;
+    // Return the object assembled below to the caller.
     return { registered, degraded, total: endpoints.length };
   }, [endpoints]);
 
+  // Declare handleRefresh for use by the surrounding module or function.
   const handleRefresh = async () => {
+    // Perform the side effect or state update expressed on the following line.
     await refetch();
+    // Perform the side effect or state update expressed on the following line.
     setLastRefresh(new Date().toISOString());
   };
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl space-y-6 animate-pulse">
@@ -104,7 +148,9 @@ export default function SuperAdminApiMonitor() {
     );
   }
 
+  // Check the condition (isError) and run the matching branch.
   if (isError) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-white p-8 shadow-sm">
@@ -130,9 +176,12 @@ export default function SuperAdminApiMonitor() {
     );
   }
 
+  // Declare healthTone for use by the surrounding module or function.
   const healthTone = healthScore === null ? "neutral" : healthScore >= 90 ? "healthy" : healthScore >= 60 ? "warning" : "danger";
+  // Declare environmentTone for use by the surrounding module or function.
   const environmentTone = normalize(environment) === "production" ? "healthy" : "warning";
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-full bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
@@ -259,7 +308,9 @@ export default function SuperAdminApiMonitor() {
   );
 }
 
+// Define InfoRow; its parameters and body implement this operation.
 function InfoRow({ icon: Icon, label, value }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
       <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -270,7 +321,9 @@ function InfoRow({ icon: Icon, label, value }) {
   );
 }
 
+// Define SummaryRow; its parameters and body implement this operation.
 function SummaryRow({ label, value }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
       <span className="text-sm font-medium text-slate-600">{label}</span>

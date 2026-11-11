@@ -1,17 +1,29 @@
+/**
+ * Purpose: destination Seed database seed module. Main declarations: seedDestinations.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // scripts/seedDestinations.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load dotenv so this module can use its exported dependencies.
 import dotenv from "dotenv";
 
+// Load ../models/Destination.js so this module can use its exported dependencies.
 import Destination from "../models/Destination.js";
 
+// Perform the side effect or state update expressed on the following line.
 dotenv.config();
 
+// Check the condition (!process.env.MONGODB_URI) and run the matching branch.
 if (!process.env.MONGODB_URI) {
+  // Perform the side effect or state update expressed on the following line.
   console.error("❌ MONGODB_URI is not defined in the environment.");
+  // Perform the side effect or state update expressed on the following line.
   process.exit(1);
 }
 
+// Declare destinations for use by the surrounding module or function.
 const destinations = [
   {
     name: "Maasai Mara",
@@ -77,27 +89,37 @@ const destinations = [
   },
 ];
 
+// Declare seedDestinations for use by the surrounding module or function.
 const seedDestinations = async () => {
+  // Run this operation with a dedicated error-handling path for failures.
   try {
+    // Perform the side effect or state update expressed on the following line.
     await mongoose.connect(process.env.MONGODB_URI);
 
     // debug removed
 
+    // Perform the side effect or state update expressed on the following line.
     await Destination.deleteMany({});
 
     // debug removed
 
+    // Perform the side effect or state update expressed on the following line.
     await Destination.insertMany(destinations);
 
     // debug removed
   } catch (error) {
+    // Perform the side effect or state update expressed on the following line.
     console.error("❌ Destination seeding failed:");
+    // Perform the side effect or state update expressed on the following line.
     console.error(error);
+    // Perform the side effect or state update expressed on the following line.
     process.exitCode = 1;
   } finally {
+    // Perform the side effect or state update expressed on the following line.
     await mongoose.connection.close().catch(() => {});
     // debug removed
   }
 };
 
+// Perform the side effect or state update expressed on the following line.
 seedDestinations();

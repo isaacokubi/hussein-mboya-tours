@@ -1,8 +1,15 @@
+/**
+ * Purpose: System Settings database model. The statements below implement this module responsibilities.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // server/models/SystemSetting.js
 
+// Load mongoose so this module can use its exported dependencies.
 import mongoose from "mongoose";
+// Load ../utils/tenantAggregationPlugin.js so this module can use its exported dependencies.
 import tenantAggregationPlugin from "../utils/tenantAggregationPlugin.js";
 
+// Load ../tenancy/tenantPlugin.js so this module can use its exported dependencies.
 import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +21,7 @@ import { tenantPlugin } from "../tenancy/tenantPlugin.js";
 |
 */
 
+// Declare systemSettingsSchema for use by the surrounding module or function.
 const systemSettingsSchema = new mongoose.Schema(
   {
 
@@ -273,6 +281,7 @@ const systemSettingsSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 systemSettingsSchema.index({
   maintenanceMode: 1,
 });
@@ -283,9 +292,11 @@ systemSettingsSchema.index({
 |--------------------------------------------------------------------------
 */
 
+// Perform the side effect or state update expressed on the following line.
 tenantPlugin(systemSettingsSchema);
 
 
+// Declare SystemSettings for use by the surrounding module or function.
 const SystemSettings =
   mongoose.models.SystemSettings ||
   mongoose.model("SystemSettings", systemSettingsSchema);

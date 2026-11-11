@@ -1,16 +1,23 @@
+/**
+ * Purpose: Tour Filters reusable UI component. Main declarations: TourFilters, updateFilter, clearFilters.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/components/TourFilters.jsx
 
+// Define TourFilters; its parameters and body implement this operation.
 export default function TourFilters({
   filters,
   setFilters
 }) {
 
 
+  // Declare updateFilter for use by the surrounding module or function.
   const updateFilter = (
     key,
     value
   ) => {
 
+    // Perform the side effect or state update expressed on the following line.
     setFilters({
 
       ...filters,
@@ -23,8 +30,10 @@ export default function TourFilters({
 
 
 
+  // Declare clearFilters for use by the surrounding module or function.
   const clearFilters = () => {
 
+    // Perform the side effect or state update expressed on the following line.
     setFilters({
 
       country: "",
@@ -39,6 +48,7 @@ export default function TourFilters({
 
 
 
+  // Return the expression shown below to the caller.
   return (
 
     <div

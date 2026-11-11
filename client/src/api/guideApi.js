@@ -1,5 +1,10 @@
+/**
+ * Purpose: guide Api client application module. Main declarations: getGuideDashboard, getAssignedTours, getTourGuests, updateTourStatus, submitTourReport.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/services/guideService.js
 
+// Load ./axios so this module can use its exported dependencies.
 import api from "./axios";
 
 /*
@@ -8,11 +13,14 @@ import api from "./axios";
 |--------------------------------------------------------------------------
 */
 
+// Declare getGuideDashboard for use by the surrounding module or function.
 export const getGuideDashboard = async () => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.get(
     "/guide/dashboard"
   );
 
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -22,7 +30,9 @@ export const getGuideDashboard = async () => {
 |--------------------------------------------------------------------------
 */
 
+// Declare getAssignedTours for use by the surrounding module or function.
 export const getAssignedTours = async (params = {}) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.get(
     "/guide/assigned-tours",
     {
@@ -30,6 +40,7 @@ export const getAssignedTours = async (params = {}) => {
     }
   );
 
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -39,11 +50,14 @@ export const getAssignedTours = async (params = {}) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare getTourGuests for use by the surrounding module or function.
 export const getTourGuests = async (tourId) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.get(
     `/guide/tours/${tourId}/guests`
   );
 
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -53,10 +67,12 @@ export const getTourGuests = async (tourId) => {
 |--------------------------------------------------------------------------
 */
 
+// Declare updateTourStatus for use by the surrounding module or function.
 export const updateTourStatus = async (
   tourId,
   status
 ) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.put(
     `/guide/tours/${tourId}/status`,
     {
@@ -64,6 +80,7 @@ export const updateTourStatus = async (
     }
   );
 
+  // Return the value of data to the caller.
   return data;
 };
 
@@ -73,14 +90,17 @@ export const updateTourStatus = async (
 |--------------------------------------------------------------------------
 */
 
+// Declare submitTourReport for use by the surrounding module or function.
 export const submitTourReport = async (
   tourId,
   reportData
 ) => {
+  // Declare { data } for use by the surrounding module or function.
   const { data } = await api.post(
     `/guide/tours/${tourId}/report`,
     reportData
   );
 
+  // Return the value of data to the caller.
   return data;
 };

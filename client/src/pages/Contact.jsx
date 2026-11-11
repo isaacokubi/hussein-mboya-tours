@@ -1,57 +1,105 @@
+/**
+ * Purpose: Contact page-level UI component. Main declarations: Contact, handleChange, submitHandler.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { useSearchParams } from "react-router-dom";
+// Load framer-motion so this module can use its exported dependencies.
 import { motion } from "framer-motion";
+// Load lucide-react so this module can use its exported dependencies.
 import { Phone, Mail, MapPin, Send, MessageCircle, Clock } from "lucide-react";
+// Load react-icons/fa so this module can use its exported dependencies.
 import { FaFacebook, FaInstagram } from "react-icons/fa";
+// Load ../context/TenantContext so this module can use its exported dependencies.
 import { useTenant } from "../context/TenantContext";
+// Load ../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../context/SettingsContext";
+// Load ./PaymentLink so this module can use its exported dependencies.
 import PaymentLink from "./PaymentLink";
 
+// Declare OFFICE_ADDRESS for use by the surrounding module or function.
 const OFFICE_ADDRESS = "";
+// Declare CONTACT_HERO for use by the surrounding module or function.
 const CONTACT_HERO = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2200&q=92";
 
+// Define Contact; its parameters and body implement this operation.
 export default function Contact() {
+  // Declare [searchParams] for use by the surrounding module or function.
   const [searchParams] = useSearchParams();
+  // Declare paymentToken for use by the surrounding module or function.
   const paymentToken = searchParams.get("paymentToken");
+  // Declare { tenant } for use by the surrounding module or function.
   const { tenant } = useTenant();
+  // Declare { settings } for use by the surrounding module or function.
   const { settings } = useSettings();
+  // Declare companyName for use by the surrounding module or function.
   const companyName = settings?.companyName || tenant?.name || "Hussein Mboya Tours";
+  // Declare businessPhone for use by the surrounding module or function.
   const businessPhone = String(settings?.supportPhone || tenant?.contactPhone || "").trim();
+  // Declare businessEmail for use by the surrounding module or function.
   const businessEmail = String(settings?.supportEmail || tenant?.contactEmail || "").trim();
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
+  // Declare [error, setError] for use by the surrounding module or function.
   const [error, setError] = useState("");
+  // Declare [sent, setSent] for use by the surrounding module or function.
   const [sent, setSent] = useState(false);
 
+  // Check the condition (paymentToken) and run the matching branch.
   if (paymentToken) return <PaymentLink token={paymentToken} />;
 
+  // Declare handleChange for use by the surrounding module or function.
   const handleChange = (event) => {
+    // Declare { name, value } for use by the surrounding module or function.
     const { name, value } = event.target;
+    // Perform the side effect or state update expressed on the following line.
     setForm((current) => ({ ...current, [name]: value }));
+    // Perform the side effect or state update expressed on the following line.
     setError("");
+    // Perform the side effect or state update expressed on the following line.
     setSent(false);
   };
 
+  // Declare submitHandler for use by the surrounding module or function.
   const submitHandler = (event) => {
+    // Perform the side effect or state update expressed on the following line.
     event.preventDefault();
+    // Perform the side effect or state update expressed on the following line.
     setError("");
+    // Perform the side effect or state update expressed on the following line.
     setSent(false);
+    // Declare name for use by the surrounding module or function.
     const name = form.name.trim();
+    // Declare email for use by the surrounding module or function.
     const email = form.email.trim();
+    // Declare phone for use by the surrounding module or function.
     const phone = form.phone.trim();
+    // Declare message for use by the surrounding module or function.
     const message = form.message.trim();
+    // Check the condition (!name || !email || !message) and run the matching branch.
     if (!name || !email || !message) return setError("Please enter your name, email address and inquiry message.");
+    // Check the condition (!/^\S+@\S+\.\S+$/.test(email)) and run the matching branch.
     if (!/^\S+@\S+\.\S+$/.test(email)) return setError("Please enter a valid email address.");
+    // Check the condition (!businessEmail) and run the matching branch.
     if (!businessEmail) return setError("This tenant has not configured a support email yet.");
+    // Declare subject for use by the surrounding module or function.
     const subject = encodeURIComponent(`Travel Inquiry from ${name}`);
+    // Declare body for use by the surrounding module or function.
     const body = encodeURIComponent(`Hello ${companyName},\n\nI would like to make an inquiry.\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || "Not provided"}\n\nMessage:\n${message}\n\nSent from the ${companyName} contact page.`);
+    // Perform the side effect or state update expressed on the following line.
     window.location.href = `mailto:${businessEmail}?subject=${subject}&body=${body}`;
+    // Perform the side effect or state update expressed on the following line.
     setSent(true);
+    // Perform the side effect or state update expressed on the following line.
     setForm({ name: "", email: "", phone: "", message: "" });
   };
 
+  // Declare mapHref for use by the surrounding module or function.
   const mapHref = settings?.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}` : "";
 
 
+  // Declare details for use by the surrounding module or function.
   const details = [
     { icon: Phone, title: "Phone", value: businessPhone || "Not configured", href: businessPhone ? `tel:${businessPhone.replace(/\s+/g, "")}` : "" },
     { icon: Mail, title: "Email", value: businessEmail || "Not configured", href: businessEmail ? `mailto:${businessEmail}` : "" },
@@ -59,6 +107,7 @@ export default function Contact() {
     { icon: Clock, title: "Working Hours", value: "Mon - Sat | 8AM - 6PM" },
   ];
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-w-0 overflow-x-clip bg-white">
       <section className="relative flex min-h-[400px] items-center bg-cover bg-center sm:min-h-[480px]" style={{ backgroundImage: `url(${CONTACT_HERO})` }}>

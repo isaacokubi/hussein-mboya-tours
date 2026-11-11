@@ -1,3 +1,7 @@
+/**
+ * Purpose: Revenue Chart reusable UI component. Main declarations: RevenueChart.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import {
     LineChart,
     Line,
@@ -10,17 +14,20 @@ import {
 
 
 
+// Define RevenueChart; its parameters and body implement this operation.
 export default function RevenueChart({
     revenue = []
 }){
 
 
+    // Declare data for use by the surrounding module or function.
     const data = Array.isArray(revenue)
         ? revenue
         : [];
 
 
 
+    // Return the expression shown below to the caller.
     return (
 
         <section className="

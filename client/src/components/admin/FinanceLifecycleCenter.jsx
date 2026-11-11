@@ -1,21 +1,41 @@
+/**
+ * Purpose: Finance Lifecycle Center reusable UI component. Main declarations: money, list, errorText, FinanceLifecycleCenter, refresh.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import { CheckCircle2, Copy, Link as LinkIcon, Plus, ReceiptText, RefreshCw, XCircle } from "lucide-react";
+// Load ../../api/financeLifecycleApi so this module can use its exported dependencies.
 import { createPaymentLink, getPaymentLinks, cancelPaymentLink, createCreditDebitNote, getCreditDebitNotes, issueCreditDebitNote, cancelCreditDebitNote } from "../../api/financeLifecycleApi";
 
+// Declare money for use by the surrounding module or function.
 const money = (v) => `KES ${Number(v || 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// Declare list for use by the surrounding module or function.
 const list = (v) => Array.isArray(v) ? v : v?.data || [];
+// Declare errorText for use by the surrounding module or function.
 const errorText = (e) => e?.response?.data?.message || e?.message || "The request could not be completed.";
 
+// Define FinanceLifecycleCenter; its parameters and body implement this operation.
 export default function FinanceLifecycleCenter({ enableCreditDebitNotes = true }) {
+  // Declare qc for use by the surrounding module or function.
   const qc = useQueryClient(); const [bookingId, setBookingId] = useState(""); const [linkAmount, setLinkAmount] = useState(""); const [invoiceId, setInvoiceId] = useState(""); const [noteType, setNoteType] = useState("credit"); const [noteAmount, setNoteAmount] = useState(""); const [taxAmount, setTaxAmount] = useState("0"); const [reason, setReason] = useState(""); const [createdPath, setCreatedPath] = useState("");
+  // Declare linksQ for use by the surrounding module or function.
   const linksQ = useQuery({ queryKey: ["finance-payment-links"], queryFn: getPaymentLinks, staleTime: 30000, retry: 2 }); const notesQ = useQuery({ queryKey: ["finance-credit-debit-notes"], queryFn: getCreditDebitNotes, staleTime: 30000, retry: 2, enabled: enableCreditDebitNotes });
+  // Declare refresh for use by the surrounding module or function.
   const refresh = () => { qc.invalidateQueries({ queryKey: ["finance-payment-links"] }); qc.invalidateQueries({ queryKey: ["finance-credit-debit-notes"] }); qc.invalidateQueries({ queryKey: ["admin-finance-accounting"] }); };
+  // Declare linkMutation for use by the surrounding module or function.
   const linkMutation = useMutation({ mutationFn: createPaymentLink, onSuccess: (data) => { setCreatedPath(data?.paymentPath || ""); setBookingId(""); setLinkAmount(""); refresh(); } });
+  // Declare cancelLink for use by the surrounding module or function.
   const cancelLink = useMutation({ mutationFn: cancelPaymentLink, onSuccess: refresh });
+  // Declare noteMutation for use by the surrounding module or function.
   const noteMutation = useMutation({ mutationFn: createCreditDebitNote, onSuccess: () => { setInvoiceId(""); setNoteAmount(""); setReason(""); refresh(); } });
+  // Declare issueNote for use by the surrounding module or function.
   const issueNote = useMutation({ mutationFn: issueCreditDebitNote, onSuccess: refresh }); const cancelNote = useMutation({ mutationFn: cancelCreditDebitNote, onSuccess: refresh });
+  // Declare copy for use by the surrounding module or function.
   const copy = async (text) => { try { await navigator.clipboard.writeText(`${window.location.origin}${text}`); } catch (error) { console.warn("Unable to copy payment link:", error); } };
+  // Return the expression shown below to the caller.
   return <section className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
     <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-600">Finance lifecycle</p><h2 className="mt-1 text-2xl font-black text-slate-950">Payment links & credit/debit notes</h2><p className="mt-1 max-w-3xl text-sm text-slate-500">Controlled collections and accounting adjustments with a clear draft → issue lifecycle.</p></div><button onClick={refresh} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"><RefreshCw size={16}/> Refresh</button></div>
     <div className={`grid gap-5 ${enableCreditDebitNotes ? "xl:grid-cols-2" : ""}`}>
@@ -25,4 +45,5 @@ export default function FinanceLifecycleCenter({ enableCreditDebitNotes = true }
     <div className={`grid gap-5 ${enableCreditDebitNotes ? "xl:grid-cols-2" : ""}`}><ListPanel title="Recent payment links" items={list(linksQ.data)} loading={linksQ.isLoading} empty="No payment links have been created yet." render={(l)=><div key={l._id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4"><div><p className="font-bold text-slate-900">{l.booking?.bookingNumber || l.booking || "Booking"}</p><p className="mt-1 text-sm font-semibold text-slate-700">{money(l.amount)} · <span className="capitalize">{l.status}</span></p><p className="mt-1 text-xs text-slate-400">Expires {l.expiresAt ? new Date(l.expiresAt).toLocaleDateString("en-KE") : "—"}</p></div>{l.status === "active" && <button onClick={()=>cancelLink.mutate(l._id)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><XCircle size={17}/></button>}</div>}/>{enableCreditDebitNotes && <ListPanel title="Credit/debit notes" items={list(notesQ.data)} loading={notesQ.isLoading} empty="No accounting notes have been created yet." render={(n)=><div key={n._id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4"><div><p className="font-bold text-slate-900">{n.noteNumber} · <span className="capitalize">{n.type}</span></p><p className="mt-1 text-sm font-semibold text-slate-700">{money(n.totalAmount)} · <span className="capitalize">{n.status}</span></p><p className="mt-1 text-xs text-slate-400">{n.reason}</p></div>{n.status === "draft" && <div className="flex gap-2"><button onClick={()=>issueNote.mutate(n._id)} className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white"><CheckCircle2 size={13}/>Issue</button><button onClick={()=>cancelNote.mutate(n._id)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600">Cancel</button></div>}</div>}/>}</div>
   </section>;
 }
+// Define ListPanel; its parameters and body implement this operation.
 function ListPanel({ title, items, loading, empty, render }) { return <div><h3 className="font-black text-slate-950">{title}</h3><div className="mt-3 space-y-2">{loading ? <div className="rounded-xl bg-slate-50 p-6 text-sm text-slate-400">Loading…</div> : items.length ? items.slice(0,8).map(render) : <div className="rounded-xl border border-dashed border-slate-200 p-6 text-sm text-slate-400">{empty}</div>}</div></div>; }

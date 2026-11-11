@@ -1,7 +1,14 @@
+/**
+ * Purpose: Custom Tour Request page-level UI component. Main declarations: formatDate, CustomTourRequest, updateField, handleSubmit.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+// Load ../api/customTourApi so this module can use its exported dependencies.
 import { createCustomTourRequest } from "../api/customTourApi";
 
+// Declare initialForm for use by the surrounding module or function.
 const initialForm = {
   destination: "",
   durationDays: 3,
@@ -20,47 +27,75 @@ const initialForm = {
   guestPhone: "",
 };
 
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(`${value}T00:00:00`);
+  // Check the condition (Number.isNaN(date.getTime())) and run the matching branch.
   if (Number.isNaN(date.getTime())) return "";
+  // Return the result of date.toLocaleDateString() to the caller.
   return date.toLocaleDateString("en-KE", { day: "2-digit", month: "short", year: "numeric" });
 };
 
+// Define CustomTourRequest; its parameters and body implement this operation.
 export default function CustomTourRequest() {
+  // Declare [form, setForm] for use by the surrounding module or function.
   const [form, setForm] = useState(initialForm);
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
 
+  // Declare endDate for use by the surrounding module or function.
   const endDate = useMemo(() => {
+    // Check the condition (!form.startDate) and run the matching branch.
     if (!form.startDate) return "";
+    // Declare date for use by the surrounding module or function.
     const date = new Date(`${form.startDate}T00:00:00`);
+    // Declare days for use by the surrounding module or function.
     const days = Math.max(1, Number(form.durationDays || 1));
+    // Check the condition (Number.isNaN(date.getTime())) and run the matching branch.
     if (Number.isNaN(date.getTime())) return "";
+    // Perform the side effect or state update expressed on the following line.
     date.setDate(date.getDate() + days - 1);
+    // Return the result of date.toISOString().slice() to the caller.
     return date.toISOString().slice(0, 10);
   }, [form.startDate, form.durationDays]);
 
+  // Declare mutation for use by the surrounding module or function.
   const mutation = useMutation({
     mutationFn: createCustomTourRequest,
     onSuccess: async () => {
+      // Perform the side effect or state update expressed on the following line.
       await queryClient.invalidateQueries({ queryKey: ["my-custom-tours"] });
+      // Perform the side effect or state update expressed on the following line.
       alert("Request submitted. The company will notify you with the total cost.");
+      // Perform the side effect or state update expressed on the following line.
       setForm(initialForm);
     },
     onError: (error) => {
+      // Perform the side effect or state update expressed on the following line.
       console.error("Custom tour request failed:", error);
+      // Perform the side effect or state update expressed on the following line.
       alert(error?.response?.data?.message || "Unable to submit custom tour request");
     },
   });
 
+  // Declare updateField for use by the surrounding module or function.
   const updateField = (field) => (event) => setForm((current) => ({ ...current, [field]: event.target.value }));
 
+  // Declare handleSubmit for use by the surrounding module or function.
   const handleSubmit = (event) => {
+    // Perform the side effect or state update expressed on the following line.
     event.preventDefault();
+    // Check the condition (!form.startDate) and run the matching branch.
     if (!form.startDate) {
+      // Perform the side effect or state update expressed on the following line.
       alert("Please select the custom tour start date.");
+      // Return the result to the caller.
       return;
     }
+    // Perform the side effect or state update expressed on the following line.
     mutation.mutate({
       ...form,
       durationDays: Number(form.durationDays),
@@ -69,6 +104,7 @@ export default function CustomTourRequest() {
     });
   };
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
       <main className="mx-auto max-w-4xl">

@@ -1,95 +1,168 @@
+/**
+ * Purpose: Super Admin Settings page-level UI component. Main declarations: Card, Toggle, RateInput, PriceInput, Field.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { toast } from "react-toastify";
+// Load react so this module can use its exported dependencies.
 import React, { useEffect, useState } from "react";
+// Load lucide-react so this module can use its exported dependencies.
 import { Save, RefreshCw, Shield, Database, Bell, CreditCard, Building2, Settings, CheckCircle, AlertTriangle, Percent, Smartphone, LockKeyhole, Server, Palette, CircleDollarSign } from "lucide-react";
+// Load ../../api/axios so this module can use its exported dependencies.
 import api from "../../api/axios";
+// Load ../../api/superAdminApi so this module can use its exported dependencies.
 import { getSettings, updateSettings } from "../../api/superAdminApi";
+// Load ../../api/platformBillingApi so this module can use its exported dependencies.
 import { getPlatformBillingConfig, updatePlatformBillingConfig } from "../../api/platformBillingApi";
+// Load ./SuperAdminPlanFeatures so this module can use its exported dependencies.
 import SuperAdminPlanFeatures from "./SuperAdminPlanFeatures";
+// Load ../../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../../context/SettingsContext";
 
+// Declare Card for use by the surrounding module or function.
 const Card = ({ icon: Icon, title, description, children }) => <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start gap-3"><div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-700"><Icon size={21} /></div><div><h2 className="text-lg font-black text-slate-950">{title}</h2>{description && <p className="mt-1 text-sm leading-5 text-slate-500">{description}</p>}</div></div><div className="mt-5 space-y-4">{children}</div></section>;
+// Declare Toggle for use by the surrounding module or function.
 const Toggle = ({ checked, onChange, label }) => <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-3.5 transition hover:border-emerald-200"><span className="text-sm font-semibold text-slate-800">{label}</span><input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-5 w-5 accent-emerald-600" /></label>;
+// Declare RateInput for use by the surrounding module or function.
 const RateInput = ({ label, description, value, onChange }) => <div className="space-y-2"><label className="block text-sm font-bold text-slate-800">{label}</label><div className="relative"><input type="number" min="0" max="100" step="0.01" className="w-full rounded-xl border border-slate-200 bg-white p-3 pr-10 font-semibold outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" value={value ?? 0} onChange={(e) => onChange(Number(e.target.value))} /><span className="absolute right-3 top-3 text-sm font-bold text-slate-400">%</span></div><p className="text-xs leading-5 text-slate-500">{description}</p></div>;
+// Declare PriceInput for use by the surrounding module or function.
 const PriceInput = ({ label, value, onChange }) => <label className="block text-sm font-bold text-slate-800">{label}<div className="mt-2 flex overflow-hidden rounded-xl border border-slate-200 bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100"><span className="border-r border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black text-emerald-700">KES</span><input type="number" min="0" step="1" value={value ?? 0} onChange={(e) => onChange(Number(e.target.value))} className="min-w-0 flex-1 p-3 font-semibold outline-none" /></div></label>;
+// Declare Field for use by the surrounding module or function.
 const Field = ({ label, value, onChange, placeholder }) => <label className="block text-sm font-bold text-slate-800">{label}<input className="mt-2 w-full rounded-xl border border-slate-200 bg-white p-3 font-medium outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" placeholder={placeholder} value={value ?? ""} onChange={onChange} /></label>;
 
+// Define SuperAdminSettings; its parameters and body implement this operation.
 export default function SuperAdminSettings() {
+  // Declare [settings, setSettings] for use by the surrounding module or function.
   const [settings, setSettings] = useState({});
+  // Declare [billing, setBilling] for use by the surrounding module or function.
   const [billing, setBilling] = useState({ prices: {}, mpesa: {} });
+  // Declare [loading, setLoading] for use by the surrounding module or function.
   const [loading, setLoading] = useState(true);
+  // Declare [settingsError, setSettingsError] for use by the surrounding module or function.
   const [settingsError, setSettingsError] = useState("");
+  // Declare [billingError, setBillingError] for use by the surrounding module or function.
   const [billingError, setBillingError] = useState("");
+  // Declare [saving, setSaving] for use by the surrounding module or function.
   const [saving, setSaving] = useState(false);
+  // Declare [savingBilling, setSavingBilling] for use by the surrounding module or function.
   const [savingBilling, setSavingBilling] = useState(false);
+  // Declare { updateSettings: updateGlobalSettings } for use by the surrounding module or function.
   const { updateSettings: updateGlobalSettings } = useSettings() || {};
 
+  // Declare load for use by the surrounding module or function.
   const load = async () => {
+    // Perform the side effect or state update expressed on the following line.
     setLoading(true);
+    // Perform the side effect or state update expressed on the following line.
     setSettingsError("");
+    // Perform the side effect or state update expressed on the following line.
     setBillingError("");
+    // Declare [settingsResult, billingResult] for use by the surrounding module or function.
     const [settingsResult, billingResult] = await Promise.allSettled([getSettings(), getPlatformBillingConfig()]);
 
+    // Check the condition (settingsResult.status === "fulfilled") and run the matching branch.
     if (settingsResult.status === "fulfilled") {
+      // Declare response for use by the surrounding module or function.
       const response = settingsResult.value;
+      // Declare nextSettings for use by the surrounding module or function.
       const nextSettings = response?.settings || response?.data || response || {};
+      // Perform the side effect or state update expressed on the following line.
       setSettings(nextSettings);
+      // Perform the side effect or state update expressed on the following line.
       updateGlobalSettings?.(nextSettings);
     } else {
+      // Perform the side effect or state update expressed on the following line.
       console.error("SUPERADMIN SETTINGS LOAD ERROR", settingsResult.reason);
+      // Perform the side effect or state update expressed on the following line.
       setSettingsError(settingsResult.reason?.response?.data?.message || settingsResult.reason?.message || "Platform settings are currently unavailable.");
     }
 
+    // Check the condition (billingResult.status === "fulfilled") and run the matching branch.
     if (billingResult.status === "fulfilled") {
+      // Declare response for use by the surrounding module or function.
       const response = billingResult.value;
+      // Perform the side effect or state update expressed on the following line.
       setBilling({ prices: response?.prices || {}, mpesa: response?.mpesa || {} });
     } else {
+      // Perform the side effect or state update expressed on the following line.
       console.error("PLATFORM BILLING CONFIG LOAD ERROR", billingResult.reason);
+      // Perform the side effect or state update expressed on the following line.
       setBillingError(billingResult.reason?.response?.data?.message || billingResult.reason?.message || "Subscription pricing and payment readiness are currently unavailable.");
     }
 
+    // Perform the side effect or state update expressed on the following line.
     setLoading(false);
   };
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => { void load(); }, []);
+  // Declare update for use by the surrounding module or function.
   const update = (key, value) => setSettings((prev) => ({ ...prev, [key]: value }));
+  // Declare updatePrice for use by the surrounding module or function.
   const updatePrice = (key, value) => setBilling((prev) => ({ ...prev, prices: { ...prev.prices, [key]: value } }));
 
+  // Declare save for use by the surrounding module or function.
   const save = async () => {
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       setSaving(true);
+      // Declare payload for use by the surrounding module or function.
       const payload = { ...settings, companyName: String(settings.companyName || "Global Tours").trim(), taxRate: Number(settings.taxRate ?? 0), taxServiceType: settings.taxServiceType || "service_fee", bookingDepositPercentage: Number(settings.bookingDepositPercentage ?? 30), defaultCommissionRate: Number(settings.defaultCommissionRate ?? 10) };
+      // Declare response for use by the surrounding module or function.
       const response = await updateSettings(payload);
+      // Declare savedSettings for use by the surrounding module or function.
       const savedSettings = response?.settings || response?.data?.settings || response?.data || payload;
+      // Perform the side effect or state update expressed on the following line.
       updateGlobalSettings?.(savedSettings);
+      // Perform the side effect or state update expressed on the following line.
       setSettings((prev) => ({ ...prev, ...savedSettings }));
+      // Perform the side effect or state update expressed on the following line.
       setSettingsError("");
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Platform settings saved successfully.");
     } catch (err) { console.error("SUPERADMIN SETTINGS SAVE ERROR", err); toast.error(err?.response?.data?.message || "Unable to save platform settings. No changes were applied."); } finally { setSaving(false); }
   };
 
+  // Declare saveBilling for use by the surrounding module or function.
   const saveBilling = async () => {
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Perform the side effect or state update expressed on the following line.
       setSavingBilling(true);
+      // Declare payload for use by the surrounding module or function.
       const payload = Object.fromEntries(["starter", "professional", "business", "enterprise"].map((key) => [key, Number(billing.prices?.[key] || 0)]));
+      // Declare response for use by the surrounding module or function.
       const response = await updatePlatformBillingConfig(payload);
+      // Perform the side effect or state update expressed on the following line.
       setBilling((prev) => ({ ...prev, prices: response?.prices || payload, mpesa: response?.mpesa || prev.mpesa }));
+      // Perform the side effect or state update expressed on the following line.
       setBillingError("");
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Subscription pricing saved successfully. New tenant subscription requests will use the updated prices.");
     } catch (err) { console.error("PLATFORM BILLING SAVE ERROR", err); toast.error(err?.response?.data?.message || "Unable to save subscription pricing. No pricing changes were applied."); } finally { setSavingBilling(false); }
   };
 
+  // Declare runMaintenance for use by the surrounding module or function.
   const runMaintenance = async (action) => {
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Check the condition (!window.confirm(action === "backup" ? "Create database backup now?" : ) and run the matching branch.
       if (!window.confirm(action === "backup" ? "Create database backup now?" : "Clear system cache now?")) return;
+      // Declare endpoint for use by the surrounding module or function.
       const endpoint = action === "backup" ? "/superadmin/maintenance/backup" : "/superadmin/maintenance/cache";
+      // Declare response for use by the surrounding module or function.
       const response = await api.post(endpoint); if (!response.data?.success) throw new Error(response.data?.message || "Maintenance action failed");
+      // Perform the side effect or state update expressed on the following line.
       toast.success(action === "backup" ? "Database backup completed successfully." : "System cache cleared successfully.");
     } catch (error) { console.error(error); toast.error(error?.response?.data?.message || "Maintenance action failed. No change was confirmed."); }
   };
 
+  // Check the condition (loading) and run the matching branch.
   if (loading) return <div className="min-h-full bg-slate-50 p-6 lg:p-8"><div className="mx-auto max-w-[1600px] animate-pulse space-y-5"><div className="h-36 rounded-3xl bg-slate-200" /><div className="grid gap-5 lg:grid-cols-2"><div className="h-64 rounded-2xl bg-slate-200" /><div className="h-64 rounded-2xl bg-slate-200" /></div><div className="h-80 rounded-2xl bg-slate-200" /></div></div>;
 
+  // Declare mpesaReady for use by the surrounding module or function.
   const mpesaReady = Boolean(billing.mpesa?.configured && billing.mpesa?.callbackConfigured && billing.mpesa?.shortcodeConfigured);
+  // Return the expression shown below to the caller.
   return <div className="min-h-full bg-slate-50 p-6 lg:p-8">
     <div className="mx-auto max-w-[1600px] space-y-6">
       <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6 text-white shadow-xl lg:p-8"><div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between"><div><div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-emerald-200"><Shield size={14} />Super Admin configuration scope</div><h1 className="text-3xl font-black tracking-tight lg:text-4xl">Platform Settings</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Global configuration, tenant subscription pricing and platform payment readiness for Global Tours.</p></div><button onClick={load} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15 disabled:opacity-60"><RefreshCw size={17} className={loading ? "animate-spin" : ""} />Refresh</button></div></section>

@@ -1,52 +1,87 @@
+/**
+ * Purpose: Manage Tours page-level UI component. Main declarations: getTourDestination, getTourList, ManageTours.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { Link } from "react-router-dom";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../../api/adminTourApi so this module can use its exported dependencies.
 import { deleteTour, getAdminTours } from "../../api/adminTourApi";
 
+// Declare getTourDestination for use by the surrounding module or function.
 const getTourDestination = (tour) => {
+  // Declare destination for use by the surrounding module or function.
   const destination = tour?.destination;
+  // Check the condition (destination && typeof destination === "object") and run the matching branch.
   if (destination && typeof destination === "object") return destination;
+  // Return the expression shown below to the caller.
   return null;
 };
 
+// Declare getTourList for use by the surrounding module or function.
 const getTourList = (data) => {
+  // Check the condition (Array.isArray(data)) and run the matching branch.
   if (Array.isArray(data)) return data;
+  // Check the condition (Array.isArray(data?.tours)) and run the matching branch.
   if (Array.isArray(data?.tours)) return data.tours;
+  // Check the condition (Array.isArray(data?.data)) and run the matching branch.
   if (Array.isArray(data?.data)) return data.data;
+  // Check the condition (Array.isArray(data?.data?.tours)) and run the matching branch.
   if (Array.isArray(data?.data?.tours)) return data.data.tours;
+  // Return the collection assembled below to the caller.
   return [];
 };
 
+// Define ManageTours; its parameters and body implement this operation.
 export default function ManageTours() {
+  // Declare queryClient for use by the surrounding module or function.
   const queryClient = useQueryClient();
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
+  // Declare { data, isLoading, error } for use by the surrounding module or function.
   const { data, isLoading, error } = useQuery({ queryKey: ["adminTours"], queryFn: getAdminTours });
+  // Declare tours for use by the surrounding module or function.
   const tours = getTourList(data);
 
+  // Declare { mutate: removeTour, isPending } for use by the surrounding module or function.
   const { mutate: removeTour, isPending } = useMutation({
     mutationFn: deleteTour,
     onSuccess: () => {
+      // Perform the side effect or state update expressed on the following line.
       queryClient.invalidateQueries({ queryKey: ["adminTours"] });
+      // Perform the side effect or state update expressed on the following line.
       queryClient.invalidateQueries({ queryKey: ["tours"] });
+      // Perform the side effect or state update expressed on the following line.
       queryClient.invalidateQueries({ queryKey: ["destinations"] });
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Tour deleted successfully");
     },
     onError: (err) => toast.error(err?.response?.data?.message || "Failed to delete tour"),
   });
 
+  // Declare filteredTours for use by the surrounding module or function.
   const filteredTours = tours.filter((tour) => {
+    // Declare destination for use by the surrounding module or function.
     const destination = getTourDestination(tour);
+    // Declare haystack for use by the surrounding module or function.
     const haystack = [tour?.title, destination?.name, destination?.slug, tour?.country, tour?.location]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
+    // Return the result of haystack.includes() to the caller.
     return haystack.includes(search.trim().toLowerCase());
   });
 
+  // Check the condition (isLoading) and run the matching branch.
   if (isLoading) return <div className="flex justify-center py-20">Loading tours...</div>;
+  // Check the condition (error) and run the matching branch.
   if (error) return <div className="p-6 text-red-600">Failed loading tours.</div>;
 
+  // Return the expression shown below to the caller.
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

@@ -1,25 +1,49 @@
+/**
+ * Purpose: Admin Coupons page-level UI component. Main declarations: money, date, status, Badge, AdminCoupons.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useEffect, useMemo, useState } from "react";
+// Load lucide-react so this module can use its exported dependencies.
 import { Search, Plus, RefreshCw, Pencil, Trash2, Tag, CheckCircle2, Clock3, XCircle, TicketPercent } from "lucide-react";
+// Load ../../api/couponApi so this module can use its exported dependencies.
 import { getCoupons, createCoupon, updateCoupon, deleteCoupon } from "../../api/couponApi";
 
+// Declare EMPTY for use by the surrounding module or function.
 const EMPTY={code:"",description:"",discountType:"percentage",amount:"",startDate:"",expiresAt:"",usageLimit:1,minimumBookingAmount:0,maximumDiscount:"",active:true};
+// Declare money for use by the surrounding module or function.
 const money=v=>`KES ${Number(v||0).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+// Declare date for use by the surrounding module or function.
 const date=v=>v?new Date(v).toLocaleDateString("en-KE",{day:"2-digit",month:"short",year:"numeric"}):"—";
+// Declare status for use by the surrounding module or function.
 const status=c=>{const n=new Date(),s=c.startDate&&new Date(c.startDate),e=c.expiresAt&&new Date(c.expiresAt);if(c.active===false)return"inactive";if(e&&e<n)return"expired";if(s&&s>n)return"scheduled";if(Number(c.usedCount||0)>=Number(c.usageLimit||0))return"used";return"active"};
+// Declare META for use by the surrounding module or function.
 const META={active:["Active","bg-emerald-50 text-emerald-700 border-emerald-200",CheckCircle2],scheduled:["Scheduled","bg-amber-50 text-amber-700 border-amber-200",Clock3],expired:["Expired","bg-red-50 text-red-700 border-red-200",XCircle],inactive:["Inactive","bg-slate-100 text-slate-600 border-slate-200",XCircle],used:["Limit reached","bg-blue-50 text-blue-700 border-blue-200",TicketPercent]};
+// Define Badge; its parameters and body implement this operation.
 function Badge({coupon}){const [label,cls,Icon]=META[status(coupon)];return <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${cls}`}><Icon size={13}/>{label}</span>}
 
+// Define AdminCoupons; its parameters and body implement this operation.
 export default function AdminCoupons(){
+ // Declare [coupons,setCoupons], [loading,setLoading], [saving,setSaving], [error,setError], [search,setSearch], [filter,setFilter], [show,setShow], [editing,setEditing], [form,setForm], [page,setPage] for use by the surrounding module or function.
  const[coupons,setCoupons]=useState([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState(""),[search,setSearch]=useState(""),[filter,setFilter]=useState("all"),[show,setShow]=useState(false),[editing,setEditing]=useState(null),[form,setForm]=useState(EMPTY),[page,setPage]=useState(1);
+ // Declare load for use by the surrounding module or function.
  const load=async()=>{try{setLoading(true);setError("");const r=await getCoupons();setCoupons(Array.isArray(r?.coupons)?r.coupons:[])}catch(e){setError(e?.response?.data?.message||"Failed to load coupons. Please try again.")}finally{setLoading(false)}};
+ // Perform the side effect or state update expressed on the following line.
  useEffect(()=>{load()},[]);
+ // Declare field for use by the surrounding module or function.
  const field=(k,v)=>setForm(x=>({...x,[k]:v}));
+ // Declare create for use by the surrounding module or function.
  const create=()=>{setEditing(null);setForm({...EMPTY,startDate:new Date().toISOString().slice(0,10)});setShow(true);setError("")};
+ // Declare edit for use by the surrounding module or function.
  const edit=c=>{setEditing(c);setForm({code:c.code||"",description:c.description||"",discountType:c.discountType||"percentage",amount:c.amount??"",startDate:c.startDate?new Date(c.startDate).toISOString().slice(0,10):"",expiresAt:c.expiresAt?new Date(c.expiresAt).toISOString().slice(0,10):"",usageLimit:c.usageLimit??1,minimumBookingAmount:c.minimumBookingAmount??0,maximumDiscount:c.maximumDiscount??"",active:c.active!==false});setShow(true);setError("")};
+ // Declare submit for use by the surrounding module or function.
  const submit=async e=>{e.preventDefault();const amount=Number(form.amount),limit=Number(form.usageLimit),min=Number(form.minimumBookingAmount||0),max=form.maximumDiscount===""?null:Number(form.maximumDiscount);if(!form.code.trim())return setError("Coupon code is required.");if(!Number.isFinite(amount)||amount<0)return setError("Enter a valid discount amount.");if(form.discountType==="percentage"&&amount>100)return setError("Percentage discount cannot exceed 100%.");if(!Number.isInteger(limit)||limit<1)return setError("Usage limit must be at least 1.");if(!form.expiresAt)return setError("Expiry date is required.");if(form.startDate&&new Date(form.expiresAt)<=new Date(form.startDate))return setError("Expiry date must be after the start date.");if(max!==null&&(!Number.isFinite(max)||max<0))return setError("Enter a valid maximum discount.");try{setSaving(true);const p={code:form.code.trim().toUpperCase(),description:form.description.trim(),discountType:form.discountType,amount,startDate:form.startDate||undefined,expiresAt:form.expiresAt,usageLimit:limit,minimumBookingAmount:min,maximumDiscount:max,active:Boolean(form.active)};if(editing)await updateCoupon(editing._id,p);else await createCoupon(p);setShow(false);setEditing(null);setForm(EMPTY);await load()}catch(e){setError(e?.response?.data?.message||"Coupon operation failed.")}finally{setSaving(false)}};
+ // Declare remove for use by the surrounding module or function.
  const remove=async c=>{if(!window.confirm(`Delete coupon ${c.code}? This cannot be undone.`))return;try{await deleteCoupon(c._id);await load()}catch(e){setError(e?.response?.data?.message||"Delete failed.")}};
+ // Declare filtered for use by the surrounding module or function.
  const filtered=useMemo(()=>{const q=search.trim().toLowerCase();return coupons.filter(c=>(!q||`${c.code||""} ${c.description||""}`.toLowerCase().includes(q))&&(filter==="all"||status(c)===filter))},[coupons,search,filter]);
+ // Perform the side effect or state update expressed on the following line.
  useEffect(()=>setPage(1),[search,filter]);const pages=Math.max(1,Math.ceil(filtered.length/10)),p=Math.min(page,pages),rows=filtered.slice((p-1)*10,p*10);const active=coupons.filter(c=>status(c)==="active").length,expired=coupons.filter(c=>status(c)==="expired").length,usage=coupons.reduce((a,c)=>a+Number(c.usedCount||0),0);
+ // Return the expression shown below to the caller.
  return <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6">
   <header className="rounded-2xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-green-600 p-6 text-white shadow-lg sm:p-8"><div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"><div><div className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-emerald-100"><Tag size={17}/>Marketing & Sales</div><h1 className="text-2xl font-bold sm:text-3xl">Coupon Management</h1><p className="mt-2 text-sm text-emerald-50 sm:text-base">Create, schedule and manage promotional discounts for customers.</p></div><button onClick={create} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-emerald-800 hover:bg-emerald-50"><Plus size={18}/>Create Coupon</button></div></header>
   <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{[["Total Coupons",coupons.length,Tag,"text-slate-900"],["Active",active,CheckCircle2,"text-emerald-700"],["Expired",expired,XCircle,"text-red-700"],["Total Usage",usage,TicketPercent,"text-blue-700"]].map(([l,v,I,c])=><div key={l} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex justify-between"><span className="text-sm font-medium text-slate-500">{l}</span><I size={18} className="text-slate-400"/></div><p className={`mt-2 text-2xl font-bold ${c}`}>{v.toLocaleString()}</p></div>)}</div>

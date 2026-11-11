@@ -1,14 +1,28 @@
+/**
+ * Purpose: Admin Layout client application module. Main declarations: AdminLayout, SidebarContent.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import "../styles/admin-settings.css";
+// Load ../styles/admin-dashboard.css so this module can use its exported dependencies.
 import "../styles/admin-dashboard.css";
+// Load react so this module can use its exported dependencies.
 import { useEffect, useMemo, useState } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+// Load lucide-react so this module can use its exported dependencies.
 import { Activity, BarChart3, Bell, Bot, Car, CalendarCheck, CreditCard, FileBarChart, FileText, Handshake, Image, LayoutDashboard, Menu, PackageCheck, Plane, BriefcaseBusiness, BadgeDollarSign, Receipt, Settings, Shield, Smartphone, Star, Tag, UserCog, Users, Wallet, X, Code2, Hotel, Home } from "lucide-react";
+// Load ../context/AuthContext so this module can use its exported dependencies.
 import { useAuth } from "../context/AuthContext";
+// Load ../context/SettingsContext so this module can use its exported dependencies.
 import { useSettings } from "../context/SettingsContext";
+// Load ../api/axios so this module can use its exported dependencies.
 import api from "../api/axios";
+// Load ../utils/roleUtils so this module can use its exported dependencies.
 import { getUserRole } from "../utils/roleUtils";
+// Load ../components/common/DashboardLogoutButton so this module can use its exported dependencies.
 import DashboardLogoutButton from "../components/common/DashboardLogoutButton";
 
+// Declare MENU for use by the surrounding module or function.
 const MENU = [
   ["Dashboard", "/admin", LayoutDashboard, "admin.dashboard", "dashboard"],
   ["Users", "/admin/users", Users, "user.manage", "users"],
@@ -53,48 +67,74 @@ const MENU = [
   ["Settings", "/admin/settings", Settings, "settings.manage", "settings"],
 ];
 
+// Declare GROUPS for use by the surrounding module or function.
 const GROUPS = [
   ["Operations", ["Dashboard", "Users", "Staff", "Destinations", "Tours", "Bookings & Refunds", "Custom Tour Requests", "Operations & Procurement", "Hotels", "Airport Transfers", "Hospitality Reservations", "Hospitality Operations", "Hospitality Commercial", "Payments", "Agents", "Commissions", "Customers CRM", "Fleet Management", "Coupons", "Reviews", "Gallery"]],
   ["Finance & Insight", ["Reports", "Analytics", "Accounting & Finance", "M-Pesa Transactions", "M-Pesa Configuration", "Finance Reports", "Management Accounting", "Complete Accounting", "Accounting Control Reports", "Accounting Subledgers", "Withholding Tax", "Reconciliation", "Compliance & eTIMS", "AI Tools"]],
   ["Governance", ["Notifications", "Roles & Permissions", "System Health", "Billing & Subscription", "Developer Platform", "Settings"]],
 ];
 
+// Define AdminLayout; its parameters and body implement this operation.
 export default function AdminLayout() {
+  // Declare { user, hasPermission } for use by the surrounding module or function.
   const { user, hasPermission } = useAuth();
+  // Declare { companyName } for use by the surrounding module or function.
   const { companyName } = useSettings();
+  // Declare [mobileOpen, setMobileOpen] for use by the surrounding module or function.
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Declare [planFeatures, setPlanFeatures] for use by the surrounding module or function.
   const [planFeatures, setPlanFeatures] = useState([]);
+  // Declare [plan, setPlan] for use by the surrounding module or function.
   const [plan, setPlan] = useState("");
+  // Declare location for use by the surrounding module or function.
   const location = useLocation();
+  // Declare role for use by the surrounding module or function.
   const role = getUserRole(user);
+  // Declare isAdministrator for use by the surrounding module or function.
   const isAdministrator = ["admin", "administrator", "super_admin"].includes(String(role || "").toLowerCase());
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
+  // Perform the side effect or state update expressed on the following line.
   useEffect(() => {
+    // Check the condition (!isAdministrator) and run the matching branch.
     if (!isAdministrator) return undefined;
+    // Declare active for use by the surrounding module or function.
     let active = true;
+    // Perform the side effect or state update expressed on the following line.
     api.get("/subscription").then(({ data }) => {
+      // Check the condition (!active) and run the matching branch.
       if (!active) return;
+      // Perform the side effect or state update expressed on the following line.
       setPlan(String(data?.plan || "").toLowerCase());
+      // Perform the side effect or state update expressed on the following line.
       setPlanFeatures(Array.isArray(data?.features) ? data.features : []);
     }).catch(() => { if (active) setPlanFeatures([]); });
+    // Return the expression shown below to the caller.
     return () => { active = false; };
   }, [isAdministrator]);
 
+  // Declare links for use by the surrounding module or function.
   const links = useMemo(() => {
+    // Declare permissionLinks for use by the surrounding module or function.
     const permissionLinks = MENU.filter(([, , , permission]) => hasPermission(permission));
+    // Return the result of permissionLinks.filter() to the caller.
     return permissionLinks.filter(([, , , , feature]) => !feature || planFeatures.includes(feature));
   }, [hasPermission, planFeatures, isAdministrator]);
 
+  // Declare groupedLinks for use by the surrounding module or function.
   const groupedLinks = useMemo(() => {
+    // Declare byName for use by the surrounding module or function.
     const byName = new Map(links.map(link => [link[0], link]));
+    // Return the result of GROUPS.map(([title, names]) => ({       title,       links: names.map(name => byName.get(name)).filter(Boolean),     })).filter() to the caller.
     return GROUPS.map(([title, names]) => ({
       title,
       links: names.map(name => byName.get(name)).filter(Boolean),
     })).filter(group => group.links.length > 0);
   }, [links]);
 
+  // Return the expression shown below to the caller.
   return (
     <div className="dashboard-responsive admin-portal min-h-screen bg-slate-100">
       <aside className="fixed inset-y-0 left-0 z-50 hidden w-72 overflow-y-auto bg-slate-950 text-white lg:block">
@@ -126,7 +166,9 @@ export default function AdminLayout() {
   );
 }
 
+// Define SidebarContent; its parameters and body implement this operation.
 function SidebarContent({ companyName, user, groups, plan }) {
+  // Return the expression shown below to the caller.
   return (
     <div className="admin-sidebar-content p-4 sm:p-5">
       <div className="mb-5 rounded-2xl bg-gradient-to-br from-sky-500/20 via-indigo-500/20 to-violet-500/20 p-3 ring-1 ring-white/10 sm:mb-6 sm:p-4">

@@ -1,23 +1,31 @@
+/**
+ * Purpose: Bookings page-level UI component. Main declarations: Bookings.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import {
     useQuery
 }
 from "@tanstack/react-query";
 
 
+// Load ../../api/adminApi so this module can use its exported dependencies.
 import {
     getAdminBookings
 }
 from "../../api/adminApi";
 
 
+// Load ../../components/admin/DataTable so this module can use its exported dependencies.
 import DataTable from "../../components/admin/DataTable";
 
 
 
 
+// Define Bookings; its parameters and body implement this operation.
 export default function Bookings(){
 
 
+    // Declare { data, isLoading } for use by the surrounding module or function.
     const {
         data,
         isLoading
@@ -35,8 +43,10 @@ export default function Bookings(){
 
 
 
+    // Check the condition (isLoading) and run the matching branch.
     if(isLoading)
 
+        // Return the expression shown below to the caller.
         return (
 
             <p className="p-6">
@@ -50,6 +60,7 @@ export default function Bookings(){
 
 
 
+    // Declare bookings for use by the surrounding module or function.
     const bookings =
 
         data?.data ||
@@ -61,6 +72,7 @@ export default function Bookings(){
 
 
 
+    // Return the expression shown below to the caller.
     return (
 
         <div className="p-6">

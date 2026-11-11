@@ -1,57 +1,90 @@
+/**
+ * Purpose: Login page-level UI component. Main declarations: Login, handleChange, handleSubmit.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useState, useContext } from "react";
+// Load react-router-dom so this module can use its exported dependencies.
 import { useNavigate } from "react-router-dom";
+// Load react-toastify so this module can use its exported dependencies.
 import { toast } from "react-toastify";
+// Load ../context/AuthContext so this module can use its exported dependencies.
 import { AuthContext } from "../context/AuthContext";
+// Load ../utils/roleUtils so this module can use its exported dependencies.
 import { dashboardPath } from "../utils/roleUtils";
+// Load ./CustomerMfa so this module can use its exported dependencies.
 import CustomerMfa from "./CustomerMfa";
 
+// Define Login; its parameters and body implement this operation.
 export default function Login() {
+  // Declare navigate for use by the surrounding module or function.
   const navigate = useNavigate();
+  // Declare { login } for use by the surrounding module or function.
   const { login } = useContext(AuthContext);
+  // Declare [formData, setFormData] for use by the surrounding module or function.
   const [formData, setFormData] = useState({ email: "", password: "" });
+  // Declare [loading, setLoading] for use by the surrounding module or function.
   const [loading, setLoading] = useState(false);
+  // Declare [mfaData, setMfaData] for use by the surrounding module or function.
   const [mfaData, setMfaData] = useState(null);
 
+  // Declare handleChange for use by the surrounding module or function.
   const handleChange = (event) => setFormData((current) => ({ ...current, [event.target.name]: event.target.value }));
 
+  // Declare handleSubmit for use by the surrounding module or function.
   const handleSubmit = async (event) => {
+    // Perform the side effect or state update expressed on the following line.
     event.preventDefault();
+    // Perform the side effect or state update expressed on the following line.
     setLoading(true);
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Declare response for use by the surrounding module or function.
       const response = await login(formData.email, formData.password);
 
+      // Check the condition (response?.mfaRequired) and run the matching branch.
       if (response?.mfaRequired) {
 
+        // Perform the side effect or state update expressed on the following line.
         setMfaData({
           userId: response.userId,
           devPin: response.devPin
         });
 
+        // Perform the side effect or state update expressed on the following line.
         toast.info(
           response.message ||
           "Verification PIN sent to your registered phone."
         );
 
+        // Return the result to the caller.
         return;
       }
 
+      // Check the condition (!response?.token) and run the matching branch.
       if (!response?.token) throw new Error("Authentication response did not contain a token.");
+      // Perform the side effect or state update expressed on the following line.
       toast.success("Login successful");
+      // Perform the side effect or state update expressed on the following line.
       navigate(dashboardPath(response?.user), { replace: true });
     } catch (error) {
       // Axios errors contain request config.data, which includes the password
       // for a failed login. Keep diagnostics limited to safe metadata.
+      // Perform the side effect or state update expressed on the following line.
       console.error("LOGIN ERROR:", {
         status: error?.response?.status || null,
         code: error?.code || "AUTHENTICATION_FAILED",
       });
+      // Perform the side effect or state update expressed on the following line.
       toast.error(error?.response?.data?.message || error?.message || "Invalid email or password");
     } finally {
+      // Perform the side effect or state update expressed on the following line.
       setLoading(false);
     }
   };
 
+  // Check the condition (mfaData) and run the matching branch.
   if (mfaData) {
+    // Return the expression shown below to the caller.
     return (
       <CustomerMfa
         userId={mfaData.userId}
@@ -60,6 +93,7 @@ export default function Login() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
       <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md">

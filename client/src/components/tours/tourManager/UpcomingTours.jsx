@@ -1,19 +1,34 @@
+/**
+ * Purpose: Upcoming Tours reusable UI component. Main declarations: formatDate, resourceName, statusClass, UpcomingTours.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { CalendarDays, Car, CheckCircle2, MapPin, UserRound, Users } from "lucide-react";
 
+// Declare formatDate for use by the surrounding module or function.
 const formatDate = (value) => {
+  // Check the condition (!value) and run the matching branch.
   if (!value) return "Date not set";
+  // Declare date for use by the surrounding module or function.
   const date = new Date(value);
+  // Return the expression shown below to the caller.
   return Number.isNaN(date.getTime()) ? "Date not set" : date.toLocaleDateString("en-KE", { day: "2-digit", month: "short", year: "numeric" });
 };
 
+// Declare resourceName for use by the surrounding module or function.
 const resourceName = (resource, fallback = "Not assigned") => {
+  // Check the condition (!resource) and run the matching branch.
   if (!resource) return fallback;
+  // Check the condition (typeof resource === "string") and run the matching branch.
   if (typeof resource === "string") return resource.trim() || fallback;
+  // Declare name for use by the surrounding module or function.
   const name = [resource.name, resource.fullName, [resource.firstName, resource.lastName].filter(Boolean).join(" "), resource.registrationNumber, resource.registration].find((value) => String(value || "").trim());
+  // Return the expression shown below to the caller.
   return name || fallback;
 };
 
+// Declare statusClass for use by the surrounding module or function.
 const statusClass = (status) => {
+  // Select the appropriate branch based on String(status || "").toLowerCase().
   switch (String(status || "").toLowerCase()) {
     case "confirmed": return "bg-sky-50 text-sky-700 ring-sky-200";
     case "ongoing":
@@ -23,7 +38,9 @@ const statusClass = (status) => {
   }
 };
 
+// Define UpcomingTours; its parameters and body implement this operation.
 export default function UpcomingTours({ tours = [] }) {
+  // Return the expression shown below to the caller.
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

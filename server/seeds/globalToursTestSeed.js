@@ -1,13 +1,23 @@
+/**
+ * Purpose: global Tours Test Seed database seed module. Main declarations: slugifyTitle, seed.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import mongoose from "mongoose";
+// Load dotenv so this module can use its exported dependencies.
 import dotenv from "dotenv";
+// Load ../models/Destination.js so this module can use its exported dependencies.
 import Destination from "../models/Destination.js";
+// Load ../models/Tour.js so this module can use its exported dependencies.
 import Tour from "../models/Tour.js";
+// Load ../tenancy/context.js so this module can use its exported dependencies.
 import { runWithTenant } from "../tenancy/context.js";
 
+// Perform the side effect or state update expressed on the following line.
 dotenv.config();
 
 // Direct image URLs known to be usable by browsers. Keep these as remote media
 // references for test data; production uploads should use the platform media flow.
+// Declare IMAGE_POOL for use by the surrounding module or function.
 const IMAGE_POOL = [
   "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=80",
   "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80",
@@ -17,6 +27,7 @@ const IMAGE_POOL = [
   "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
 ];
 
+// Declare destinationData for use by the surrounding module or function.
 const destinationData = [
   ["Tsavo National Park", "tsavo-national-park", "Taita-Taveta County", "Vast wilderness, red elephants and unforgettable game drives across one of Kenya's largest protected areas."],
   ["Lake Naivasha", "lake-naivasha", "Nakuru County", "A scenic freshwater lake surrounded by wildlife, dramatic landscapes and peaceful lakeside escapes."],
@@ -25,6 +36,7 @@ const destinationData = [
   ["Samburu National Reserve", "samburu-national-reserve", "Samburu County", "A spectacular northern Kenya safari destination famous for unique wildlife and rich Samburu culture."],
 ];
 
+// Declare tourData for use by the surrounding module or function.
 const tourData = [
   ["Tsavo East Wildlife Explorer", "Tsavo National Park", "Safari", 3, 650],
   ["Tsavo West Rhino & Springs Safari", "Tsavo National Park", "Safari", 4, 820],
@@ -48,20 +60,30 @@ const tourData = [
   ["Samburu Luxury Wilderness Experience", "Samburu National Reserve", "Luxury", 5, 1550],
 ];
 
+// Declare slugifyTitle for use by the surrounding module or function.
 const slugifyTitle = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+// Declare seed for use by the surrounding module or function.
 const seed = async () => {
+  // Check the condition (!process.env.MONGODB_URI) and run the matching branch.
   if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing in .env");
+  // Perform the side effect or state update expressed on the following line.
   await mongoose.connect(process.env.MONGODB_URI);
 
+  // Perform the side effect or state update expressed on the following line.
   await runWithTenant({ role: "super_admin", bypass: true }, async () => {
+    // Declare destinationSlugs for use by the surrounding module or function.
     const destinationSlugs = destinationData.map(([, slug]) => slug);
+    // Declare tourSlugs for use by the surrounding module or function.
     const tourSlugs = tourData.map(([title]) => slugifyTitle(title));
 
     // Only remove this seed's records, never real Global Tours data.
+    // Perform the side effect or state update expressed on the following line.
     await Tour.deleteMany({ slug: { $in: tourSlugs } });
+    // Perform the side effect or state update expressed on the following line.
     await Destination.deleteMany({ slug: { $in: destinationSlugs } });
 
+    // Declare destinations for use by the surrounding module or function.
     const destinations = await Destination.insertMany(
       destinationData.map(([name, slug, location, description], index) => ({
         name,
@@ -86,15 +108,24 @@ const seed = async () => {
       }))
     );
 
+    // Declare byName for use by the surrounding module or function.
     const byName = new Map(destinations.map((destination) => [destination.name, destination]));
+    // Declare start for use by the surrounding module or function.
     const start = new Date();
+    // Perform the side effect or state update expressed on the following line.
     start.setDate(start.getDate() + 14);
 
+    // Declare tours for use by the surrounding module or function.
     const tours = tourData.map(([title, destinationName, category, days, price], index) => {
+      // Declare destination for use by the surrounding module or function.
       const destination = byName.get(destinationName);
+      // Declare date for use by the surrounding module or function.
       const date = new Date(start);
+      // Perform the side effect or state update expressed on the following line.
       date.setDate(date.getDate() + index * 3);
+      // Declare image for use by the surrounding module or function.
       const image = IMAGE_POOL[(index + 2) % IMAGE_POOL.length];
+      // Return the object assembled below to the caller.
       return {
         title,
         slug: slugifyTitle(title),
@@ -142,16 +173,22 @@ const seed = async () => {
       };
     });
 
+    // Perform the side effect or state update expressed on the following line.
     await Tour.insertMany(tours, { ordered: true });
+    // Perform the side effect or state update expressed on the following line.
     console.log(`Global Tours test seed complete: ${destinations.length} destinations + ${tours.length} tours.`);
   });
 };
 
+// Perform the side effect or state update expressed on the following line.
 seed()
   .catch((error) => {
+    // Perform the side effect or state update expressed on the following line.
     console.error("Global Tours test seed failed:", error.message);
+    // Perform the side effect or state update expressed on the following line.
     process.exitCode = 1;
   })
   .finally(async () => {
+    // Perform the side effect or state update expressed on the following line.
     await mongoose.connection.close().catch(() => {});
   });

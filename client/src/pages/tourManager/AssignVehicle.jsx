@@ -1,17 +1,24 @@
+/**
+ * Purpose: Assign Vehicle page-level UI component. Main declarations: AssignVehicle.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 // client/src/pages/tourManager/AssignVehicle.jsx
 
 
+// Load react so this module can use its exported dependencies.
 import {
     useState
 } from "react";
 
 
+// Load react-router-dom so this module can use its exported dependencies.
 import {
     useParams,
     useNavigate
 } from "react-router-dom";
 
 
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import {
     useQuery,
     useMutation,
@@ -19,11 +26,13 @@ import {
 } from "@tanstack/react-query";
 
 
+// Load react-toastify so this module can use its exported dependencies.
 import {
     toast
 } from "react-toastify";
 
 
+// Load ../../api/tourApi so this module can use its exported dependencies.
 import {
 
     getVehicles,
@@ -43,10 +52,12 @@ from "../../api/tourApi";
 
 
 
+// Declare AssignVehicle for use by the surrounding module or function.
 const AssignVehicle =()=>{
 
 
 
+    // Declare { id } for use by the surrounding module or function.
     const {
 
         id
@@ -56,10 +67,12 @@ const AssignVehicle =()=>{
 
 
 
+    // Declare navigate for use by the surrounding module or function.
     const navigate = useNavigate();
 
 
 
+    // Declare queryClient for use by the surrounding module or function.
     const queryClient = useQueryClient();
 
 
@@ -69,6 +82,7 @@ const AssignVehicle =()=>{
 
 
 
+    // Declare [ vehicle, setVehicle ] for use by the surrounding module or function.
     const [
 
         vehicle,
@@ -85,6 +99,7 @@ const AssignVehicle =()=>{
 
 
 
+    // Declare { data:vehicleData } for use by the surrounding module or function.
     const {
 
         data:vehicleData
@@ -115,6 +130,7 @@ const AssignVehicle =()=>{
 
 
 
+    // Declare { data:tourData, isLoading } for use by the surrounding module or function.
     const {
 
         data:tourData,
@@ -149,6 +165,7 @@ const AssignVehicle =()=>{
 
 
 
+    // Declare vehicles for use by the surrounding module or function.
     const vehicles =
         Array.isArray(vehicleData?.data)
             ? vehicleData.data
@@ -166,6 +183,7 @@ const AssignVehicle =()=>{
 
 
 
+    // Declare tour for use by the surrounding module or function.
     const tour =
 
         tourData?.tour ||
@@ -182,6 +200,7 @@ const AssignVehicle =()=>{
 
 
 
+    // Declare { mutate:saveVehicle, isPending } for use by the surrounding module or function.
     const {
 
         mutate:saveVehicle,
@@ -210,6 +229,7 @@ const AssignVehicle =()=>{
         onSuccess:()=>{
 
 
+            // Perform the side effect or state update expressed on the following line.
             toast.success(
 
                 "Vehicle assigned successfully"
@@ -218,6 +238,7 @@ const AssignVehicle =()=>{
 
 
 
+            // Perform the side effect or state update expressed on the following line.
             queryClient.invalidateQueries({
 
                 queryKey:[
@@ -232,6 +253,7 @@ const AssignVehicle =()=>{
 
 
 
+            // Perform the side effect or state update expressed on the following line.
             navigate(
 
                 "/tour-manager/tours"
@@ -247,6 +269,7 @@ const AssignVehicle =()=>{
         onError:()=>{
 
 
+            // Perform the side effect or state update expressed on the following line.
             toast.error(
 
                 "Assignment failed"
@@ -268,8 +291,10 @@ const AssignVehicle =()=>{
 
 
 
+    // Check the condition (isLoading) and run the matching branch.
     if(isLoading)
 
+    // Return the expression shown below to the caller.
     return (
 
         <div className="p-6">
@@ -288,6 +313,7 @@ const AssignVehicle =()=>{
 
 
 
+    // Return the expression shown below to the caller.
     return (
 
 

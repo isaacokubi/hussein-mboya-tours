@@ -1,6 +1,13 @@
+/**
+ * Purpose: recovery Service business-logic service. Main declarations: recoverBookings.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { mergeTenantFilter , requireTenantId} from "../tenancy/context.js";
+// Load ../models/Booking.js so this module can use its exported dependencies.
 import Booking from "../models/Booking.js";
+// Load ../services/settingsService.js so this module can use its exported dependencies.
 import { getSystemSettings } from "../services/settingsService.js";
+// Load ./emailService.js so this module can use its exported dependencies.
 import { sendEmail } from "./emailService.js";
 
 /*
@@ -15,17 +22,24 @@ import { sendEmail } from "./emailService.js";
 |
 */
 
+// Declare recoverBookings for use by the surrounding module or function.
 export const recoverBookings = async () => {
+  // Perform the side effect or state update expressed on the following line.
   requireTenantId();
 
+  // Declare settings for use by the surrounding module or function.
   const settings = await getSystemSettings();
+  // Declare companyName for use by the surrounding module or function.
   const companyName = settings.companyName || "Company";
+  // Declare now for use by the surrounding module or function.
   const now = new Date();
 
+  // Declare twentyFourHoursAgo for use by the surrounding module or function.
   const twentyFourHoursAgo = new Date(
     now.getTime() - 24 * 60 * 60 * 1000
   );
 
+  // Declare bookings for use by the surrounding module or function.
   const bookings = await Booking.find({
     paymentStatus: "pending",
 
@@ -49,15 +63,22 @@ export const recoverBookings = async () => {
     ],
   });
 
+  // Declare remindersSent for use by the surrounding module or function.
   let remindersSent = 0;
+  // Declare failures for use by the surrounding module or function.
   let failures = 0;
 
+  // Repeat the enclosed work for each required iteration.
   for (const booking of bookings) {
+    // Run this operation with a dedicated error-handling path for failures.
     try {
+      // Check the condition (!booking.contact?.email) and run the matching branch.
       if (!booking.contact?.email) {
+        // Skip the remainder of this iteration and continue with the next one.
         continue;
       }
 
+      // Perform the side effect or state update expressed on the following line.
       await sendEmail({
         to: booking.contact.email,
 
@@ -86,14 +107,19 @@ export const recoverBookings = async () => {
         `,
       });
 
+      // Perform the side effect or state update expressed on the following line.
       booking.lastReminderSent = now;
 
+      // Perform the side effect or state update expressed on the following line.
       await booking.save();
 
+      // Perform the side effect or state update expressed on the following line.
       remindersSent++;
     } catch (error) {
+      // Perform the side effect or state update expressed on the following line.
       failures++;
 
+      // Perform the side effect or state update expressed on the following line.
       console.error(
         `Failed sending reminder for booking ${booking._id}:`,
         error.message
@@ -101,6 +127,7 @@ export const recoverBookings = async () => {
     }
   }
 
+  // Return the object assembled below to the caller.
   return {
     processed: bookings.length,
     remindersSent,

@@ -1,5 +1,11 @@
+/**
+ * Purpose: Tour Manager Guides page-level UI component. Main declarations: normalizeGuides, availabilityOf, availabilityLabel, availabilityClasses, displayName.
+ * Inline comments explain the purpose of important declarations and executable blocks.
+ */
 import { useMemo, useState } from "react";
+// Load @tanstack/react-query so this module can use its exported dependencies.
 import { useQuery } from "@tanstack/react-query";
+// Load lucide-react so this module can use its exported dependencies.
 import {
   AlertTriangle,
   BriefcaseBusiness,
@@ -14,58 +20,95 @@ import {
   UsersRound,
   XCircle,
 } from "lucide-react";
+// Load ../../api/tourManagerApi so this module can use its exported dependencies.
 import { getGuides } from "../../api/tourManagerApi";
 
+// Declare normalizeGuides for use by the surrounding module or function.
 const normalizeGuides = (response) => {
+  // Check the condition (Array.isArray(response)) and run the matching branch.
   if (Array.isArray(response)) return response;
+  // Check the condition (Array.isArray(response?.guides)) and run the matching branch.
   if (Array.isArray(response?.guides)) return response.guides;
+  // Check the condition (Array.isArray(response?.data)) and run the matching branch.
   if (Array.isArray(response?.data)) return response.data;
+  // Check the condition (Array.isArray(response?.data?.guides)) and run the matching branch.
   if (Array.isArray(response?.data?.guides)) return response.data.guides;
+  // Check the condition (Array.isArray(response?.items)) and run the matching branch.
   if (Array.isArray(response?.items)) return response.items;
+  // Return the collection assembled below to the caller.
   return [];
 };
 
+// Declare availabilityOf for use by the surrounding module or function.
 const availabilityOf = (guide) => String(guide?.availability || "unknown").trim().toLowerCase();
 
+// Declare availabilityLabel for use by the surrounding module or function.
 const availabilityLabel = (value) => {
+  // Check the condition (value === "available") and run the matching branch.
   if (value === "available") return "Available";
+  // Check the condition (value === "busy") and run the matching branch.
   if (value === "busy") return "Busy";
+  // Check the condition (value === "unavailable") and run the matching branch.
   if (value === "unavailable") return "Unavailable";
+  // Check the condition (value === "on_leave" || value === "leave") and run the matching branch.
   if (value === "on_leave" || value === "leave") return "On leave";
+  // Return a configured text value to the caller.
   return "Status unavailable";
 };
 
+// Declare availabilityClasses for use by the surrounding module or function.
 const availabilityClasses = (value) => {
+  // Check the condition (value === "available") and run the matching branch.
   if (value === "available") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  // Check the condition (value === "busy") and run the matching branch.
   if (value === "busy") return "bg-amber-50 text-amber-700 ring-amber-200";
+  // Check the condition (value === "unavailable" || value === "on_leave" || value === "leave") and run the matching branch.
   if (value === "unavailable" || value === "on_leave" || value === "leave") return "bg-rose-50 text-rose-700 ring-rose-200";
+  // Return a configured text value to the caller.
   return "bg-slate-100 text-slate-600 ring-slate-200";
 };
 
+// Declare displayName for use by the surrounding module or function.
 const displayName = (guide) => {
+  // Check the condition (guide?.name) and run the matching branch.
   if (guide?.name) return guide.name;
+  // Declare fullName for use by the surrounding module or function.
   const fullName = [guide?.firstName, guide?.lastName].filter(Boolean).join(" ");
+  // Return the expression shown below to the caller.
   return fullName || "Unnamed guide";
 };
 
+// Declare assignedCount for use by the surrounding module or function.
 const assignedCount = (guide) => {
+  // Check the condition (Array.isArray(guide?.assignedTours)) and run the matching branch.
   if (Array.isArray(guide?.assignedTours)) return guide.assignedTours.length;
+  // Check the condition (Number.isFinite(Number(guide?.assignedTours))) and run the matching branch.
   if (Number.isFinite(Number(guide?.assignedTours))) return Number(guide.assignedTours);
+  // Check the condition (Number.isFinite(Number(guide?.assignedTourCount))) and run the matching branch.
   if (Number.isFinite(Number(guide?.assignedTourCount))) return Number(guide.assignedTourCount);
+  // Return the expression shown below to the caller.
   return null;
 };
 
+// Declare completedCount for use by the surrounding module or function.
 const completedCount = (guide) => {
+  // Check the condition (Number.isFinite(Number(guide?.completedTours))) and run the matching branch.
   if (Number.isFinite(Number(guide?.completedTours))) return Number(guide.completedTours);
+  // Check the condition (Number.isFinite(Number(guide?.completedTourCount))) and run the matching branch.
   if (Number.isFinite(Number(guide?.completedTourCount))) return Number(guide.completedTourCount);
+  // Return the expression shown below to the caller.
   return null;
 };
 
+// Declare contactValue for use by the surrounding module or function.
 const contactValue = (value) => value ? String(value) : null;
 
+// Define TourManagerGuides; its parameters and body implement this operation.
 export default function TourManagerGuides() {
+  // Declare [search, setSearch] for use by the surrounding module or function.
   const [search, setSearch] = useState("");
 
+  // Declare guidesQuery for use by the surrounding module or function.
   const guidesQuery = useQuery({
     queryKey: ["tour-manager-guides"],
     queryFn: getGuides,
@@ -73,8 +116,11 @@ export default function TourManagerGuides() {
     retry: 1,
   });
 
+  // Declare guides for use by the surrounding module or function.
   const guides = useMemo(() => {
+    // Declare normalized for use by the surrounding module or function.
     const normalized = normalizeGuides(guidesQuery.data);
+    // Return the result of Array.from() to the caller.
     return Array.from(
       new Map(
         normalized.filter(Boolean).map((guide, index) => [
@@ -85,10 +131,14 @@ export default function TourManagerGuides() {
     );
   }, [guidesQuery.data]);
 
+  // Declare filtered for use by the surrounding module or function.
   const filtered = useMemo(() => {
+    // Declare query for use by the surrounding module or function.
     const query = search.trim().toLowerCase();
+    // Check the condition (!query) and run the matching branch.
     if (!query) return guides;
 
+    // Return the result of guides.filter() to the caller.
     return guides.filter((guide) =>
       [
         displayName(guide),
@@ -101,8 +151,11 @@ export default function TourManagerGuides() {
     );
   }, [guides, search]);
 
+  // Declare stats for use by the surrounding module or function.
   const stats = useMemo(() => {
+    // Declare knownAvailability for use by the surrounding module or function.
     const knownAvailability = guides.filter((guide) => availabilityOf(guide) !== "unknown");
+    // Return the object assembled below to the caller.
     return {
       total: guides.length,
       available: guides.filter((guide) => availabilityOf(guide) === "available").length,
@@ -111,7 +164,9 @@ export default function TourManagerGuides() {
     };
   }, [guides]);
 
+  // Check the condition (guidesQuery.isLoading) and run the matching branch.
   if (guidesQuery.isLoading) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
         <div className="mx-auto max-w-7xl animate-pulse space-y-6">
@@ -124,7 +179,9 @@ export default function TourManagerGuides() {
     );
   }
 
+  // Check the condition (guidesQuery.isError) and run the matching branch.
   if (guidesQuery.isError) {
+    // Return the expression shown below to the caller.
     return (
       <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
         <div className="mx-auto max-w-3xl rounded-3xl border border-rose-200 bg-white p-6 shadow-sm sm:p-8">
@@ -139,6 +196,7 @@ export default function TourManagerGuides() {
     );
   }
 
+  // Return the expression shown below to the caller.
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
       <div className="mx-auto max-w-7xl">
