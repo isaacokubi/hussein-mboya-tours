@@ -1,0 +1,58 @@
+name: Dependency Remediation Preview
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    name: Preview non-breaking lockfile security fixes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply non-force npm audit fixes to lockfiles
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd server && npm audit fix --package-lock-only --ignore-scripts || true)
+          (cd client && npm audit fix --package-lock-only --ignore-scripts || true)
+      - name: Generate post-remediation audit reports
+        shell: bash
+        run: |
+          set +e
+          (cd server && npm audit --json) > server-npm-audit-after.json
+          server_status=$?
+          (cd client && npm audit --json) > client-npm-audit-after.json
+          client_status=$?
+          set -e
+          echo "Server audit exit code: $server_status"
+          echo "Client audit exit code: $client_status"
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          for (const file of ["server-npm-audit-after.json", "client-npm-audit-after.json"]) {
+            const report = JSON.parse(fs.readFileSync(file, "utf8"));
+            console.log(JSON.stringify({file, vulnerabilities: report.metadata?.vulnerabilities || {}, affected: Object.keys(report.vulnerabilities || {})}, null, 2));
+          }
+          NODE
+      - name: Upload lockfile remediation preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-remediation-preview-${{ github.run_id }}
+          path: |
+            server/package-lock.json
+            client/package-lock.json
+            server-npm-audit-after.json
+            client-npm-audit-after.json
+          if-no-files-found: error
+          retention-days: 14
