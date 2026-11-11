@@ -26,7 +26,7 @@ jobs:
           set -euo pipefail
           (cd server && npm audit fix --force --ignore-scripts || true)
           (cd client && npm audit fix --force --ignore-scripts || true)
-          (cd client && npm uninstall depcheck --save-dev --ignore-scripts)
+          (cd client && npm uninstall depcheck vite-plugin-pwa workbox-build --save-dev --ignore-scripts)
           (cd client && npm audit fix --ignore-scripts || true)
       - name: Generate post-remediation audit reports
         shell: bash
