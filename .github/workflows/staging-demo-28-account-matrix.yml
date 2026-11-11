@@ -16,7 +16,7 @@ jobs:
     env:
       DEMO_API_BASE_URL: ${{ secrets.STAGING_API_URL }}
       DEMO_TEST_PASSWORD: ${{ secrets.STAGING_DEMO_PASSWORD }}
-      DEMO_API_REPORT_PATH: server/reports/demo-28-account-matrix.json
+      DEMO_API_REPORT_PATH: reports/demo-28-account-matrix.json
     steps:
       - name: Checkout
         uses: actions/checkout@v4
