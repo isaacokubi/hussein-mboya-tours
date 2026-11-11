@@ -16,6 +16,7 @@ const savedEnv = {
   apiKey: process.env.RESEND_API_KEY,
   fromEmail: process.env.RESEND_FROM_EMAIL,
   fromName: process.env.RESEND_FROM_NAME,
+  nodeEnv: process.env.NODE_ENV,
 };
 
 const restoreEnv = () => {
@@ -23,6 +24,7 @@ const restoreEnv = () => {
     RESEND_API_KEY: savedEnv.apiKey,
     RESEND_FROM_EMAIL: savedEnv.fromEmail,
     RESEND_FROM_NAME: savedEnv.fromName,
+    NODE_ENV: savedEnv.nodeEnv,
   })) {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;
@@ -42,6 +44,30 @@ test("sendEmail submits through Resend and defaults to the supported development
     assert.deepEqual(result, { id: "email_test_1" });
     assert.equal(request.from, `Tours Test <${RESEND_TEST_SENDER}>`);
     assert.equal(request.to, "customer@example.com");
+  } finally { restoreEnv(); }
+});
+
+test("production sendEmail requires an explicitly configured verified sender", async () => {
+  process.env.NODE_ENV = "production";
+  process.env.RESEND_API_KEY = "test-only-key";
+  delete process.env.RESEND_FROM_EMAIL;
+  try {
+    await assert.rejects(
+      sendEmail({ to: "customer@example.com", subject: "Test", text: "Hello" }),
+      /RESEND_FROM_EMAIL must be configured with a verified production sender address/,
+    );
+  } finally { restoreEnv(); }
+});
+
+test("production sendEmail rejects the Resend development test sender", async () => {
+  process.env.NODE_ENV = "production";
+  process.env.RESEND_API_KEY = "test-only-key";
+  process.env.RESEND_FROM_EMAIL = RESEND_TEST_SENDER;
+  try {
+    await assert.rejects(
+      sendEmail({ to: "customer@example.com", subject: "Test", text: "Hello" }),
+      /development test sender cannot be used in production/,
+    );
   } finally { restoreEnv(); }
 });
 
