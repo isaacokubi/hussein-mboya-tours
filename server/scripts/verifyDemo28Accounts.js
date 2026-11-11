@@ -103,6 +103,21 @@ try {
       result.dashboardStatus = dashboard.status;
       result.dashboardSuccess = dashboard.payload?.success ?? null;
       assert.equal(dashboard.status, 200, `${account.email} ${account.dashboard}`);
+
+      // Verify staff booking-list access with read-only GET requests. These
+      // checks deliberately avoid booking creation, updates, cancellations,
+      // payment changes, or notifications.
+      if (account.role === "admin") {
+        const bookingList = await request("/api/admin/bookings", token);
+        result.adminBookingListStatus = bookingList.status;
+        assert.equal(bookingList.status, 200, `${account.email} admin booking list`);
+      }
+
+      if (account.role === "tour_manager") {
+        const bookingList = await request("/api/tourmanager/bookings", token);
+        result.managerBookingListStatus = bookingList.status;
+        assert.equal(bookingList.status, 200, `${account.email} tour-manager booking list`);
+      }
     } catch (error) {
       result.errors.push(error?.message || String(error));
       report.failures.push({ email: account.email, error: error?.message || String(error) });
