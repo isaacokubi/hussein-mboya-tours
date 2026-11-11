@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getSafeDemoApiOrigin, LOGIN_WINDOW_MS, needsLoginWindowWait } from "./demoApiValidationSafety.js";
+import { buildDemoAccountMatrix } from "./demoAccountMatrix.js";
 
 const baseUrl = getSafeDemoApiOrigin(process.env.DEMO_API_BASE_URL);
 const password = String(process.env.DEMO_TEST_PASSWORD || "");
@@ -12,20 +13,10 @@ if (["hussein-mboya-tours.onrender.com", "www.hussein-mboya-tours.onrender.com"]
   throw new Error("Refusing to run the demo account matrix against the production hostname. Use the staging API origin.");
 }
 
-const accounts = [
-  { email: "superadmin@hussein-mboya.com", role: "super_admin", tenant: null, dashboard: "/api/superadmin/dashboard" },
-  ...["hussein-mboya", "amani-trails", "demo-safari"].flatMap((tenant) => [
-    { email: `admin@${tenant === "hussein-mboya" ? "hussein-mboya.com" : tenant === "amani-trails" ? "amani-trails.com" : "demo-safari.com"}`, role: "admin", tenant, dashboard: "/api/admin/dashboard/metrics" },
-    { email: `manager@${tenant === "hussein-mboya" ? "hussein-mboya.com" : tenant === "amani-trails" ? "amani-trails.com" : "demo-safari.com"}`, role: "tour_manager", tenant, dashboard: "/api/tourmanager/dashboard" },
-    { email: `agent@${tenant === "hussein-mboya" ? "hussein-mboya.com" : tenant === "amani-trails" ? "amani-trails.com" : "demo-safari.com"}`, role: "agent", tenant, dashboard: "/api/agent/dashboard" },
-    { email: `guide1@${tenant === "hussein-mboya" ? "hussein-mboya.com" : tenant === "amani-trails" ? "amani-trails.com" : "demo-safari.com"}`, role: "guide", tenant, dashboard: "/api/guide/dashboard" },
-    { email: `driver1@${tenant === "hussein-mboya" ? "hussein-mboya.com" : tenant === "amani-trails" ? "amani-trails.com" : "demo-safari.com"}`, role: "driver", tenant, dashboard: "/api/driver/dashboard" },
-    ...[1, 2, 3, 4].map((n) => ({ email: `customer${n}@${tenant === "hussein-mboya" ? "hussein-mboya.com" : tenant === "amani-trails" ? "amani-trails.com" : "demo-safari.com"}`, role: "customer", tenant, dashboard: "/api/bookings/my-bookings" })),
-  ]),
-];
-
+const accounts = buildDemoAccountMatrix();
 const report = { timestamp: new Date().toISOString(), baseUrl, totalAccounts: accounts.length, results: [], failures: [] };
 const sessions = new Map();
+const tenantIdsBySlug = new Map();
 
 async function request(endpoint, token, options = {}) {
   const response = await fetch(new URL(endpoint, baseUrl), {
@@ -44,7 +35,7 @@ async function request(endpoint, token, options = {}) {
 }
 
 try {
-  assert.equal(accounts.length, 28, "The demo account matrix must contain exactly 28 accounts.");
+  assert.equal(accounts.length, 28, "The demo account matrix must contain exactly 28 canonical accounts.");
 
   for (const [index, account] of accounts.entries()) {
     if (needsLoginWindowWait(index, accounts.length)) {
@@ -56,16 +47,16 @@ try {
       method: "POST",
       body: JSON.stringify({ email: account.email, password }),
     });
-
     if (login.status === 429) throw new Error(`Login rate limiter reached at ${account.email}; stopping safely.`);
 
     const actualRole = login.payload?.user?.role;
-    const actualTenant = login.payload?.user?.tenantId || null;
+    const actualTenantId = login.payload?.user?.tenantId || null;
     const result = {
       email: account.email,
       expectedRole: account.role,
       actualRole,
       expectedTenant: account.tenant,
+      actualTenantId,
       authenticated: login.status === 200,
       loginStatus: login.status,
       dashboardStatus: null,
@@ -76,12 +67,21 @@ try {
     try {
       assert.equal(login.status, 200, `${account.email} login`);
       assert.equal(actualRole, account.role, `${account.email} role`);
-      if (account.tenant === null) assert.equal(actualTenant, null, `${account.email} platform scope`);
       assert.ok(login.payload?.token, `${account.email} token`);
 
-      const token = login.payload.token;
-      sessions.set(account.email, { token, tenantId: actualTenant });
+      if (account.tenant === null) {
+        assert.equal(actualTenantId, null, `${account.email} platform scope`);
+      } else if (account.role === "admin") {
+        assert.ok(actualTenantId, `${account.email} must resolve to a tenant`);
+        const previousTenantId = tenantIdsBySlug.get(account.tenant);
+        if (previousTenantId) assert.equal(actualTenantId, previousTenantId, `${account.email} tenant identity is stable`);
+        tenantIdsBySlug.set(account.tenant, actualTenantId);
+      } else {
+        assert.equal(actualTenantId, tenantIdsBySlug.get(account.tenant), `${account.email} must resolve to ${account.tenant}`);
+      }
 
+      const token = login.payload.token;
+      sessions.set(account.email, { token, tenantId: actualTenantId });
       const dashboard = await request(account.dashboard, token);
       result.dashboardStatus = dashboard.status;
       result.dashboardSuccess = dashboard.payload?.success ?? null;
@@ -95,13 +95,13 @@ try {
     console.log(JSON.stringify(result));
   }
 
-  const authenticated = report.results.filter((r) => r.authenticated);
+  const authenticated = report.results.filter((result) => result.authenticated);
   assert.equal(authenticated.length, 28, "All 28 demo accounts must authenticate.");
-  assert.equal(new Set(authenticated.filter((r) => r.expectedTenant).map((r) => r.actualTenant)).size, 3, "Tenant accounts must resolve to three distinct tenant IDs.");
+  assert.equal(tenantIdsBySlug.size, 3, "All three tenant admin accounts must resolve.");
+  assert.equal(new Set(tenantIdsBySlug.values()).size, 3, "Tenant accounts must resolve to three distinct tenant IDs.");
 
-  const customers = authenticated.filter((r) => r.expectedRole === "customer");
+  const customers = authenticated.filter((result) => result.expectedRole === "customer");
   assert.equal(customers.length, 12, "All 12 seeded customers must authenticate.");
-
   for (const customer of customers) {
     const session = sessions.get(customer.email);
     const denied = await request("/api/admin/dashboard/metrics", session.token);
@@ -118,10 +118,10 @@ try {
 } finally {
   const reportPath = path.resolve(process.env.DEMO_API_REPORT_PATH || "reports/demo-28-account-matrix.json");
   await fs.mkdir(path.dirname(reportPath), { recursive: true });
-  await fs.writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 });
+  await fs.writeFile(reportPath, `${JSON.stringify(report, null, 2)}\\n`, { mode: 0o600 });
   console.log(JSON.stringify({
     totalAccounts: report.totalAccounts,
-    passedLogins: report.results.filter((r) => r.authenticated && !r.errors.length).length,
+    passedLogins: report.results.filter((result) => result.authenticated && !result.errors.length).length,
     failures: report.failures.length,
     report: reportPath,
   }, null, 2));
