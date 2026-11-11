@@ -1,0 +1,61 @@
+name: Explicit Read-only Production Demo Account Matrix
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_matrix:
+        description: "Type YES_VERIFY_READ_ONLY_PRODUCTION_DEMO_ACCOUNTS to authorize 28 login and GET-only dashboard checks"
+        required: true
+        type: string
+        default: "NO"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: explicit-read-only-production-demo-matrix
+  cancel-in-progress: false
+
+jobs:
+  production-demo-matrix:
+    name: Verify 28 disposable demo accounts (login and GET only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DEMO_API_BASE_URL: ${{ secrets.PRODUCTION_TEST_API_URL }}
+      DEMO_TEST_PASSWORD: ${{ secrets.PRODUCTION_TEST_DEMO_PASSWORD }}
+      DEMO_API_REPORT_PATH: reports/production-demo-28-account-matrix.json
+      ALLOW_PRODUCTION_DEMO_MATRIX: "YES"
+      CONFIRM_PRODUCTION_DEMO_MATRIX: "YES_VERIFY_READ_ONLY_PRODUCTION_DEMO_ACCOUNTS"
+    steps:
+      - name: Verify exact operator authorization and API origin
+        shell: bash
+        env:
+          CONFIRMATION: ${{ inputs.confirm_matrix }}
+        run: |
+          set -euo pipefail
+          [[ "$CONFIRMATION" == "YES_VERIFY_READ_ONLY_PRODUCTION_DEMO_ACCOUNTS" ]] || { echo "::error::Exact production matrix confirmation is required."; exit 1; }
+          [[ "${DEMO_API_BASE_URL:-}" == "https://hussein-mboya-tours.onrender.com" ]] || { echo "::error::PRODUCTION_TEST_API_URL must be the canonical production API origin."; exit 1; }
+          [[ -n "${DEMO_TEST_PASSWORD:-}" ]] || { echo "::error::Configure PRODUCTION_TEST_DEMO_PASSWORD."; exit 1; }
+          echo "Production matrix authorized. It performs login POSTs and dashboard GETs only; it does not create/update business records or call payment endpoints."
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+      - name: Run explicitly authorized account matrix
+        working-directory: server
+        run: node scripts/verifyDemo28Accounts.js
+      - name: Upload production matrix report
+        if: ${{ always() && hashFiles('server/reports/production-demo-28-account-matrix.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-demo-28-account-matrix
+          path: server/reports/production-demo-28-account-matrix.json
+          if-no-files-found: error
