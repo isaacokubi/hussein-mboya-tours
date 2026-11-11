@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "23 2 * * *"
+  # Run one verified backup when this workflow is first applied/updated on main.
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/production-backup.yml"
 
 permissions:
   contents: read
