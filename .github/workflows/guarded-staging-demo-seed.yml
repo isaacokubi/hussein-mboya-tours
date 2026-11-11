@@ -1,0 +1,75 @@
+name: Guarded Staging Demo Seed
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_seed:
+        description: "Type YES_SEED_GLOBAL_TOURS_TEST to authorize the guarded synthetic-data seed"
+        required: true
+        type: string
+        default: "NO"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guarded-staging-demo-seed
+  cancel-in-progress: false
+
+jobs:
+  seed-staging-demo:
+    name: Seed isolated global_tours_test database
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NODE_ENV: test
+      MONGODB_URI: ${{ secrets.STAGING_MONGODB_URI }}
+      SEED_DEMO_PASSWORD: ${{ secrets.STAGING_DEMO_PASSWORD }}
+      ALLOW_ATLAS_DEMO_SEED: "YES"
+      CONFIRM_TEST_SEED: "YES"
+    steps:
+      - name: Require explicit operator confirmation and staging-only secrets
+        shell: bash
+        env:
+          CONFIRMATION: ${{ inputs.confirm_seed }}
+        run: |
+          set -euo pipefail
+          if [[ "$CONFIRMATION" != "YES_SEED_GLOBAL_TOURS_TEST" ]]; then
+            echo "::error::Seed not authorized. Re-run manually and enter YES_SEED_GLOBAL_TOURS_TEST."
+            exit 1
+          fi
+          if [[ -z "${MONGODB_URI:-}" ]]; then
+            echo "::error::Configure the STAGING_MONGODB_URI repository secret. No database write was attempted."
+            exit 1
+          fi
+          if [[ -z "${SEED_DEMO_PASSWORD:-}" ]]; then
+            echo "::error::Configure STAGING_DEMO_PASSWORD. It must be the same password used by the 28-account login matrix. No database write was attempted."
+            exit 1
+          fi
+          echo "Explicit confirmation and required secret presence verified. Secret values are not printed."
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run guarded comprehensive demo seed
+        working-directory: server
+        run: node seeds/completeTestDemoSeed.js
+
+      - name: Upload seed validation report
+        if: ${{ always() && hashFiles('server/reports/test-seed-report.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-demo-seed-validation
+          path: server/reports/test-seed-report.json
+          if-no-files-found: error
