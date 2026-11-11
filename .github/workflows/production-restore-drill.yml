@@ -73,7 +73,10 @@ jobs:
           openssl enc -d -aes-256-cbc -pbkdf2 -in "$archive" -pass env:BACKUP_ENCRYPTION_PASSPHRASE > restore.archive.gz
           test -s restore.archive.gz
           gzip -t restore.archive.gz
-          sha256sum -c "$(find restore-artifact -name '*.archive.gz.enc.sha256' -type f | head -n 1)"
+          checksum="$(find restore-artifact -name '*.archive.gz.enc.sha256' -type f | head -n 1)"
+          expected="$(awk '{print $1}' "$checksum")"
+          actual="$(sha256sum "$archive" | awk '{print $1}')"
+          test -n "$expected" && test "$expected" = "$actual" || { echo "Encrypted backup SHA-256 verification failed."; exit 1; }
 
       - name: Restore into isolated ephemeral MongoDB
         shell: bash
