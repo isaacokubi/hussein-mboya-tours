@@ -508,7 +508,7 @@ export const completeBookingPayment = async ({
       */
 
       if (
-        paymentDoc.status === "completed" &&
+        paymentDoc.status === "completed" ||
         bookingDoc.paymentStatus === "paid"
       ) {
 
