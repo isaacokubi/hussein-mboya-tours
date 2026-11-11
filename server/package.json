@@ -89,6 +89,6 @@
     "joi": "^18.2.5"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.11"
   }
 }
