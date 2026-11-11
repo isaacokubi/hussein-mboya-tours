@@ -54,15 +54,17 @@ jobs:
         id: web
         shell: bash
         run: |
-          started="$(date +%s%3N)"
+          # Use a monotonic clock: wall-clock adjustments can produce negative latency.
+          started="$(python3 -c 'import time; print(time.monotonic_ns() // 1_000_000)')"
 
           curl --fail-with-body --silent --max-time 20 \
             -I "$PRODUCTION_WEB_URL/" \
             2>/dev/null \
             > /tmp/production-web-headers.txt
 
-          ended="$(date +%s%3N)"
+          ended="$(python3 -c 'import time; print(time.monotonic_ns() // 1_000_000)')"
           latency_ms="$((ended - started))"
+          test "$latency_ms" -ge 0
 
           cat /tmp/production-web-headers.txt
           echo "latency_ms=$latency_ms" >> "$GITHUB_OUTPUT"
