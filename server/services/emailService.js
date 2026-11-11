@@ -32,7 +32,15 @@ export const sendEmail = async ({ to, subject, html, text, attachments = [], cc,
 
   const apiKey = String(process.env.RESEND_API_KEY || "").trim();
   if (!apiKey) throw new Error("RESEND_API_KEY is not configured.");
-  const sender = String(process.env.RESEND_FROM_EMAIL || RESEND_TEST_SENDER).trim();
+  const configuredSender = String(process.env.RESEND_FROM_EMAIL || "").trim();
+  const production = String(process.env.NODE_ENV || "").toLowerCase() === "production";
+  if (production && !configuredSender) {
+    throw new Error("RESEND_FROM_EMAIL must be configured with a verified production sender address.");
+  }
+  if (production && configuredSender.toLowerCase() === RESEND_TEST_SENDER) {
+    throw new Error("The Resend development test sender cannot be used in production; configure a verified sender domain.");
+  }
+  const sender = configuredSender || RESEND_TEST_SENDER;
   if (!EMAIL_PATTERN.test(sender)) throw new Error("RESEND_FROM_EMAIL must be a valid email address.");
 
   const settings = await getSystemSettings(settingsSource);
