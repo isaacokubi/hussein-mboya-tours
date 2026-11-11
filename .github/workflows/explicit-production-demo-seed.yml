@@ -1,0 +1,68 @@
+name: Explicit Production Disposable Demo Seed
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_seed:
+        description: "Type YES_SEED_HUSSEINDB_DISPOSABLE_DATA to replace only the three approved demo tenants and synthetic global test RBAC/account"
+        required: true
+        type: string
+        default: "NO"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: explicit-production-disposable-demo-seed
+  cancel-in-progress: false
+
+jobs:
+  seed-production-test-data:
+    name: Seed approved disposable demo records in husseindb
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NODE_ENV: test
+      MONGODB_URI: ${{ secrets.PRODUCTION_TEST_MONGODB_URI }}
+      SEED_DEMO_PASSWORD: ${{ secrets.PRODUCTION_TEST_DEMO_PASSWORD }}
+      ALLOW_PRODUCTION_TEST_SEED: "YES"
+      CONFIRM_PRODUCTION_TEST_SEED: "YES_SEED_HUSSEINDB_DISPOSABLE_DATA"
+    steps:
+      - name: Verify exact operator authorization and database target
+        shell: bash
+        env:
+          CONFIRMATION: ${{ inputs.confirm_seed }}
+        run: |
+          set -euo pipefail
+          [[ "$CONFIRMATION" == "YES_SEED_HUSSEINDB_DISPOSABLE_DATA" ]] || { echo "::error::Exact production-test confirmation is required."; exit 1; }
+          [[ -n "${MONGODB_URI:-}" && -n "${SEED_DEMO_PASSWORD:-}" ]] || { echo "::error::Configure PRODUCTION_TEST_MONGODB_URI and PRODUCTION_TEST_DEMO_PASSWORD."; exit 1; }
+          node --input-type=module - <<'NODE'
+          const uri = new URL(process.env.MONGODB_URI);
+          const db = decodeURIComponent(uri.pathname.replace(/^\//, "").split("/")[0] || "");
+          if (uri.hostname.toLowerCase() !== "cluster0.cdtxzts.mongodb.net" || db !== "husseindb") {
+            throw new Error("Production-test seed target must be the exact approved Atlas host and husseindb database.");
+          }
+          console.log("Exact approved MongoDB host/database verified; credentials withheld.");
+          NODE
+          echo "The operator authorized replacement of demo tenant slugs hussein-mboya, amani-trails, demo-safari and synthetic global test RBAC/platform test account only."
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+      - name: Run guarded disposable-data seed
+        working-directory: server
+        run: node seeds/completeTestDemoSeed.js
+      - name: Upload production test seed report
+        if: ${{ always() && hashFiles('server/reports/test-seed-report.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-disposable-demo-seed-report
+          path: server/reports/test-seed-report.json
+          if-no-files-found: error
