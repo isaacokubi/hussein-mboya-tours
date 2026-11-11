@@ -65,7 +65,7 @@ jobs:
         run: |
           set -euo pipefail
           ruby -e 'require "yaml"; ARGV.each { |file| YAML.load_file(file, aliases: true); puts "YAML syntax OK: #{file}" }' \
-            .github/workflows/production-backup.yml .github/workflows/production-restore-drill.yml
+            .github/workflows/production-backup.yml .github/workflows/production-restore-drill.yml .github/workflows/explicit-production-demo-matrix.yml
           (
             cd server
             npm ci
