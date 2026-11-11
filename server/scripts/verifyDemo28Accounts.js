@@ -28,7 +28,7 @@ async function request(endpoint, token, options = {}) {
     signal: AbortSignal.timeout(90000),
     headers: {
       "content-type": "application/json",
-      "user-agent": "HusseinMboyaStaging28AccountMatrix/1.0",
+      "user-agent": "HusseinMboyaProduction28AccountMatrix/1.1",
       ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -38,21 +38,34 @@ async function request(endpoint, token, options = {}) {
   return { status: response.status, payload };
 }
 
+async function loginWithRateLimitRetry(account) {
+  // The production limiter is IP-based and may include requests from earlier
+  // workflow runs. Never bypass it: wait for its full window and retry safely.
+  for (let retry = 0; retry <= 3; retry += 1) {
+    const login = await request("/api/auth/login", null, {
+      method: "POST",
+      body: JSON.stringify({ email: account.email, password }),
+    });
+    if (login.status !== 429) return login;
+    if (retry === 3) {
+      throw new Error(`Login rate limiter remained active after 3 full-window waits at ${account.email}; stopping safely.`);
+    }
+    console.warn(`Production login rate limit reached at ${account.email}; waiting ${LOGIN_WINDOW_MS + 1000}ms before retry ${retry + 1}/3.`);
+    await new Promise((resolve) => setTimeout(resolve, LOGIN_WINDOW_MS + 1000));
+  }
+  throw new Error("Unreachable login retry state.");
+}
+
 try {
   assert.equal(accounts.length, 28, "The demo account matrix must contain exactly 28 canonical accounts.");
 
   for (const [index, account] of accounts.entries()) {
     if (needsLoginWindowWait(index, accounts.length)) {
-      console.log(`Login rate-limit window reached after ${index} accounts; waiting ${LOGIN_WINDOW_MS}ms.`);
+      console.log(`Login rate-limit window reached after ${index} accounts; waiting ${LOGIN_WINDOW_MS + 1000}ms.`);
       await new Promise((resolve) => setTimeout(resolve, LOGIN_WINDOW_MS + 1000));
     }
 
-    const login = await request("/api/auth/login", null, {
-      method: "POST",
-      body: JSON.stringify({ email: account.email, password }),
-    });
-    if (login.status === 429) throw new Error(`Login rate limiter reached at ${account.email}; stopping safely.`);
-
+    const login = await loginWithRateLimitRetry(account);
     const actualRole = login.payload?.user?.role;
     const actualTenantId = login.payload?.user?.tenantId || null;
     const result = {
@@ -117,7 +130,7 @@ try {
 } catch (error) {
   const message = error?.message || String(error);
   report.failures.push({ error: message });
-  console.error(`Staging matrix aborted: ${message}`);
+  console.error(`Demo account matrix aborted: ${message}`);
   process.exitCode = 1;
 } finally {
   const reportPath = path.resolve(process.env.DEMO_API_REPORT_PATH || "reports/demo-28-account-matrix.json");
