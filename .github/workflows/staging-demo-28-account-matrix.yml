@@ -33,22 +33,30 @@ jobs:
         run: npm ci
 
       - name: Verify staging API origin is configured
+        id: staging-config
+        shell: bash
         run: |
           set -euo pipefail
-          test -n "${DEMO_API_BASE_URL:-}"
+          if [[ -z "${DEMO_API_BASE_URL:-}" || -z "${DEMO_TEST_PASSWORD:-}" ]]; then
+            echo "Staging matrix SKIPPED: configure STAGING_API_URL and STAGING_DEMO_PASSWORD repository secrets."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           case "${DEMO_API_BASE_URL}" in
             https://hussein-mboya-tours.onrender.com|https://www.hussein-mboya-tours.onrender.com)
               echo "Refusing production hostname."
               exit 1
               ;;
           esac
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Run 28-account matrix
+        if: ${{ steps.staging-config.outputs.configured == 'true' }}
         working-directory: server
         run: node scripts/verifyDemo28Accounts.js
 
       - name: Upload 28-account report
-        if: always()
+        if: ${{ always() && steps.staging-config.outputs.configured == 'true' && hashFiles('server/reports/demo-28-account-matrix.json') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: staging-28-account-matrix
