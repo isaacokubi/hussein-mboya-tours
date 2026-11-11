@@ -50,6 +50,14 @@ if (status == 200 and body.get("success") is True
     print(json.dumps(body, separators=(",", ":")))
     raise SystemExit(0)
 
+# MongoDB may connect before required startup migrations finish. That is a
+# legitimate not-ready state (not a malformed health response); keep polling.
+if (status == 503 and body.get("success") is False
+        and body.get("startup") == "starting"
+        and body.get("status") == "starting"
+        and body.get("database") == "connected"):
+    raise SystemExit(2)
+
 if (status == 503 and body.get("success") is False
         and body.get("startup") in {"starting", "failed"}
         and body.get("status") in {"starting", "degraded"}
