@@ -25,7 +25,7 @@ jobs:
         run: |
           set -euo pipefail
           (cd server && npm audit fix --force --ignore-scripts || true)
-          (cd client && npm audit fix --package-lock-only --ignore-scripts || true)
+          (cd client && npm audit fix --force --ignore-scripts || true)
       - name: Generate post-remediation audit reports
         shell: bash
         run: |
