@@ -75,6 +75,7 @@ Browser end-to-end checks are available through the Playwright configuration in 
 ## Key documentation
 
 - [System architecture and implementation guide](docs/SYSTEM_FROM_SCRATCH_GUIDE.md)
+- [Exact file creation order and frontend/backend communication](docs/FROM_ZERO_TO_PRODUCTION_BUILD_SEQUENCE.md)
 - [Multi-tenancy and data isolation](docs/MULTITENANCY.md)
 - [Tenant payment configuration](docs/TENANT_PAYMENT_CONFIGURATION.md)
 - [M-Pesa sandbox readiness and acceptance limits](docs/MPESA_DARAJA_SANDBOX_READINESS.md)

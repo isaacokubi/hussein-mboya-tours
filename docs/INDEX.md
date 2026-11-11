@@ -10,6 +10,9 @@ This guide documents the checked-in code and the evidence available in the repos
 
 ## 2. Understanding the system
 
+- [Exact file creation order and frontend/backend communication](FROM_ZERO_TO_PRODUCTION_BUILD_SEQUENCE.md)
+- [Build the platform from scratch](SYSTEM_FROM_SCRATCH_GUIDE.md)
+
 - [Architecture](ARCHITECTURE.md)
 - [Frontend](FRONTEND.md)
 - [Backend](BACKEND.md)
