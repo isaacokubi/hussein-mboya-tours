@@ -55,7 +55,7 @@ test("Atlas seed opt-in is restricted to the disposable global_tours_test databa
   configure({ db: "global_tours_test", host: "other-cluster.mongodb.net" });
   assert.throws(() => safeTarget(), /host must be loopback/);
   configure({ db: "production", host: "cluster0.example.mongodb.net" });
-  assert.throws(() => safeTarget(), /explicit Atlas staging-seed opt-in/);
+  assert.throws(() => safeTarget(), /exact Atlas staging or production-test opt-in/);
 });
 test("seed guard refuses production-looking host or deployment configuration", () => {
   configure({ db: "production_test" });
