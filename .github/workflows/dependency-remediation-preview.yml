@@ -23,7 +23,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Apply non-force npm audit fixes to lockfiles
+      - name: Apply isolated npm audit remediations
         shell: bash
         run: |
           set -euo pipefail
@@ -46,7 +46,11 @@ jobs:
           import fs from "node:fs";
           for (const file of ["server-npm-audit-after.json", "client-npm-audit-after.json"]) {
             const report = JSON.parse(fs.readFileSync(file, "utf8"));
-            console.log(JSON.stringify({file, vulnerabilities: report.metadata?.vulnerabilities || {}, affected: Object.keys(report.vulnerabilities || {})}, null, 2));
+            const vulnerabilities = report.metadata?.vulnerabilities || {};
+            console.log(JSON.stringify({file, vulnerabilities, affected: Object.keys(report.vulnerabilities || {})}, null, 2));
+            if (Number(vulnerabilities.total || 0) > 0) {
+              process.exitCode = 1;
+            }
           }
           NODE
       - name: Validate remediated server and client dependency trees
