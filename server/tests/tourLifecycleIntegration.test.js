@@ -120,6 +120,67 @@ test("tour lifecycle atomically reserves dated capacity with booking creation an
       tenantId, sourceType: "payment", sourceId: completedPayment.payment._id,
     }), journalCountBeforeReplay, "replay must not duplicate the payment journal");
 
+    // A completed partial payment must be idempotent even though its booking remains unpaid.
+    const partialBooking = await Booking.create({
+      tenantId, bookingNumber: "BK-PARTIAL-REPLAY", customer: new mongoose.Types.ObjectId(),
+      tour: new mongoose.Types.ObjectId(), travelDate, numberOfGuests: 1, totalAmount: 2000,
+      amountPaid: 0, balanceAmount: 2000, paymentStatus: "pending", status: "pending",
+    });
+    const partialPayment = await Payment.create({
+      tenantId, customer: partialBooking.customer, user: new mongoose.Types.ObjectId(),
+      booking: partialBooking._id, provider: "MPESA", method: "mpesa",
+      paymentMethod: "MPESA", amount: 1000, currency: "KES", status: "pending",
+    });
+    const partialCompletion = await completeBookingPayment({
+      payment: partialPayment, booking: partialBooking,
+      paymentData: { amount: 1000, paymentMethod: "MPESA", mpesaReceiptNumber: "CI-PARTIAL-001" },
+    });
+    assert.equal(partialCompletion.payment.status, "completed");
+    assert.equal(partialCompletion.booking.paymentStatus, "partial");
+    assert.equal(partialCompletion.booking.amountPaid, 1000);
+    assert.equal(partialCompletion.booking.balanceAmount, 1000);
+    const partialJournalCount = await JournalEntry.countDocuments({
+      tenantId, sourceType: "payment", sourceId: partialPayment._id,
+    });
+    const partialReplay = await completeBookingPayment({
+      payment: partialCompletion.payment, booking: partialCompletion.booking,
+      paymentData: { amount: 1000, paymentMethod: "MPESA", mpesaReceiptNumber: "CI-PARTIAL-001" },
+    });
+    assert.equal(partialReplay.alreadyCompleted, true);
+    assert.equal(partialReplay.booking.paymentStatus, "partial");
+    assert.equal(partialReplay.booking.amountPaid, 1000);
+    assert.equal(partialReplay.booking.balanceAmount, 1000);
+    assert.equal(await JournalEntry.countDocuments({
+      tenantId, sourceType: "payment", sourceId: partialPayment._id,
+    }), partialJournalCount);
+
+    // Concurrent duplicate callbacks must produce one credit and one journal.
+    const concurrentBooking = await Booking.create({
+      tenantId, bookingNumber: "BK-CONCURRENT-REPLAY", customer: new mongoose.Types.ObjectId(),
+      tour: new mongoose.Types.ObjectId(), travelDate, numberOfGuests: 1, totalAmount: 2000,
+      amountPaid: 0, balanceAmount: 2000, paymentStatus: "pending", status: "pending",
+    });
+    const concurrentPayment = await Payment.create({
+      tenantId, customer: concurrentBooking.customer, user: new mongoose.Types.ObjectId(),
+      booking: concurrentBooking._id, provider: "MPESA", method: "mpesa",
+      paymentMethod: "MPESA", amount: 1000, currency: "KES", status: "pending",
+    });
+    const concurrentPayload = { paymentData: { amount: 1000, paymentMethod: "MPESA", mpesaReceiptNumber: "CI-CONCURRENT-001" } };
+    const concurrentResults = await Promise.all([
+      completeBookingPayment({ payment: concurrentPayment, booking: concurrentBooking, ...concurrentPayload }),
+      completeBookingPayment({ payment: concurrentPayment, booking: concurrentBooking, ...concurrentPayload }),
+    ]);
+    assert.equal(concurrentResults.filter((result) => result.alreadyCompleted).length, 1);
+    const concurrentBookingAfter = await Booking.findById(concurrentBooking._id).lean();
+    const concurrentPaymentAfter = await Payment.findById(concurrentPayment._id).lean();
+    assert.equal(concurrentPaymentAfter.status, "completed");
+    assert.equal(concurrentBookingAfter.paymentStatus, "partial");
+    assert.equal(concurrentBookingAfter.amountPaid, 1000);
+    assert.equal(concurrentBookingAfter.balanceAmount, 1000);
+    assert.equal(await JournalEntry.countDocuments({
+      tenantId, sourceType: "payment", sourceId: concurrentPayment._id,
+    }), 1);
+
     const cancelled = await cancelTourAndBookings({
       tourId: tour._id,
       reason: "Lifecycle integration cancellation",
