@@ -41,7 +41,7 @@ export function buildDemoAccountMatrix() {
     .map((email) => {
       const [, domain] = email.split("@");
       const role = roleForEmail(email);
-      const tenant = tenantByDomain[domain] || null;
+      const tenant = email === "superadmin1@husseinmboya.com" ? null : (tenantByDomain[domain] || null);
       const dashboard = dashboardForRole(role);
       if (!role || !dashboard || (email !== "superadmin1@husseinmboya.com" && !tenant)) {
         throw new Error(`Unsupported canonical demo account in staging matrix: ${email}`);
