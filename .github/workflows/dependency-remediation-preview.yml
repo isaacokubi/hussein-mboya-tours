@@ -91,6 +91,8 @@ jobs:
           else
             git diff --cached --check
             git commit -m "fix(deps): resolve audited dependency vulnerabilities"
+            git fetch origin "${GITHUB_HEAD_REF}"
+            git rebase FETCH_HEAD
             git push origin "HEAD:${GITHUB_HEAD_REF}"
           fi
       - name: Upload lockfile remediation preview
