@@ -4,13 +4,17 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getSafeDemoApiOrigin, LOGIN_WINDOW_MS, needsLoginWindowWait } from "./demoApiValidationSafety.js";
 import { buildDemoAccountMatrix } from "./demoAccountMatrix.js";
+import { isExplicitProductionDemoMatrix } from "./demoApiValidationSafety.js";
 
 const baseUrl = getSafeDemoApiOrigin(process.env.DEMO_API_BASE_URL);
 const password = String(process.env.DEMO_TEST_PASSWORD || "");
 if (password.length < 8) throw new Error("Set DEMO_TEST_PASSWORD before verifying demo accounts.");
 const parsedBase = new URL(baseUrl);
-if (["hussein-mboya-tours.onrender.com", "www.hussein-mboya-tours.onrender.com"].includes(parsedBase.hostname.toLowerCase())) {
-  throw new Error("Refusing to run the demo account matrix against the production hostname. Use the staging API origin.");
+if (["hussein-mboya-tours.onrender.com", "www.hussein-mboya-tours.onrender.com"].includes(parsedBase.hostname.toLowerCase()) && !isExplicitProductionDemoMatrix(baseUrl)) {
+  throw new Error("Refusing production API matrix without the exact read-only production matrix authorization.");
+}
+if (parsedBase.hostname.toLowerCase() === "www.hussein-mboya-tours.onrender.com") {
+  throw new Error("Use the canonical production API origin without the www alias.");
 }
 
 const accounts = buildDemoAccountMatrix();
