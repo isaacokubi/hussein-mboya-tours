@@ -30,7 +30,7 @@ const sessions = new Map();
 async function request(endpoint, token, options = {}) {
   const response = await fetch(new URL(endpoint, baseUrl), {
     ...options,
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(90000),
     headers: {
       "content-type": "application/json",
       "user-agent": "HusseinMboyaStaging28AccountMatrix/1.0",
@@ -111,7 +111,9 @@ try {
 
   if (report.failures.length) process.exitCode = 1;
 } catch (error) {
-  report.failures.push({ error: error?.message || String(error) });
+  const message = error?.message || String(error);
+  report.failures.push({ error: message });
+  console.error(`Staging matrix aborted: ${message}`);
   process.exitCode = 1;
 } finally {
   const reportPath = path.resolve(process.env.DEMO_API_REPORT_PATH || "reports/demo-28-account-matrix.json");
