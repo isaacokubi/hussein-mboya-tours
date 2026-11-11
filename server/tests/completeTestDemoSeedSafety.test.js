@@ -5,7 +5,7 @@ import { safeTarget, assertSeedConfirmation, getTestPassword, NAMESPACE, TEST_PA
 import AccountingPeriod from "../models/AccountingPeriod.js";
 import WithholdingTax from "../models/WithholdingTax.js";
 
-const original = { env: process.env.NODE_ENV, uri: process.env.MONGODB_URI, global: process.env.ALLOW_GLOBAL_MPESA_FALLBACK, single: process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK, confirm: process.env.CONFIRM_TEST_SEED, password: process.env.TEST_DEMO_SEED_PASSWORD, atlas: process.env.ALLOW_ATLAS_DEMO_SEED };
+const original = { env: process.env.NODE_ENV, uri: process.env.MONGODB_URI, global: process.env.ALLOW_GLOBAL_MPESA_FALLBACK, single: process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK, confirm: process.env.CONFIRM_TEST_SEED, password: process.env.TEST_DEMO_SEED_PASSWORD, atlas: process.env.ALLOW_ATLAS_DEMO_SEED, production: process.env.ALLOW_PRODUCTION_TEST_SEED, productionConfirm: process.env.CONFIRM_PRODUCTION_TEST_SEED };
 function configure({ nodeEnv = "test", db = "global_tours_test", host = "127.0.0.1", globalFallback = "false", singleFallback = "false" } = {}) {
   process.env.NODE_ENV = nodeEnv;
   process.env.MONGODB_URI = `mongodb://${host}:27017/${db}`;
@@ -13,7 +13,7 @@ function configure({ nodeEnv = "test", db = "global_tours_test", host = "127.0.0
   process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK = singleFallback;
 }
 test.after(() => {
-  for (const [key, value] of [["NODE_ENV", original.env], ["MONGODB_URI", original.uri], ["ALLOW_GLOBAL_MPESA_FALLBACK", original.global], ["ALLOW_SINGLE_TENANT_DEV_FALLBACK", original.single], ["CONFIRM_TEST_SEED", original.confirm], ["TEST_DEMO_SEED_PASSWORD", original.password], ["ALLOW_ATLAS_DEMO_SEED", original.atlas]]) {
+  for (const [key, value] of [["NODE_ENV", original.env], ["MONGODB_URI", original.uri], ["ALLOW_GLOBAL_MPESA_FALLBACK", original.global], ["ALLOW_SINGLE_TENANT_DEV_FALLBACK", original.single], ["CONFIRM_TEST_SEED", original.confirm], ["TEST_DEMO_SEED_PASSWORD", original.password], ["ALLOW_ATLAS_DEMO_SEED", original.atlas], ["ALLOW_PRODUCTION_TEST_SEED", original.production], ["CONFIRM_PRODUCTION_TEST_SEED", original.productionConfirm]]) {
     if (value === undefined) delete process.env[key]; else process.env[key] = value;
   }
 });
@@ -55,7 +55,7 @@ test("Atlas seed opt-in is restricted to the disposable global_tours_test databa
   configure({ db: "global_tours_test", host: "other-cluster.mongodb.net" });
   assert.throws(() => safeTarget(), /host must be loopback/);
   configure({ db: "production", host: "cluster0.example.mongodb.net" });
-  assert.throws(() => safeTarget(), /explicit Atlas staging-seed opt-in/);
+  assert.throws(() => safeTarget(), /exact Atlas staging or production-test opt-in/);
 });
 test("seed guard refuses production-looking host or deployment configuration", () => {
   configure({ db: "production_test" });
@@ -82,4 +82,20 @@ test("accounting and withholding tax models accept a valid TEST accounting perio
   assert.ok(!AccountingPeriod.schema.path("period").options.match.test("26-09"));
   assert.ok(WithholdingTax.schema.path("taxPeriod").options.match.test("2026-09"));
   assert.ok(!WithholdingTax.schema.path("taxPeriod").options.match.test("2026-13"));
+});
+
+test("production database seed requires exact host, database, and two-part explicit authorization", () => {
+  configure({ db: "husseindb", host: "cluster0.cdtxzts.mongodb.net" });
+  assert.throws(() => safeTarget(), /without the exact production-test authorization/);
+  process.env.ALLOW_PRODUCTION_TEST_SEED = "YES";
+  process.env.CONFIRM_PRODUCTION_TEST_SEED = "YES_SEED_HUSSEINDB_DISPOSABLE_DATA";
+  assert.deepEqual(safeTarget(), { dbName: "husseindb", host: "cluster0.cdtxzts.mongodb.net" });
+  delete process.env.CONFIRM_PRODUCTION_TEST_SEED;
+  assert.throws(() => safeTarget(), /without the exact production-test authorization/);
+  process.env.CONFIRM_PRODUCTION_TEST_SEED = "YES_SEED_HUSSEINDB_DISPOSABLE_DATA";
+  assertSeedConfirmation();
+  assert.throws(() => safeTarget({ dbName: "husseindb", host: "other.mongodb.net" }), /without the exact production-test authorization/);
+  assert.throws(() => safeTarget({ dbName: "otherdb", host: "cluster0.cdtxzts.mongodb.net" }), /host must be loopback/);
+  process.env.NODE_ENV = "production";
+  assert.throws(() => safeTarget(), /NODE_ENV=production/);
 });

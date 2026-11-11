@@ -150,27 +150,39 @@ function databaseTarget() {
   return { dbName: decodeURIComponent(parsed.pathname.replace(/^\//, "").split("/")[0] || ""), host: parsed.hostname.toLowerCase() };
 }
 
+export function isExplicitProductionTestSeed(target = databaseTarget()) {
+  return process.env.ALLOW_PRODUCTION_TEST_SEED === "YES"
+    && process.env.CONFIRM_PRODUCTION_TEST_SEED === "YES_SEED_HUSSEINDB_DISPOSABLE_DATA"
+    && String(target.dbName || "").toLowerCase() === "husseindb"
+    && String(target.host || "").toLowerCase() === "cluster0.cdtxzts.mongodb.net";
+}
+
 export function safeTarget(target = databaseTarget()) {
   if (String(process.env.NODE_ENV || "").toLowerCase() === "production") throw new Error("Refusing test seed because NODE_ENV=production.");
   const { dbName, host } = target;
   const normalizedHost = String(host || "").toLowerCase();
-  if (String(dbName || "").toLowerCase() === "husseindb") {
-    throw new Error("Refusing comprehensive test seed against the application database husseindb.");
-  }
+  const explicitProductionTestSeed = isExplicitProductionTestSeed(target);
   const explicitAtlasStagingSeed = process.env.ALLOW_ATLAS_DEMO_SEED === "YES"
     && normalizedHost === "cluster0.cdtxzts.mongodb.net"
     && dbName === "global_tours_test";
-  if (!new Set(["127.0.0.1", "localhost", "[::1]", "::1"]).has(normalizedHost) && !explicitAtlasStagingSeed) {
-    throw new Error("Refusing test seed: MongoDB host must be loopback unless the explicit Atlas staging-seed opt-in targets global_tours_test.");
+  if (String(dbName || "").toLowerCase() === "husseindb" && !explicitProductionTestSeed) {
+    throw new Error("Refusing comprehensive test seed against the application database husseindb without the exact production-test authorization.");
+  }
+  if (!new Set(["127.0.0.1", "localhost", "[::1]", "::1"]).has(normalizedHost) && !explicitAtlasStagingSeed && !explicitProductionTestSeed) {
+    throw new Error("Refusing test seed: MongoDB host must be loopback unless an exact Atlas staging or production-test opt-in is supplied.");
   }
   const configText = [process.env.NODE_ENV, process.env.PLATFORM_HOST, process.env.CLIENT_URL, process.env.CLIENT_ORIGINS, host, dbName].join(" ").toLowerCase();
-  if (!explicitAtlasStagingSeed && !/(^|[-_])(test|testing|demo|disposable|seed)([-_]|$)/.test(dbName)) throw new Error(`Refusing seed: configured database name "${dbName || "(default)"}" is not explicitly test/demo/disposable. No writes were made.`);
+  if (!explicitAtlasStagingSeed && !explicitProductionTestSeed && !/(^|[-_])(test|testing|demo|disposable|seed)([-_]|$)/.test(dbName)) throw new Error(`Refusing seed: configured database name "${dbName || "(default)"}" is not explicitly test/demo/disposable. No writes were made.`);
   if (/prod|production|render\.com|vercel\.app|mongodb\+srv:.*prod/.test(configText)) throw new Error("Refusing test seed because production-looking configuration was detected.");
   if ([process.env.ALLOW_GLOBAL_MPESA_FALLBACK, process.env.ALLOW_SINGLE_TENANT_DEV_FALLBACK].some((value) => String(value || "").trim().toLowerCase() === "true")) throw new Error("Refusing test seed while an unsafe M-Pesa fallback is enabled.");
   return { dbName, host };
 }
 
 export function assertSeedConfirmation() {
+  if (process.env.ALLOW_PRODUCTION_TEST_SEED === "YES") {
+    if (process.env.CONFIRM_PRODUCTION_TEST_SEED !== "YES_SEED_HUSSEINDB_DISPOSABLE_DATA") throw new Error("Production test seed requires CONFIRM_PRODUCTION_TEST_SEED=YES_SEED_HUSSEINDB_DISPOSABLE_DATA.");
+    return;
+  }
   if (process.env.CONFIRM_TEST_SEED !== "YES") throw new Error("Set CONFIRM_TEST_SEED=YES to confirm this disposable TEST seed.");
 }
 
@@ -252,6 +264,12 @@ async function upsertPlain(Model, filter, fields) {
 }
 
 async function initializeApplicationCollections() {
+  const missingCollections = allModels.map((Model) => Model.collection.collectionName).filter((name) => !existingCollections.has(name));
+  if (isExplicitProductionTestSeed()) {
+    if (missingCollections.length) throw new Error(`Production test seed is read-only with respect to MongoDB DDL and cannot create ${missingCollections.length} missing application collection(s): ${missingCollections.join(", ")}. No tenant or RBAC data writes were made.`);
+    console.log(`Production test seed reusing all ${existingCollections.size} existing application collections; collection creation and index reconciliation are disabled.`);
+    return;
+  }
   const newlyCreatedCollections = new Set();
   for (const Model of allModels) {
     const name = Model.collection.collectionName;
@@ -734,11 +752,15 @@ export async function runCompleteTestDemoSeed() {
   existingCollections = new Set((await mongoose.connection.db.listCollections({}, { nameOnly: true }).toArray()).map(({ name }) => name));
   const targetCollectionsBefore = existingCollections.size;
   const clusterCollectionsBefore = await countClusterCollections();
+  if (isExplicitProductionTestSeed()) {
+    const missingCollections = allModels.map((Model) => Model.collection.collectionName).filter((name) => !existingCollections.has(name));
+    if (missingCollections.length) throw new Error(`Production seed blocked before writes: ${missingCollections.length} required collections are absent and Atlas collection capacity is constrained. Missing: ${missingCollections.join(", ")}.`);
+  }
   seedStage = "initializing application model collections and indexes";
   await initializeApplicationCollections();
   seedStage = "replacing namespace-marked demo tenant data";
   const replacedDemoData = await replacePriorDemoData();
-  await reconcileExpensePurchaseOrderIndex();
+  if (!isExplicitProductionTestSeed()) await reconcileExpensePurchaseOrderIndex();
   const buildInfo = await mongoose.connection.db.admin().command({ buildInfo: 1 });
   assertSupportedMongoVersion(buildInfo.version);
   const dbName = mongoose.connection.name;
