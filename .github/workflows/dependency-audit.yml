@@ -1,4 +1,4 @@
-name: Dependency Security Audit
+name: Dependency Security Audit Gate
 
 on:
   pull_request:
@@ -54,14 +54,18 @@ jobs:
             client-npm-audit.json
           if-no-files-found: warn
           retention-days: 30
-      - name: Report vulnerability totals
+      - name: Fail if any dependency vulnerability remains
         if: always()
         run: |
           node --input-type=module <<'NODE'
           import fs from "node:fs";
           for (const file of ["server-npm-audit.json", "client-npm-audit.json"]) {
-            if (!fs.existsSync(file)) { console.log(file + ": report unavailable"); continue; }
+            if (!fs.existsSync(file)) throw new Error(file + ": audit report unavailable");
             const report = JSON.parse(fs.readFileSync(file, "utf8"));
-            console.log(JSON.stringify({file, vulnerabilities: report.metadata?.vulnerabilities || {}, advisories: Object.keys(report.vulnerabilities || {})}, null, 2));
+            const vulnerabilities = report.metadata?.vulnerabilities || {};
+            console.log(JSON.stringify({file, vulnerabilities, advisories: Object.keys(report.vulnerabilities || {})}, null, 2));
+            if (Number(vulnerabilities.total || 0) > 0) {
+              process.exitCode = 1;
+            }
           }
           NODE
