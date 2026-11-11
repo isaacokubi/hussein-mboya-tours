@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import fs from "fs/promises";
 import { getSystemSettings } from "./settingsService.js";
 
 export const RESEND_TEST_SENDER = "onboarding@resend.dev";
@@ -79,6 +80,12 @@ export const sendBookingStatusEmail = async (booking, status, reason = "") => {
   const title = status === "cancelled" ? "Booking cancelled" : status === "refunded" ? "Booking refund update" : "Booking status update";
   const message = `${title}: booking ${bookingNumber} is now ${status}.${reason ? ` ${reason}` : ""}`;
   return sendEmail({ to: bookingEmailAddress(booking), subject: `${title} - ${companyName}`, text: message, html: `<h2>${escapeHtml(title)}</h2><p>Booking <strong>${escapeHtml(bookingNumber)}</strong> is now ${escapeHtml(status)}.</p>${reason ? `<p>${escapeHtml(reason)}</p>` : ""}`, fromName: companyName });
+};
+
+export const createEmailAttachment = async ({ filename, path: filePath, contentType = "application/pdf" }) => {
+  if (!filename || !filePath) throw new Error("Attachment filename and file path are required.");
+  const content = await fs.readFile(filePath);
+  return { filename, content: content.toString("base64"), contentType };
 };
 
 // Used by focused tests without constructing a real SDK client.

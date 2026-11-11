@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import { sendEmail } from "./emailService.js";
+import { createEmailAttachment, sendEmail } from "./emailService.js";
 import { bookingConfirmationEmail } from "../utils/emailTemplates.js";
 import { createInvoice } from "../utils/createInvoice.js";
 import { getSystemSettings } from "./settingsService.js";
@@ -21,7 +21,7 @@ export const sendBookingConfirmation = async (booking) => {
       to: contactEmail,
       subject: `Your ${companyName} Booking Confirmation`,
       html: bookingConfirmationEmail({ customerName: booking.contactName || booking.contact?.name || booking.customerSnapshot?.name || "Customer", bookingNumber: booking.bookingNumber, tourName: booking.tour?.title || "Tour", amount: booking.totalAmount }),
-      attachments: [{ filename: `Invoice-${booking.bookingNumber}.pdf`, path: invoicePath }],
+      attachments: [await createEmailAttachment({ filename: `Invoice-${booking.bookingNumber}.pdf`, path: invoicePath })],
     });
     await fs.unlink(invoicePath).catch(() => {});
     return result;

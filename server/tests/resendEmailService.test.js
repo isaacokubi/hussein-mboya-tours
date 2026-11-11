@@ -1,7 +1,11 @@
 import test from "node:test";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import assert from "node:assert/strict";
 import {
   RESEND_TEST_SENDER,
+  createEmailAttachment,
   resetResendClientForTests,
   sendEmail,
   sendEmailBestEffort,
@@ -77,4 +81,21 @@ test("best-effort delivery keeps completed booking and payment work successful",
   };
   const result = await completeBusinessOperation(() => sendEmailBestEffort(async () => { throw new Error("Resend unavailable"); }, "Test notification"));
   assert.deepEqual(result, { status: "completed", emailResult: null });
+});
+
+
+test("createEmailAttachment converts a local invoice file to Resend base64 content", async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "resend-attachment-"));
+  const filePath = path.join(directory, "invoice.pdf");
+  const invoice = Buffer.from("%PDF-1.4 test invoice");
+  try {
+    await fs.writeFile(filePath, invoice);
+    const attachment = await createEmailAttachment({ filename: "Invoice-TEST.pdf", path: filePath });
+    assert.equal(attachment.filename, "Invoice-TEST.pdf");
+    assert.equal(attachment.content, invoice.toString("base64"));
+    assert.equal(attachment.contentType, "application/pdf");
+    assert.equal("path" in attachment, false);
+  } finally {
+    await fs.rm(directory, { recursive: true, force: true });
+  }
 });
