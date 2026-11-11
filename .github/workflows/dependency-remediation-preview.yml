@@ -57,6 +57,8 @@ jobs:
           VITE_SOCKET_URL: https://api.example.invalid
         run: |
           set -euo pipefail
+          ruby -e 'require "yaml"; ARGV.each { |file| YAML.load_file(file, aliases: true); puts "YAML syntax OK: #{file}" }' \
+            .github/workflows/production-backup.yml .github/workflows/production-restore-drill.yml
           (
             cd server
             npm ci
