@@ -46,6 +46,29 @@ jobs:
             console.log(JSON.stringify({file, vulnerabilities: report.metadata?.vulnerabilities || {}, affected: Object.keys(report.vulnerabilities || {})}, null, 2));
           }
           NODE
+      - name: Validate remediated server and client dependency trees
+        shell: bash
+        env:
+          MONGODB_URI: mongodb://127.0.0.1:27017/hussein_mboya_ci
+          JWT_SECRET: ci-only-test-secret
+          DEFAULT_TENANT_ID: 000000000000000000000000
+          NODE_ENV: test
+          VITE_API_URL: https://api.example.invalid/api
+          VITE_SOCKET_URL: https://api.example.invalid
+        run: |
+          set -euo pipefail
+          (
+            cd server
+            npm ci
+            npm run check:all
+            npm test
+          )
+          (
+            cd client
+            npm ci
+            npm run lint
+            npm run build
+          )
       - name: Upload lockfile remediation preview
         if: always()
         uses: actions/upload-artifact@v4
