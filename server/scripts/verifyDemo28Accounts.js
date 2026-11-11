@@ -118,7 +118,7 @@ try {
 } finally {
   const reportPath = path.resolve(process.env.DEMO_API_REPORT_PATH || "reports/demo-28-account-matrix.json");
   await fs.mkdir(path.dirname(reportPath), { recursive: true });
-  await fs.writeFile(reportPath, `${JSON.stringify(report, null, 2)}\\n`, { mode: 0o600 });
+  await fs.writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 });
   console.log(JSON.stringify({
     totalAccounts: report.totalAccounts,
     passedLogins: report.results.filter((result) => result.authenticated && !result.errors.length).length,
