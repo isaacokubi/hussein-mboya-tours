@@ -52,7 +52,7 @@ jobs:
           fi
           node --input-type=module <<'NODE'
           const mongo = new URL(process.env.STAGING_MONGODB_URI);
-          const dbName = decodeURIComponent(mongo.pathname.replace(/^\\//, "").split("/")[0] || "");
+          const dbName = decodeURIComponent(mongo.pathname.replace(/^\//, "").split("/")[0] || "");
           if (mongo.protocol !== "mongodb+srv:" ||
               mongo.hostname.toLowerCase() !== "cluster0.cdtxzts.mongodb.net" ||
               dbName !== "global_tours_test") {
