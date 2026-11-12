@@ -124,3 +124,44 @@ Workflow link: https://github.com/isaacokubi/hussein-mboya-tours/actions/workflo
 
 Automated application checks, staging tenant-account verification, production health smoke checks, and one isolated backup-restore drill now have passing evidence. **The product is still NOT CERTIFIED for live tenant onboarding** until the dependency vulnerability report is reviewed, M-Pesa provider sandbox callback lifecycle is exercised, KRA/eTIMS provider onboarding and a real test submission are verified, email delivery is checked, production DB effective privileges are confirmed, and browser/mobile acceptance is completed.
 
+
+
+## Resume checkpoint — 2026-11-12: Mongoose dependency security remediation
+
+**This is the exact point to resume from next session. Do not restart the earlier test plan.**
+
+### Current finding
+
+- The latest CI dependency-install log reported **3 vulnerabilities: 2 moderate and 1 critical**. The critical finding was identified in the production dependency tree and relates to Mongoose filter/query sanitization.
+- Repository dependency declarations at the time of review:
+  - `server/package.json`: Mongoose range `^8.12.0`.
+  - `server/package-lock.json`: resolved Mongoose `8.24.1`.
+  - Resolved Mongoose engine requirement: Node `>=16.20.1`.
+- A newer patched target `mongoose@8.24.7` was selected for an isolated compatibility/security validation. **This is a proposed patch target, not yet a confirmed safe production upgrade.**
+- No Mongoose version or lockfile change has been merged into `main`. No production deployment or database migration was performed for this investigation.
+
+### Isolated validation branch and workflow
+
+- Branch: `security/mongoose-8-24-7`
+- Branch base: `935b4491393fef86d9af19b00f206ab5352a86c8` (the `main` tip at branch creation).
+- Workflow file: `.github/workflows/isolated-mongoose-security-patch.yml`
+- Workflow creation commit: `7b5e36d49328b01931e9f7b258891f56c93d5f35`.
+- Intended workflow sequence: install the current locked dependencies; upgrade Mongoose only to 8.24.7 on this isolated branch; inspect production dependency audit; fail if critical/high production vulnerabilities remain; run `npm run check:all`; run the complete `npm test` suite; commit only `server/package.json` and `server/package-lock.json` if all gates pass.
+- Workflow run [43224068726](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/43224068726) completed with conclusion **failure**. GitHub's run jobs endpoint reported `total_count: 0` and no jobs. Therefore **no dependency install, Mongoose upgrade, audit, or test step is evidenced as having run**. Treat this as a workflow-trigger/registration failure, not as evidence that Mongoose 8.24.7 failed compatibility tests.
+- The workflow file was fetched and reviewed from the security branch. The branch and workflow are still isolated from `main`; no pull request was opened and nothing was merged.
+
+### Exact next action when resuming
+
+1. Resume on branch `security/mongoose-8-24-7` and inspect why run `43224068726` was created with zero jobs. First check GitHub's workflow registration/validation and event requirements for a workflow file introduced on a non-default branch. Do not assume the reason without evidence.
+2. Make the smallest correction so the isolated workflow can execute (for example, register the workflow on the default branch in a safe, non-production-triggering way, or use an already registered CI workflow/PR path). Keep the Mongoose patch itself isolated from `main`.
+3. Trigger the isolated validation and verify that jobs actually start. Inspect the audit output and exact advisories; do not rely only on the overall green/red badge.
+4. If the patched Mongoose release clears critical/high production advisories, run all backend checks and tests, and review compatibility-sensitive Mongoose query/update, aggregation, middleware, and tenant-isolation behavior. Capture the exact test counts and audit report.
+5. Only after all checks pass, open a PR for the dependency patch and review the diff. Do not merge or deploy until the PR checks pass and the change is explicitly approved.
+6. If 8.24.7 does not clear the advisory or breaks compatibility, stop and evaluate the smallest supported patched version based on the advisory's affected/fixed ranges. Never use `npm audit fix --force`.
+
+### Safety and status
+
+- Production database `husseindb` was not used for this security validation and must remain excluded from tests.
+- Do not expose or request database passwords, M-Pesa secrets, API tokens, or callback credentials in chat or committed files.
+- Overall release remains **NOT CERTIFIED FOR LIVE TENANT ONBOARDING** until the outstanding dependency, payment-provider, eTIMS/KRA, email, effective database-privilege, and browser/mobile acceptance items are completed.
+- Last verified `main` revision before this checkpoint: `935b4491393fef86d9af19b00f206ab5352a86c8`.
