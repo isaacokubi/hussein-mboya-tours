@@ -77,3 +77,50 @@ Workflow link: https://github.com/isaacokubi/hussein-mboya-tours/actions/workflo
 - `2e4062c` — added this test execution ledger to `main`.
 - `76edb6b` — changed the legacy `Staging 28-Account Demo Matrix` workflow to manual dispatch only. It previously ran the same staging account matrix on every push to `main`, causing duplicate/redundant account logins after unrelated documentation or code commits. The dedicated seed-and-verify workflow remains manually triggered. The normal CI workflow still runs on `main` pushes and pull requests.
 - Vercel reported both frontend deployments as pending for `76edb6b` at the time of this ledger update. This is a documentation/workflow-only change; no application runtime code was modified.
+
+
+## Verification addendum — 2026-11-12 (direct artifact and workflow review)
+
+### 4. Staging 28-account matrix — PASS (artifact contents independently reviewed)
+
+- Run: [43211534900](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/43211534900), commit `f6a52fd4fa2b49f9f8ad86a4ab37091b12531410`.
+- Verification artifact reports **28 accounts, 28 authenticated, 0 failures**. Each account has login HTTP 200 and dashboard HTTP 200. All expected roles match.
+- Customer accounts receive HTTP 403 from tenant-admin metrics, as required.
+- Seed report confirms database `global_tours_test`, three tenants, 12 tenant users per tenant (36 total) plus the platform super-admin, and 93 application collections after seeding. No application collections were skipped.
+- Test target is the staging API `https://hussein-mboya-tours-1.onrender.com`; no production API/database target was used.
+- A separate redundant legacy matrix run timed out before completing any logins. The legacy workflow was changed to manual dispatch only; the dedicated seed-and-verify workflow remains the authoritative passing result.
+
+### 5. Current CI and tenant-isolation checks — PASS
+
+- CI run [43222457610](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/43222457610), commit `2e00ceadd93f7e196ec7ab023317bab469e6451b): all four jobs passed (server checks, live tenant isolation, tour lifecycle integration, client lint/build).
+- Backend suite: **354 tests, 349 passed, 0 failed, 5 skipped**. Skips are not counted as passes.
+- Live tenant isolation regression: **17 passed, 0 failed**. Coverage in the log includes cross-tenant delete blocking, tenant-scoped insertMany/bulkWrite, aggregation lookup isolation, nested facet isolation, tenantId immutability and cross-tenant data preservation.
+- Database-backed health/readiness: **4 passed, 0 failed, 0 skipped**.
+- First-tenant acceptance: **1 passed, 0 failed, 0 skipped** on a disposable local MongoDB replica set.
+- Client ESLint and production build passed.
+- Three-phase release gate [43222457182](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/43222457182) passed all three phases.
+
+### 6. Production endpoint smoke check — PASS, with deployment SHA noted
+
+- Run [43222457386](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/43222457386) passed against the configured production API and public web endpoint.
+- API health response reported healthy/ready and database connected to `husseindb`; the public website returned valid HTML.
+- The live API reported application version `f82661e884cae968076446c26e9580fe33bf2fe2`. The five commits between that application revision and `2e00cea` changed only GitHub workflows and documentation, not application source files. Do not deploy a docs-only change solely to alter the reported runtime SHA.
+
+### 7. Production backup and isolated restore — PASS for this backup run
+
+- Scheduled backup run [43195968316](https://github.com/isaacokubi/hussein-mboya-tours/actions/runs/43195968316) completed successfully.
+- Backup was encrypted, checksum-verified, decrypted only inside the workflow, and restored into an isolated temporary MongoDB instance.
+- Restore evidence: **2,218 documents restored, 0 failures**; 37 users, 3 organizations, 33 bookings, 33 payments, 30 invoices; zero orphaned tenant references in bookings, payments and invoices.
+- Encrypted archive and checksum were uploaded as a GitHub Actions artifact with 30-day retention.
+- This proves this archive can be restored; Atlas PITR/continuous backup settings and a provider-managed restore remain unverified.
+
+### 8. Dependency audit — INVESTIGATION REQUIRED
+
+- The current CI `npm ci` output reported **3 dependency vulnerabilities (2 moderate, 1 critical)**. The installation warning also reported an engine mismatch for `africastalking@0.8.4` (the package requires npm >=11.12.1 while the Node 22 runner provides npm 10.9.9).
+- Commit `5e22962` adds non-blocking full-tree and production-only `npm audit --json` reports as a CI artifact so exact package/advisory/fix details can be reviewed before changing dependencies.
+- Do not run `npm audit fix --force` or upgrade payment dependencies blindly. Await the detailed report and test any dependency changes through CI.
+
+### Updated release decision
+
+Automated application checks, staging tenant-account verification, production health smoke checks, and one isolated backup-restore drill now have passing evidence. **The product is still NOT CERTIFIED for live tenant onboarding** until the dependency vulnerability report is reviewed, M-Pesa provider sandbox callback lifecycle is exercised, KRA/eTIMS provider onboarding and a real test submission are verified, email delivery is checked, production DB effective privileges are confirmed, and browser/mobile acceptance is completed.
+
