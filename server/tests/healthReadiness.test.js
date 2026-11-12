@@ -327,7 +327,10 @@ test("a fresh MongoDB-backed server becomes healthy after its critical migration
   // Perform the side effect or state update expressed on the following line.
   t.after(async () => {
     // Check the condition (runtime.child.exitCode === null) and run the matching branch.
-    if (runtime.child.exitCode === null) runtime.child.kill("SIGTERM");
+    if (runtime.child.exitCode === null) {
+      runtime.child.kill("SIGTERM");
+      await waitForChildExit(runtime.childExit, 15_000);
+    }
     // Declare { default: cleanupMongoose } for use by the surrounding module or function.
     const { default: cleanupMongoose } = await import("mongoose");
     // Declare cleanupClient for use by the surrounding module or function.
