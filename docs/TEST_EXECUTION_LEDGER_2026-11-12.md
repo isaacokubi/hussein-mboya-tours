@@ -71,3 +71,9 @@ Workflow link: https://github.com/isaacokubi/hussein-mboya-tours/actions/workflo
 6. Complete eTIMS only when the tenant has a real approved adapter and KRA/provider sandbox credentials.
 
 **Current release decision: NOT CERTIFIED FOR LIVE TENANT ONBOARDING** until the blocking external/provider and production operational evidence above is captured.
+
+## Ledger maintenance commits
+
+- `2e4062c` — added this test execution ledger to `main`.
+- `76edb6b` — changed the legacy `Staging 28-Account Demo Matrix` workflow to manual dispatch only. It previously ran the same staging account matrix on every push to `main`, causing duplicate/redundant account logins after unrelated documentation or code commits. The dedicated seed-and-verify workflow remains manually triggered. The normal CI workflow still runs on `main` pushes and pull requests.
+- Vercel reported both frontend deployments as pending for `76edb6b` at the time of this ledger update. This is a documentation/workflow-only change; no application runtime code was modified.
