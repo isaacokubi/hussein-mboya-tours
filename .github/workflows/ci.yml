@@ -35,6 +35,39 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Capture dependency vulnerability details
+        run: |
+          npm audit --json > npm-audit-all.json || true
+          npm audit --omit=dev --json > npm-audit-production.json || true
+          node --input-type=commonjs <<'NODE'
+          const fs = require('node:fs');
+          for (const file of ['npm-audit-all.json', 'npm-audit-production.json']) {
+            const report = JSON.parse(fs.readFileSync(file, 'utf8'));
+            const counts = report.metadata?.vulnerabilities || {};
+            console.log(JSON.stringify({ report: file, vulnerabilities: counts }, null, 2));
+            for (const [name, item] of Object.entries(report.vulnerabilities || {})) {
+              console.log(JSON.stringify({
+                package: name,
+                severity: item.severity,
+                direct: item.isDirect,
+                range: item.range,
+                fixAvailable: item.fixAvailable
+              }));
+            }
+          }
+          NODE
+
+      - name: Upload dependency audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-dependency-audit-${{ github.run_id }}
+          path: |
+            server/npm-audit-all.json
+            server/npm-audit-production.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Syntax, security, RBAC and multitenancy checks
         run: npm run check:all
 
