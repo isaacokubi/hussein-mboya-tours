@@ -1,0 +1,105 @@
+name: Seed Staging Demo Accounts and Verify 28-Account Matrix
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_staging_seed:
+        description: "Confirm that STAGING_MONGODB_URI targets only the disposable global_tours_test database"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-demo-seed-and-matrix
+  cancel-in-progress: false
+
+jobs:
+  seed-and-verify:
+    name: Seed isolated staging data and verify demo logins
+    if: ${{ inputs.confirm_staging_seed == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    env:
+      STAGING_MONGODB_URI: ${{ secrets.STAGING_MONGODB_URI }}
+      STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
+      STAGING_DEMO_PASSWORD: ${{ secrets.STAGING_DEMO_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Validate staging-only targets and required secrets
+        id: validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${STAGING_MONGODB_URI:-}" || -z "${STAGING_API_URL:-}" || -z "${STAGING_DEMO_PASSWORD:-}" ]]; then
+            echo "::error::Configure STAGING_MONGODB_URI, STAGING_API_URL, and STAGING_DEMO_PASSWORD in repository Actions secrets."
+            exit 1
+          fi
+          node --input-type=module <<'NODE'
+          const mongo = new URL(process.env.STAGING_MONGODB_URI);
+          const dbName = decodeURIComponent(mongo.pathname.replace(/^\\//, "").split("/")[0] || "");
+          if (mongo.protocol !== "mongodb+srv:" ||
+              mongo.hostname.toLowerCase() !== "cluster0.cdtxzts.mongodb.net" ||
+              dbName !== "global_tours_test") {
+            throw new Error("Refusing seed: STAGING_MONGODB_URI must target only cluster0.cdtxzts.mongodb.net/global_tours_test.");
+          }
+          const api = new URL(process.env.STAGING_API_URL);
+          if (api.protocol !== "https:" ||
+              api.hostname.toLowerCase() !== "hussein-mboya-tours-1.onrender.com" ||
+              api.pathname !== "/" || api.search || api.hash || api.username || api.password) {
+            throw new Error("Refusing test: STAGING_API_URL must be the approved staging API HTTPS origin.");
+          }
+          if (process.env.STAGING_DEMO_PASSWORD.length < 12) {
+            throw new Error("STAGING_DEMO_PASSWORD must contain at least 12 characters.");
+          }
+          console.log("Staging database and API target checks passed. Secret values were not printed.");
+          NODE
+
+      - name: Seed isolated staging demo tenants and accounts
+        working-directory: server
+        env:
+          NODE_ENV: test
+          MONGODB_URI: ${{ secrets.STAGING_MONGODB_URI }}
+          SEED_DEMO_PASSWORD: ${{ secrets.STAGING_DEMO_PASSWORD }}
+          ALLOW_ATLAS_DEMO_SEED: "YES"
+          CONFIRM_TEST_SEED: "YES"
+        run: node seeds/completeTestDemoSeed.js
+
+      - name: Upload staging seed validation report
+        if: ${{ always() && hashFiles('server/reports/test-seed-report.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-demo-seed-report
+          path: server/reports/test-seed-report.json
+          if-no-files-found: error
+
+      - name: Verify all 28 seeded accounts and role dashboards
+        working-directory: server
+        env:
+          DEMO_API_BASE_URL: ${{ secrets.STAGING_API_URL }}
+          DEMO_TEST_PASSWORD: ${{ secrets.STAGING_DEMO_PASSWORD }}
+          DEMO_API_REPORT_PATH: reports/demo-28-account-matrix.json
+        run: node scripts/verifyDemo28Accounts.js
+
+      - name: Upload 28-account verification report
+        if: ${{ always() && hashFiles('server/reports/demo-28-account-matrix.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-28-account-matrix
+          path: server/reports/demo-28-account-matrix.json
+          if-no-files-found: error
