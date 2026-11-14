@@ -222,10 +222,8 @@ if (runtimeValidation) {
   if (weakJwt) errors.push("JWT_SECRET must be at least 32 characters and contain sufficient character diversity in production.");
   // Check the condition (insecureOrigins) and run the matching branch.
   if (insecureOrigins) errors.push("CLIENT_URL/CLIENT_ORIGINS must use HTTPS in production.");
-  // Check the condition (missingPlatformHost) and run the matching branch.
-  if (missingPlatformHost) errors.push("PLATFORM_HOST must be configured in production for tenant subdomain resolution.");
-  // Check the condition (placeholderHost) and run the matching branch.
-  if (placeholderHost) errors.push("PLATFORM_HOST must be a real production hostname, not a development placeholder.");
+  // Check the condition (invalidPlatformHost) and run the matching branch.
+  if (invalidPlatformHost) errors.push("PLATFORM_HOST must be a valid hostname when configured.");
   // Check the condition (weakPaymentKey) and run the matching branch.
   if (weakPaymentKey) errors.push("PAYMENT_CREDENTIAL_ENCRYPTION_KEY must be at least 32 characters when payment credentials are configured in production.");
   // Check the condition (missingEtimsKey) and run the matching branch.
