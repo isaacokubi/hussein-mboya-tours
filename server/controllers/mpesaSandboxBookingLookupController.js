@@ -23,10 +23,7 @@ export const getMpesaSandboxBookingCandidates = async (req, res, next) => {
       .map((booking) => {
         const totalAmount = Number(booking.totalAmount || 0);
         const amountPaid = Number(booking.amountPaid || 0);
-        const storedBalance = Number(booking.balanceAmount);
-        const amountDue = Number.isFinite(storedBalance)
-          ? Math.max(0, storedBalance)
-          : Math.max(0, totalAmount - amountPaid);
+        const amountDue = Math.max(0, totalAmount - amountPaid);
         return {
           id: String(booking._id),
           bookingNumber: booking.bookingNumber || "",
