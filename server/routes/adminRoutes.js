@@ -22,6 +22,7 @@ import { refundBooking, processRefund } from "../controllers/adminPaymentControl
 import { getUsers, updateUserStatus, deleteUser, createStaffAccount } from "../controllers/adminUserController.js";
 // Load ../controllers/adminUserProfileController.js so this module can use its exported dependencies.
 import { updateUserProfile } from "../controllers/adminUserProfileController.js";
+import { getMpesaSandboxBookingCandidates } from "../controllers/mpesaSandboxBookingLookupController.js";
 
 // Declare router for use by the surrounding module or function.
 const router = express.Router();
@@ -38,6 +39,9 @@ router.use(adminMiddleware);
 router.get("/bookings/analytics", getBookingAnalytics);
 // Perform the side effect or state update expressed on the following line.
 router.get("/revenue/analytics", getRevenueAnalytics);
+
+/* Read-only candidate lookup; inherits protect, tenant resolution and admin authorization. */
+router.get("/bookings/mpesa-sandbox-candidates", getMpesaSandboxBookingCandidates);
 
 /* Booking finance operations */
 // Perform the side effect or state update expressed on the following line.
