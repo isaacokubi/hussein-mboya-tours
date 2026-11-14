@@ -38,10 +38,6 @@ import Pagination from "../../components/admin/Pagination";
 const PAGE_SIZE = 10;
 // Declare STATUS_VALUES for use by the surrounding module or function.
 const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"];
-// Declare PLATFORM_HOST for use by the surrounding module or function.
-const PLATFORM_HOST = String(import.meta.env.VITE_PLATFORM_HOST || "globaltours.com")
-  .replace(/^https?:\/\//, "")
-  .replace(/\/$/, "");
 // Declare INITIAL_FORM for use by the surrounding module or function.
 const INITIAL_FORM = {
   companyName: "",
@@ -106,16 +102,7 @@ function CompanyTenantForm({ onCreated, onCancel }) {
   const plans = planData?.plans || [];
   // Declare selectedPlan for use by the surrounding module or function.
   const selectedPlan = plans.find((plan) => plan.value === form.plan);
-  // Declare tenantSlug for use by the surrounding module or function.
-  const tenantSlug = String(form.slug || form.companyName || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  // Declare platformUrl for use by the surrounding module or function.
-  const platformUrl = tenantSlug
-    ? `https://${tenantSlug}.${PLATFORM_HOST}`
-    : `https://<company-slug>.${PLATFORM_HOST}`;
+  const platformUrl = "A public tenant URL will be available after a domain is registered and connected.";
 
   // Declare handleChange for use by the surrounding module or function.
   const handleChange = ({ target: { name, value } }) => {
@@ -241,7 +228,7 @@ function CompanyTenantForm({ onCreated, onCancel }) {
               <ShieldCheck className="h-5 w-5" />
               <h3 className="font-bold">Tenant URL</h3>
             </div>
-            <p className="mt-1 text-sm text-emerald-900/70">This is the expected platform address for the new company workspace.</p>
+            <p className="mt-1 text-sm text-emerald-900/70">A public URL can be assigned after a domain is registered and connected.</p>
             <div className="mt-3 overflow-x-auto rounded-xl border border-emerald-200 bg-white px-4 py-3 font-mono text-sm text-slate-800">{platformUrl}</div>
           </section>
 
