@@ -190,10 +190,8 @@ if (runtimeValidation) {
   const insecureOrigins = production && origins.some((origin) => !/^https:\/\//i.test(origin));
   // Declare platformHost for use by the surrounding module or function.
   const platformHost = String(process.env.PLATFORM_HOST || "").trim();
-  // Declare missingPlatformHost for use by the surrounding module or function.
-  const missingPlatformHost = production && !platformHost;
-  // Declare placeholderHost for use by the surrounding module or function.
-  const placeholderHost = production && /^(your-domain\.com|localhost|127\.0\.0\.1)$/i.test(platformHost);
+  // A platform hostname is optional until the owner registers a domain.
+  const invalidPlatformHost = production && Boolean(platformHost) && (/^(your-domain\\.com|localhost|127\\.0\\.0\\.1)$/i.test(platformHost) || /[/:?#\\s]/.test(platformHost));
   // Declare paymentKeyRequired for use by the surrounding module or function.
   const paymentKeyRequired = production;
   // Declare weakPaymentKey for use by the surrounding module or function.
