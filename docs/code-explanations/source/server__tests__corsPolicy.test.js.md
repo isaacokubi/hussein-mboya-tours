@@ -28,7 +28,7 @@ Key statements:
 ## Module-level declarations
 
 - Line 6: `const stagingOrigin = "https://hussein-mboya-tours-2-l3m78h6fz-isaacokubis-projects.vercel.app";`.
-- Line 7: `const productionOrigin = "https://www.globaltours.com";`.
+- Line 7: `const productionOrigin = "https://www.(unregistered platform domain)";`.
 - Line 21: `const configuredOrigins = [stagingOrigin, productionOrigin];`.
 - Line 22: `const middleware = cors({`.
 - Line 28: `const invoke = (method, headers) => new Promise((resolve, reject) => {`.
