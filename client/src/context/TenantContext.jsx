@@ -60,7 +60,7 @@ const getTenantSlugFromHost = () => {
   // Declare host for use by the surrounding module or function.
   const host = window.location.hostname.toLowerCase();
   // Declare platformHost for use by the surrounding module or function.
-  const platformHost = String(import.meta.env.VITE_PLATFORM_HOST || "globaltours.com").toLowerCase();
+  const platformHost = String(import.meta.env.VITE_PLATFORM_HOST || "").toLowerCase();
   // Declare suffix for use by the surrounding module or function.
   const suffix = `.${platformHost}`;
   // Check the condition (host.endsWith(suffix)) and run the matching branch.
