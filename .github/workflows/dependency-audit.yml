@@ -1,0 +1,71 @@
+name: Dependency Security Audit Gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit locked production and client dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit server lockfile
+        working-directory: server
+        shell: bash
+        run: |
+          set +e
+          npm audit --json > ../server-npm-audit.json
+          status=$?
+          set -e
+          echo "server_audit_exit_code=$status" >> "$GITHUB_OUTPUT"
+          node -e 'const r=require("../server-npm-audit.json"); const m=r.metadata?.vulnerabilities||{}; console.log(JSON.stringify({scope:"server",vulnerabilities:m,packages:r.metadata?.dependencies?.prod??null},null,2));'
+        id: server
+      - name: Audit client lockfile
+        working-directory: client
+        shell: bash
+        run: |
+          set +e
+          npm audit --json > ../client-npm-audit.json
+          status=$?
+          set -e
+          echo "client_audit_exit_code=$status" >> "$GITHUB_OUTPUT"
+          node -e 'const r=require("../client-npm-audit.json"); const m=r.metadata?.vulnerabilities||{}; console.log(JSON.stringify({scope:"client",vulnerabilities:m,packages:r.metadata?.dependencies?.prod??null},null,2));'
+        id: client
+      - name: Upload exact npm audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-reports-${{ github.run_id }}
+          path: |
+            server-npm-audit.json
+            client-npm-audit.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Fail if any dependency vulnerability remains
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          for (const file of ["server-npm-audit.json", "client-npm-audit.json"]) {
+            if (!fs.existsSync(file)) throw new Error(file + ": audit report unavailable");
+            const report = JSON.parse(fs.readFileSync(file, "utf8"));
+            const vulnerabilities = report.metadata?.vulnerabilities || {};
+            console.log(JSON.stringify({file, vulnerabilities, advisories: Object.keys(report.vulnerabilities || {})}, null, 2));
+            if (Number(vulnerabilities.total || 0) > 0) {
+              process.exitCode = 1;
+            }
+          }
+          NODE

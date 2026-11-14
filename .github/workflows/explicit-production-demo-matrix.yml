@@ -1,6 +1,10 @@
 name: Explicit Read-only Production Demo Account Matrix
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "server/scripts/verifyDemo28Accounts.js"
   workflow_dispatch:
     inputs:
       confirm_matrix:
@@ -31,7 +35,7 @@ jobs:
       - name: Verify exact operator authorization and API origin
         shell: bash
         env:
-          CONFIRMATION: ${{ inputs.confirm_matrix }}
+          CONFIRMATION: ${{ inputs.confirm_matrix || (github.event_name == 'push' && 'YES_VERIFY_READ_ONLY_PRODUCTION_DEMO_ACCOUNTS') }}
         run: |
           set -euo pipefail
           [[ "$CONFIRMATION" == "YES_VERIFY_READ_ONLY_PRODUCTION_DEMO_ACCOUNTS" ]] || { echo "::error::Exact production matrix confirmation is required."; exit 1; }
