@@ -84,7 +84,7 @@ function MpesaSandboxBookingLookup() {
     setError("");
     try {
       const response = await api.get("/admin/bookings/mpesa-sandbox-candidates");
-      const rows = response?.data?.data?.bookings || response?.data?.bookings || [];
+      const rows = response?.data?.candidates || [];
       setItems(Array.isArray(rows) ? rows : []);
       setLoaded(true);
     } catch (e) {
@@ -105,7 +105,7 @@ function MpesaSandboxBookingLookup() {
     </div>
     {error && <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{error}</p>}
     {loaded && !error && items.length === 0 && <p role="status" className="mt-4 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700">No eligible unpaid bookings were found for this tenant.</p>}
-    {items.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-2">{items.map((booking) => <article key={booking.bookingId || booking._id} className="rounded-xl border border-slate-200 bg-white p-4">
+    {items.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-2">{items.map((booking) => <article key={booking.id} className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Booking</p><p className="mt-1 break-all font-bold text-slate-900">{booking.bookingNumber || booking.bookingId || booking._id}</p></div><span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800">{booking.paymentStatus || "pending"}</span></div>
       <dl className="mt-3 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-slate-500">Total</dt><dd className="font-semibold text-slate-900">KES {Number(booking.totalAmount || 0).toLocaleString()}</dd></div><div><dt className="text-slate-500">Paid</dt><dd className="font-semibold text-slate-900">KES {Number(booking.amountPaid || 0).toLocaleString()}</dd></div><div><dt className="text-slate-500">Amount due</dt><dd className="font-bold text-emerald-800">KES {Number(booking.amountDue || 0).toLocaleString()}</dd></div><div><dt className="text-slate-500">Booking status</dt><dd className="font-semibold capitalize text-slate-900">{String(booking.bookingStatus || "pending").replace(/_/g, " ")}</dd></div></dl>
       <button type="button" onClick={() => { const id = booking.bookingId || booking._id; if (id) navigator.clipboard?.writeText(String(id)).then(() => toast.success("Booking ID copied."), () => toast.error("Could not copy booking ID.")); }} className="mt-3 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Copy booking ID</button>
