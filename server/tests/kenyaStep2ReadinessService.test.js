@@ -1,38 +1,74 @@
-/**
- * Purpose: kenya Step2 Readiness Service.test automated test. The statements below implement this module responsibilities.
- * Inline comments explain the purpose of important declarations and executable blocks.
- */
 import test from "node:test";
-// Load node:assert/strict so this module can use its exported dependencies.
 import assert from "node:assert/strict";
-// Load ../services/kenyaStep2ReadinessService.js so this module can use its exported dependencies.
 import { buildKenyaReadinessChecks } from "../services/kenyaStep2ReadinessService.js";
 
-// Perform the side effect or state update expressed on the following line.
-test("Kenya readiness passes with complete compliant configuration", () => {
-  // Declare records for use by the surrounding module or function.
-  const records = [
-    { type: "TRA_LICENSE", status: "approved", expiryDate: "2099-01-01T00:00:00.000Z" },
-    { type: "ODPC_REGISTRATION", status: "approved", expiryDate: null },
-    { type: "PRIVACY_POLICY", status: "approved" },
-    { type: "DATA_RETENTION", status: "approved" },
-    { type: "DPA_REVIEW", status: "approved" },
-    { type: "ETIMS_ONBOARDING", status: "approved" },
-  ];
-  // Declare checks for use by the surrounding module or function.
-  const checks = buildKenyaReadinessChecks({ kraPin: "P000000000A", kraPinStatus: "verified", vatRegistered: true, vatNumber: "P051234567X", etimsEnabled: true }, records, new Date("2026-09-11T00:00:00.000Z"));
-  // Perform the side effect or state update expressed on the following line.
+const NOW = new Date("2026-09-11T00:00:00.000Z");
+const compliantRecords = () => [
+  { type: "TRA_LICENSE", status: "approved", issueDate: "2026-01-01", expiryDate: "2099-01-01T00:00:00.000Z" },
+  { type: "ODPC_REGISTRATION", status: "approved", expiryDate: null },
+  { type: "PRIVACY_POLICY", status: "approved" },
+  { type: "DATA_RETENTION", status: "approved" },
+  { type: "DPA_REVIEW", status: "approved" },
+  { type: "ETIMS_ONBOARDING", status: "approved" },
+];
+const verifiedTax = {
+  kraPin: "P000000000A",
+  kraPinStatus: "verified",
+  vatRegistered: true,
+  vatNumber: "P051234567X",
+  vatValidationStatus: "verified",
+  etimsEnabled: true,
+};
+
+test("Kenya readiness passes only with verified tax and approved current compliance records", () => {
+  const checks = buildKenyaReadinessChecks(verifiedTax, compliantRecords(), NOW);
   assert.equal(checks.every((item) => item.ok), true);
 });
 
-// Perform the side effect or state update expressed on the following line.
-test("Kenya readiness rejects an expired TRA licence", () => {
-  // Declare records for use by the surrounding module or function.
-  const records = [{ type: "TRA_LICENSE", status: "approved", expiryDate: "2026-09-10T00:00:00.000Z" }];
-  // Declare checks for use by the surrounding module or function.
-  const checks = buildKenyaReadinessChecks({ kraPin: "P000000000A", kraPinStatus: "verified", vatRegistered: false, etimsEnabled: false }, records, new Date("2026-09-11T00:00:00.000Z"));
-  // Perform the side effect or state update expressed on the following line.
+test("pending KRA PIN is not treated as verified", () => {
+  const checks = buildKenyaReadinessChecks({ ...verifiedTax, kraPinStatus: "pending" }, compliantRecords(), NOW);
+  assert.equal(checks.find((item) => item.key === "kra").ok, false);
+});
+
+test("VAT registration requires a verified VAT number", () => {
+  const checks = buildKenyaReadinessChecks({ ...verifiedTax, vatValidationStatus: "pending" }, compliantRecords(), NOW);
+  assert.equal(checks.find((item) => item.key === "vat").ok, false);
+});
+
+test("submitted TRA application is not treated as an approved licence", () => {
+  const records = compliantRecords().map((record) => record.type === "TRA_LICENSE" ? { ...record, status: "submitted" } : record);
+  const checks = buildKenyaReadinessChecks(verifiedTax, records, NOW);
   assert.equal(checks.find((item) => item.key === "tra").ok, false);
-  // Perform the side effect or state update expressed on the following line.
-  assert.equal(checks.find((item) => item.key === "privacy").ok, false);
+});
+
+test("readiness rejects an expired or soon-to-expire TRA licence", () => {
+  for (const expiryDate of ["2026-09-10T00:00:00.000Z", "2026-09-20T00:00:00.000Z"]) {
+    const records = compliantRecords().map((record) => record.type === "TRA_LICENSE" ? { ...record, expiryDate } : record);
+    const checks = buildKenyaReadinessChecks(verifiedTax, records, NOW);
+    assert.equal(checks.find((item) => item.key === "tra").ok, false);
+  }
+});
+
+test("missing TRA expiry date is not accepted as a current licence", () => {
+  const records = compliantRecords().map((record) => record.type === "TRA_LICENSE" ? { ...record, expiryDate: null } : record);
+  const checks = buildKenyaReadinessChecks(verifiedTax, records, NOW);
+  assert.equal(checks.find((item) => item.key === "tra").ok, false);
+});
+
+test("expired or unapproved compliance records do not pass", () => {
+  const records = compliantRecords().map((record) => record.type === "ODPC_REGISTRATION" ? { ...record, status: "submitted", expiryDate: "2026-09-10T00:00:00.000Z" } : record);
+  const checks = buildKenyaReadinessChecks({ ...verifiedTax, etimsEnabled: false }, records, NOW);
+  assert.equal(checks.find((item) => item.key === "odpc").ok, false);
+  assert.equal(checks.find((item) => item.key === "privacy").ok, true);
+});
+
+test("eTIMS onboarding is required when eTIMS is enabled", () => {
+  const records = compliantRecords().filter((record) => record.type !== "ETIMS_ONBOARDING");
+  const checks = buildKenyaReadinessChecks(verifiedTax, records, NOW);
+  assert.equal(checks.find((item) => item.key === "etims").ok, false);
+});
+
+test("VAT profile is not required when the tenant is not VAT registered", () => {
+  const checks = buildKenyaReadinessChecks({ ...verifiedTax, vatRegistered: false, vatNumber: "", vatValidationStatus: "not_verified" }, compliantRecords(), NOW);
+  assert.equal(checks.find((item) => item.key === "vat").ok, true);
 });
