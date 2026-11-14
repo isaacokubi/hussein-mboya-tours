@@ -18,17 +18,17 @@ const read = (file) => fs.readFileSync(path.join(process.cwd(), file), "utf8");
 // Perform the side effect or state update expressed on the following line.
 test("tenant subdomain matching distinguishes tenant hosts from platform hosts", () => {
   // Perform the side effect or state update expressed on the following line.
-  assert.equal(isTenantSubdomainHost("safari.globaltours.com", "globaltours.com"), true);
+  assert.equal(isTenantSubdomainHost("safari.example.com", "example.com"), true);
   // Perform the side effect or state update expressed on the following line.
-  assert.equal(isTenantSubdomainHost("api.globaltours.com", "globaltours.com"), false);
+  assert.equal(isTenantSubdomainHost("api.example.com", "example.com"), false);
   // Perform the side effect or state update expressed on the following line.
-  assert.equal(isTenantSubdomainHost("www.globaltours.com", "globaltours.com"), false);
+  assert.equal(isTenantSubdomainHost("www.example.com", "example.com"), false);
   // Perform the side effect or state update expressed on the following line.
-  assert.equal(isTenantSubdomainHost("globaltours.com", "globaltours.com"), false);
+  assert.equal(isTenantSubdomainHost("example.com", "example.com"), false);
   // Perform the side effect or state update expressed on the following line.
-  assert.equal(isTenantSubdomainHost("safari.preview.globaltours.com", "globaltours.com"), false);
+  assert.equal(isTenantSubdomainHost("safari.preview.example.com", "example.com"), false);
   // Perform the side effect or state update expressed on the following line.
-  assert.equal(isTenantSubdomainHost("safari.other.test", "globaltours.com"), false);
+  assert.equal(isTenantSubdomainHost("safari.other.test", "example.com"), false);
 });
 
 // Perform the side effect or state update expressed on the following line.
