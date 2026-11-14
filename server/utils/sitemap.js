@@ -36,7 +36,7 @@ const generateSitemap = async () => {
     // Declare hostname for use by the surrounding module or function.
     const hostname =
       process.env.CLIENT_URL ||
-      (process.env.PLATFORM_HOST ? `https://${String(process.env.PLATFORM_HOST).replace(/^https?:\/\//, "").replace(/\/$/, "")}` : "https://globaltours.com");
+      (process.env.PLATFORM_HOST ? `https://${String(process.env.PLATFORM_HOST).replace(/^https?:\/\//, "").replace(/\/$/, "")}` : "https://hussein-mboya-tours.vercel.app");
 
     // Declare sitemap for use by the surrounding module or function.
     const sitemap = new SitemapStream({
