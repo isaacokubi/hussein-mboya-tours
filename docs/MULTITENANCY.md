@@ -1,38 +1,25 @@
 # Multi-tenancy
 
-The platform supports isolated tour-operator workspaces under one deployment.
+The platform supports isolated tour-operator workspaces under one deployment. A registered custom domain is optional; the application must not assume ownership of a platform hostname.
 
 ## Tenant URLs
 
-Every organization has a unique slug. With `PLATFORM_HOST=globaltours.com`, the public URL is:
+Until a platform domain is registered, the frontend is accessed through its assigned hosting URL (currently the Vercel deployment URL). Tenant-specific custom domains can be connected individually after their owners configure DNS and complete domain verification.
 
-`https://<tenant-slug>.globaltours.com`
+Do not generate tenant subdomains from an unowned or placeholder hostname. SuperAdmin tenant management displays a direct URL only when that tenant has a configured custom domain.
 
-Examples:
+## Domain configuration
 
-- `https://amani-trails-safaris.globaltours.com`
-- `https://savanna-crown-safaris.globaltours.com`
-- `https://coastal-horizon-adventures.globaltours.com`
-
-The platform owner remains at `https://globaltours.com/superadmin`.
-
-## DNS / frontend hosting
-
-Configure the frontend hosting provider with the apex domain and wildcard `*.globaltours.com`. The exact DNS records and TLS setup depend on the provider. The application resolves the hostname after the provider routes it to the frontend; it does not create DNS records itself.
-
-Server environment:
-
-`PLATFORM_HOST=globaltours.com`
-
-Frontend build environment:
-
-`VITE_PLATFORM_HOST=globaltours.com`
+- `PLATFORM_HOST` is optional. Set it only after the platform owner registers and controls a domain and configures wildcard DNS/TLS.
+- `VITE_PLATFORM_HOST` is optional and should match `PLATFORM_HOST` only when platform subdomain routing is enabled.
+- `CLIENT_URL` and `CLIENT_ORIGINS` must contain the actual HTTPS frontend origin(s) used by the deployment.
+- Tenant custom domains are stored in `organizations.domain`; DNS and TLS must point the domain at the frontend deployment before activation.
 
 ## Tenant resolution
 
-Requests can identify a company with the authenticated user's `tenantId`, a platform subdomain, a configured custom domain, a tenant-specific frontend origin, `X-Tenant-Slug`/`X-Tenant-Key` where supported, or a development/default tenant fallback. The hostname is preferred over client-supplied tenant identifiers.
+Requests can identify a company with the authenticated user's `tenantId`, a configured platform subdomain (when `PLATFORM_HOST` is set), a verified custom domain, a tenant-specific frontend origin, or supported `X-Tenant-Slug`/`X-Tenant-Key` selectors. The hostname is preferred over client-supplied tenant identifiers.
 
-The resolved organization is attached as `req.tenant` and `req.tenantId` and propagated through the tenancy context.
+The resolved organization is attached as `req.tenant` and `req.tenantId` and propagated through the tenancy context. A shared hosting hostname does not imply ownership of a separate domain; use the configured public tenant slug or tenant selection mechanism where applicable.
 
 ## Isolation
 
@@ -46,7 +33,7 @@ Tenant public settings expose company name, legal name, slug, platform URL, cust
 
 ## Custom domains
 
-A tenant may provide a custom domain such as `www.husseintours.com` during company creation. It is stored in `organizations.domain` and is displayed in SuperAdmin tenant management. DNS and TLS must point the domain at the frontend deployment before it can serve the tenant.
+A tenant may provide a custom domain during company creation. It is stored in `organizations.domain` and is displayed in SuperAdmin tenant management. DNS and TLS must point the domain at the frontend deployment before it can serve the tenant.
 
 For production, custom-domain onboarding should additionally verify domain ownership before activation and should only enable `features.customDomain` after verification.
 
@@ -59,4 +46,4 @@ cd server
 npm run migrate:multitenancy
 ```
 
-The script creates the default `amani-trails-safaris` organization when necessary, assigns existing business records to it, synchronizes indexes, and prints `DEFAULT_TENANT_ID`.
+The script creates the default organization when necessary, assigns existing business records to it, synchronizes indexes, and prints `DEFAULT_TENANT_ID`.
