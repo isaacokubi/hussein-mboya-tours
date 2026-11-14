@@ -19,7 +19,7 @@ flowchart LR
 
 ## Release considerations
 
-Provide production HTTPS API/client origins, valid `PLATFORM_HOST`, strong JWT and encryption secrets, intended MongoDB URI/database, provider callback routes, and optional integration secrets through host secret settings. Do not commit `.env`. Frontend `VITE_*` variables are build-time public values. Render health check is readiness-based, so the API may be marked unhealthy until DB/startup migration is ready.
+Provide production HTTPS API/client origins, an optional `PLATFORM_HOST` only after registering a domain, strong JWT and encryption secrets, intended MongoDB URI/database, provider callback routes, and optional integration secrets through host secret settings. Do not commit `.env`. Frontend `VITE_*` variables are build-time public values. Render health check is readiness-based, so the API may be marked unhealthy until DB/startup migration is ready.
 
 ## Operations and rollback
 
