@@ -80,7 +80,7 @@ if (isProduction) {
   // Check the condition (!platformHost || /^(your-domain\.com|localhost|127\.0\.0\.1)$/i.test(p) and run the matching branch.
   if (!platformHost || /^(your-domain\.com|localhost|127\.0\.0\.1)$/i.test(platformHost) || /[/:?#\s]/.test(platformHost)) {
     // Stop the current operation by raising a new Error instance.
-    throw new Error("Production PLATFORM_HOST must be configured as a real hostname without a scheme or path.");
+    throw new Error("Production PLATFORM_HOST must be a valid hostname without a scheme or path when configured.");
   }
 
   // Check the condition (process.env.ETIMS_CREDENTIAL_ENCRYPTION_KEY && String(process.env.ETIM) and run the matching branch.

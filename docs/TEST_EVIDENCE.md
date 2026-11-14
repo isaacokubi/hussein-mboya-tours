@@ -300,7 +300,7 @@ The audit began from `9b594ee8297d35400083a3ebe7af2ef7659ad40b` (`main` and `ori
 | Tour-domain suite | PASS | `cd server && npm run test:tour-domain`: 1 passed, 0 failed, 0 skipped. |
 | Security suite | PASS | `cd server && npm run test:security`: 2 passed, 0 failed, 0 skipped. |
 | Full syntax/model/service/security/tenant/production checks | PASS | `cd server && npm run check:all`; tenant model contract passed and production readiness contract passed. |
-| Client lint and production build | PASS | `cd client && npm run lint`; build used explicit `VITE_API_URL=https://hussein-mboya-tours.onrender.com/api`, matching HTTPS socket origin, and `VITE_PLATFORM_HOST=globaltours.com`. |
+| Client lint and production build | PASS | `cd client && npm run lint`; build used explicit `VITE_API_URL=https://hussein-mboya-tours.onrender.com/api`, matching HTTPS socket origin, and no platform domain was configured; tenant subdomain routing remains disabled until a domain is registered. |
 | MongoDB version guard | PASS | Full suite accepts 4.2+ and rejects 4.0, 3.6 and unknown versions. Mongoose compatibility lists MongoDB 4.2; CI target remains MongoDB 8. |
 | Cloudinary optional path | PASS | Health/readiness test verified API middleware loads with Cloudinary unset, body-only multipart succeeds, and actual file upload returns 503. |
 | Workflow YAML | PASS | Ruby Psych parsed all 7 `.github/workflows/*.yml` files. Node jobs target Node 22; CI uses MongoDB 8 and invokes the first-tenant test against a replica set. No candidate CI run was available. |

@@ -190,10 +190,8 @@ if (runtimeValidation) {
   const insecureOrigins = production && origins.some((origin) => !/^https:\/\//i.test(origin));
   // Declare platformHost for use by the surrounding module or function.
   const platformHost = String(process.env.PLATFORM_HOST || "").trim();
-  // Declare missingPlatformHost for use by the surrounding module or function.
-  const missingPlatformHost = production && !platformHost;
-  // Declare placeholderHost for use by the surrounding module or function.
-  const placeholderHost = production && /^(your-domain\.com|localhost|127\.0\.0\.1)$/i.test(platformHost);
+  // A platform hostname is optional until the owner registers a domain.
+  const invalidPlatformHost = production && Boolean(platformHost) && (/^(your-domain\\.com|localhost|127\\.0\\.0\\.1)$/i.test(platformHost) || /[/:?#\\s]/.test(platformHost));
   // Declare paymentKeyRequired for use by the surrounding module or function.
   const paymentKeyRequired = production;
   // Declare weakPaymentKey for use by the surrounding module or function.
@@ -222,10 +220,8 @@ if (runtimeValidation) {
   if (weakJwt) errors.push("JWT_SECRET must be at least 32 characters and contain sufficient character diversity in production.");
   // Check the condition (insecureOrigins) and run the matching branch.
   if (insecureOrigins) errors.push("CLIENT_URL/CLIENT_ORIGINS must use HTTPS in production.");
-  // Check the condition (missingPlatformHost) and run the matching branch.
-  if (missingPlatformHost) errors.push("PLATFORM_HOST must be configured in production for tenant subdomain resolution.");
-  // Check the condition (placeholderHost) and run the matching branch.
-  if (placeholderHost) errors.push("PLATFORM_HOST must be a real production hostname, not a development placeholder.");
+  // Check the condition (invalidPlatformHost) and run the matching branch.
+  if (invalidPlatformHost) errors.push("PLATFORM_HOST must be a valid hostname when configured.");
   // Check the condition (weakPaymentKey) and run the matching branch.
   if (weakPaymentKey) errors.push("PAYMENT_CREDENTIAL_ENCRYPTION_KEY must be at least 32 characters when payment credentials are configured in production.");
   // Check the condition (missingEtimsKey) and run the matching branch.

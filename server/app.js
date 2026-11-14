@@ -239,7 +239,7 @@ const corsOptions = {
       // Declare hostname for use by the surrounding module or function.
       const hostname = parsedOrigin.hostname.toLowerCase();
       // Declare configuredPlatformHost for use by the surrounding module or function.
-      const configuredPlatformHost = String(process.env.PLATFORM_HOST || "globaltours.com").trim().toLowerCase();
+      const configuredPlatformHost = String(process.env.PLATFORM_HOST || "").trim().toLowerCase();
       // Declare platformSuffix for use by the surrounding module or function.
       const platformSuffix = `.${configuredPlatformHost}`;
       // Declare tenantOrigin for use by the surrounding module or function.

@@ -15,7 +15,7 @@ import { deleteSuperAdminTenant, getSuperAdminTenants, updateSuperAdminTenantSta
 import { activateTenantSubscription } from "../../api/tenantSubscriptionApi";
 
 // Declare PLATFORM_HOST for use by the surrounding module or function.
-const PLATFORM_HOST = String(import.meta.env.VITE_PLATFORM_HOST || "globaltours.com").replace(/^https?:\/\//, "").replace(/\/$/, "");
+const tenantUrl = (tenant) => tenant.domain ? `https://${String(tenant.domain).replace(/^https?:\/\//, "").replace(/\/$/, "")}` : "";
 // Declare PLANS for use by the surrounding module or function.
 const PLANS = [
   { value: "starter", label: "Starter", tone: "slate" },
@@ -24,7 +24,7 @@ const PLANS = [
   { value: "enterprise", label: "Enterprise", tone: "violet" },
 ];
 // Declare tenantUrl for use by the surrounding module or function.
-const tenantUrl = (tenant) => `https://${tenant.slug}.${PLATFORM_HOST}`;
+
 // Declare planLabel for use by the surrounding module or function.
 const planLabel = (plan) => PLANS.find((item) => item.value === String(plan || "").toLowerCase())?.label || String(plan || "—");
 // Declare formatDate for use by the surrounding module or function.
@@ -141,7 +141,7 @@ export default function SuperAdminTenants() {
                 return (
                   <tr key={tenant._id} className="transition hover:bg-emerald-50/30">
                     <td className="px-5 py-4"><div className="font-bold text-slate-900">{tenant.name}</div><div className="text-xs text-slate-500">{tenant.slug}</div></td>
-                    <td className="px-5 py-4"><a href={tenantUrl(tenant)} target="_blank" rel="noreferrer" className="text-xs font-semibold text-emerald-700 hover:underline">{tenantUrl(tenant)}</a></td>
+                    <td className="px-5 py-4">{tenantUrl(tenant) ? <a href={tenantUrl(tenant)} target="_blank" rel="noreferrer" className="text-xs font-semibold text-emerald-700 hover:underline">{tenantUrl(tenant)}</a> : <span className="text-xs text-slate-400">No domain configured</span>}</td>
                     <td className="px-5 py-4">{tenant.owner ? <><div className="font-medium text-slate-800">{tenant.owner.name}</div><div className="text-xs text-slate-500">{tenant.owner.email}</div></> : <span className="text-slate-400">No owner</span>}</td>
                     <td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold capitalize ${tenant.status === "active" ? "bg-emerald-100 text-emerald-800" : tenant.status === "trial" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{tenant.status}</span></td>
                     <td className="px-5 py-4"><div className="font-bold capitalize text-slate-900">{planLabel(currentPlan)}</div><div className="text-xs text-slate-500">{sub.seats ? `${sub.seats} seats` : "Plan limits"}</div></td>

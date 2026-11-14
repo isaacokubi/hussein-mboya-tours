@@ -210,7 +210,7 @@ Key statements:
 
 - Line 26: `const PAGE_SIZE = 10;`.
 - Line 27: `const STATUS_VALUES = ["active", "inactive", "disabled", "suspended", "blocked"];`.
-- Line 28: `const PLATFORM_HOST = String(import.meta.env.VITE_PLATFORM_HOST || "globaltours.com")`.
+- Line 28: `const PLATFORM_HOST = String(import.meta.env.VITE_PLATFORM_HOST || "(unregistered platform domain)")`.
 - Line 31: `const INITIAL_FORM = {`.
 - Line 50: `const getUsers = async (search, page) =>`.
 - Line 52: `const updateStatus = async (id, status) =>`.

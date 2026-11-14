@@ -81,7 +81,7 @@ Key statements:
 
 ## Module-level declarations
 
-- Line 8: `const PLATFORM_HOST = String(import.meta.env.VITE_PLATFORM_HOST || "globaltours.com").replace(/^https?:\/\//, "").replace(/\/$/, "");`.
+- Line 8: `const PLATFORM_HOST = String(import.meta.env.VITE_PLATFORM_HOST || "").replace(/^https?:\/\//, "").replace(/\/$/, "");`.
 - Line 9: `const PLANS = [`.
 - Line 15: `const tenantUrl = (tenant) => \`https://${tenant.slug}.${PLATFORM_HOST}\`;`.
 - Line 16: `const planLabel = (plan) => PLANS.find((item) => item.value === String(plan || "").toLowerCase())?.label || String(plan || "—");`.

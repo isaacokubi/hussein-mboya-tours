@@ -13,7 +13,7 @@ import { getConfiguredOrigins, isConfiguredOrigin, isValidConfiguredOrigin } fro
 // Declare stagingOrigin for use by the surrounding module or function.
 const stagingOrigin = "https://hussein-mboya-tours-2-l3m78h6fz-isaacokubis-projects.vercel.app";
 // Declare productionOrigin for use by the surrounding module or function.
-const productionOrigin = "https://www.globaltours.com";
+const productionOrigin = "https://hussein-mboya-tours.vercel.app";
 
 // Perform the side effect or state update expressed on the following line.
 test("configured staging and production origins are exact HTTPS origins", () => {

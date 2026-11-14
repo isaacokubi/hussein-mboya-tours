@@ -62,13 +62,12 @@ test("production evidence gates are explicit", () => {
 });
 
 // Perform the side effect or state update expressed on the following line.
-test("runtime production readiness requires a platform host for tenant URLs", () => {
+test("runtime production readiness allows shared-host deployment before a custom domain is registered", () => {
   // Declare check for use by the surrounding module or function.
   const check = read("scripts/production-readiness-check.js");
   // Perform the side effect or state update expressed on the following line.
-  assert.match(check, /const missingPlatformHost = production && !platformHost/);
-  // Perform the side effect or state update expressed on the following line.
-  assert.match(check, /PLATFORM_HOST must be configured in production for tenant subdomain resolution/);
+  assert.match(check, /const invalidPlatformHost = production && Boolean\(platformHost\)/);
+  assert.doesNotMatch(check, /PLATFORM_HOST must be configured in production/);
 });
 
 // Perform the side effect or state update expressed on the following line.
