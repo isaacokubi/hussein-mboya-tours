@@ -34,7 +34,7 @@ test("Kenyan Safaricom phone numbers normalize to international format", () => {
 
 test("Daraja timestamp and STK password follow the shortcode + passkey + timestamp contract", () => {
   const timestamp = generateTimestamp();
-  assert.match(timestamp, /^\\d{14}$/);
+  assert.match(timestamp, /^\d{14}$/);
   const expected = Buffer.from(`${config.shortcode}${config.passkey}${timestamp}`).toString("base64");
   assert.equal(generatePassword(timestamp, config), expected);
   assert.throws(() => generatePassword(timestamp), /configuration/i);
