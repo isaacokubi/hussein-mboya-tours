@@ -91,11 +91,11 @@ test("STK Push sends the expected Sandbox request and accepts only a complete pr
 
 test("STK Push rejects invalid amount, invalid phone, and incomplete provider responses", async () => {
   await assert.rejects(() => runWithTenant(tenant, () => initiateStkPush({
-    phone: "0712345678", amount: 0, bookingId: "booking-1", config, client: {},
+    phone: "0712345678", amount: 0, bookingId: "booking-1", config, client: {}, companyName: "Test Tours",
   })), { code: "INVALID_MPESA_AMOUNT" });
 
   await assert.rejects(() => runWithTenant(tenant, () => initiateStkPush({
-    phone: "070000000", amount: 100, bookingId: "booking-2", config, client: {},
+    phone: "070000000", amount: 100, bookingId: "booking-2", config, client: {}, companyName: "Test Tours",
   })), { code: "INVALID_MPESA_PHONE" });
 
   const client = {
@@ -104,7 +104,7 @@ test("STK Push rejects invalid amount, invalid phone, and incomplete provider re
   };
   await assert.rejects(() => runWithTenant(tenant, () => initiateStkPush({
     phone: "0712345678", amount: 100, bookingId: "booking-3",
-    config: { ...config, consumerKey: "unique-invalid-key", consumerSecret: "unique-invalid-secret" }, client,
+    config: { ...config, consumerKey: "unique-invalid-key", consumerSecret: "unique-invalid-secret" }, client, companyName: "Test Tours",
   })), { code: "MPESA_REQUEST_UNCERTAIN" });
 });
 
@@ -116,7 +116,7 @@ test("STK provider rejection is surfaced as a safe provider error without leakin
   await assert.rejects(
     () => runWithTenant(tenant, () => initiateStkPush({
       phone: "0712345678", amount: 100, bookingId: "booking-4",
-      config: { ...config, consumerKey: "unique-reject-key", consumerSecret: "unique-reject-secret" }, client,
+      config: { ...config, consumerKey: "unique-reject-key", consumerSecret: "unique-reject-secret" }, client, companyName: "Test Tours",
     })),
     (error) => error.code === "MPESA_PROVIDER_REJECTED"
       && error.status === 400
