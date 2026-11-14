@@ -42,7 +42,7 @@ Parameters: none.
 Key statements:
 - **Line 39:** `if (typeof window === "undefined") return "";` — This branch gates the following work on a condition; test both true and false paths when changing it.
 - **Line 40:** `const host = window.location.hostname.toLowerCase();` — Executes the statement shown; follow the surrounding function's inputs, mutations and return path to understand its role.
-- **Line 41:** `const platformHost = String(import.meta.env.VITE_PLATFORM_HOST || "globaltours.com").toLowerCase();` — Reads runtime/build configuration; never expose secret values through logs or browser-bundled variables.
+- **Line 41:** `const platformHost = String(import.meta.env.VITE_PLATFORM_HOST || "").toLowerCase();` — Reads runtime/build configuration; never expose secret values through logs or browser-bundled variables.
 - **Line 42:** `const suffix = \`.${platformHost}\`;` — Executes the statement shown; follow the surrounding function's inputs, mutations and return path to understand its role.
 - **Line 43:** `if (host.endsWith(suffix)) return host.slice(0, -suffix.length).split(".").filter(Boolean).pop() || "";` — This branch gates the following work on a condition; test both true and false paths when changing it.
 - **Line 44:** `return "";` — Exits this function and supplies its result (or response short-circuit) to the caller.
@@ -126,7 +126,7 @@ Key statements:
 - Line 36: `const isSuperAdminUser = (user) => ["super_admin", "superadmin"].includes(normalizeRole(user));`.
 - Line 38: `const getTenantSlugFromHost = () => {`.
 - Line 40: `const host = window.location.hostname.toLowerCase();`.
-- Line 41: `const platformHost = String(import.meta.env.VITE_PLATFORM_HOST || "globaltours.com").toLowerCase();`.
+- Line 41: `const platformHost = String(import.meta.env.VITE_PLATFORM_HOST || "").toLowerCase();`.
 - Line 42: `const suffix = \`.${platformHost}\`;`.
 - Line 47: `const applyTenantIdentity = (tenant) => {`.
 - Line 52: `let favicon = document.querySelector('link[rel="icon"]');`.
