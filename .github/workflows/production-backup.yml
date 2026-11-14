@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "23 2 * * *"
+  # Run one verified backup when this workflow is first applied/updated on main.
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/production-backup.yml"
 
 permissions:
   contents: read
@@ -100,16 +105,19 @@ jobs:
               const users = restored.users.countDocuments({});
               const organizations = restored.organizations.countDocuments({});
               if (!users || !organizations) throw new Error("Restored users and organizations must contain readable documents");
-              const organizationIds = restored.organizations.find({}, { _id: 1 }).toArray().map(({ _id }) => _id);
+              const organizationIds = restored.organizations.find({}, { _id: 1 }).toArray().map(({ _id }) => String(_id));
               const collections = restored.getCollectionNames();
               const integrity = {};
               for (const required of ["bookings", "payments", "invoices"]) {
                 if (!collections.includes(required)) throw new Error(`Restored archive is missing ${required}`);
-                const indexes = restored.getCollection(required).getIndexes();
+                const collection = restored.getCollection(required);
+                const indexes = collection.getIndexes();
                 if (!indexes.length) throw new Error(`Restored ${required} collection has no readable indexes`);
-                integrity[required] = restored.getCollection(required).countDocuments({
-                  tenantId: { $exists: true, $ne: null, $nin: organizationIds }
-                });
+                integrity[required] = collection.aggregate([
+                  { $match: { tenantId: { $exists: true, $ne: null } } },
+                  { $match: { $expr: { $not: { $in: [{ $toString: "$tenantId" }, organizationIds] } } } },
+                  { $count: "count" }
+                ]).toArray()[0]?.count || 0;
                 if (integrity[required]) throw new Error(`Restored ${required} contain tenant references without an organization`);
               }
               printjson({ database: appDbName, userCount: users, organizationCount: organizations,
